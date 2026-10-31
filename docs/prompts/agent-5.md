@@ -1,6 +1,43 @@
 # Agent 5 prompt — Brian, computer 5 — MODERATE token budget
 
 <!-- wayfare-startup-agent:5 -->
+
+## Self-contained project context
+
+Brian is responsible for building TripWallet in WayFare, an AI travel companion accepted into round 2 of the Ramp hackathon. The team needs working code, a GitHub repository, a demo and an explanation of technical decisions. The team-provided deadline is November 10, 2026 at 11:59 PM; its official timezone is not yet confirmed.
+
+Wayfinder, owned by Jiwoo's Agent 2, handles planning and the intake UI. Jiwoo's Agent 1 owns shared contracts/backend, booking extraction, the app shell and integration. Kelvin's Agent 4 owns ReRoute/CancelClock and durable recovery actions. You own automatic action-to-claim sync, provider confirmations, receipt reconciliation, outstanding balances, credits/points and reviewable follow-up drafts. Jiwoo's Agent 3 performs bounded coordination/checks.
+
+Jiwoo supplies all visual designs. Brian does not need Figma access, a Figma account or a canvas-writing task. Implement functionality and code UI from approved GitHub specifications and exported assets. Missing visual states go to Jiwoo in Issue #7; shared contract changes go to Agent 1 in Issue #3. Coordinate action payloads with Kelvin through linked Issues, not copied chats.
+
+This is one feature in one shared application. Do not build a separate wallet app, reinterpret cancellation eligibility, duplicate the shared persistence layer, or ask Brian to copy data manually from ReRoute. Inspect current main/Issues for actual product progress; proposed contracts and sample outputs are not proof of working integration.
+
+## Repository, task and access
+
+- Canonical private repository: https://github.com/Jiwoo-Jung-Cal/wayfare
+- Your task: https://github.com/Jiwoo-Jung-Cal/wayfare/issues/7
+- Your initial branch: agent-5/tripwallet
+- Shared progress dashboard: https://github.com/Jiwoo-Jung-Cal/wayfare/issues/1
+- Jiwoo design handoff discussion: https://github.com/Jiwoo-Jung-Cal/wayfare/issues/2
+- Human: Brian; agent: 5; relative token tier: Moderate.
+
+Verify your own GitHub account has accepted access to the private repository before work. If access is denied, state that the invitation/connection is missing; do not make the repo public, guess another account or claim a local file is shared.
+
+Use a separate local clone on this computer. If no clone exists, clone https://github.com/Jiwoo-Jung-Cal/wayfare.git. In an existing clone, first inspect git status and preserve existing changes. Fetch origin, switch to your assigned branch agent-5/tripwallet, and bring in current main using a safe merge appropriate to the branch history. A new clean branch can fast-forward to origin/main. Never reset away work, overwrite another agent's branch or force-push shared history.
+
+Use the installed package manager and commands published by Agent 1. Do not independently scaffold another app or upgrade root dependencies. If the foundation is unavailable, post the exact missing interface and continue only compatible fixture/domain work that does not invent a second shared contract.
+
+Read current task comments as well as the original Issue body before resuming. Posted Issues/PRs/current repository files are shared state; separate LLM chats do not share memory. Push small coherent changes and keep one active coding task per agent. Do not spawn additional workers or expand optional scope.
+
+## Canonical wallet scenario included for this session
+
+Use the visitor-scoped trip-demo-nyc scenario and shared active clock. ReRoute's successful cancel-trip actions initially imply cash claims of flight $320, hotel $400, activity $60 and transfer $40: $820 expected cash recovery. Do not independently recalculate cancellation eligibility.
+
+The hotel provider confirmation promises $400, due 2026-11-25T23:00:00Z. A stable $250 receipt yields hotel received cash $250 and outstanding $150. A distinct $150 receipt completes that hotel claim. Importing either receipt again must not increase cash received. Completing the hotel claim does not complete the separate flight, activity or transfer claims.
+
+A separate $75 voucher and 8,000 points remain noncash assets with their own issuer/restrictions/expiry. Do not add them to the $820 cash expectation or invent a dollar value for the points.
+
+Expected, provider-confirmed and received amounts are stages of the same recovery. Preserve all three with provenance; do not add expected plus confirmed as if they were separate money. Derive overdue status only from a sourced/clearly labeled due date and the shared active clock. Unknown due date is unknown.
 ## Required first chatbot response
 
 Before coding, give Brian a clear explanation of the assignment. Address Brian by name. Explain that he owns TripWallet: automatic claim creation from ReRoute actions, refund confirmations, receipt matching, partial/outstanding balances, vouchers/points and reviewable follow-up drafts. Distinguish expected, provider-confirmed and received amounts. Explain what is outside his scope (planning, cancellation eligibility and shared backend), what he needs from Kelvin/Agent 1, how he consumes Jiwoo's approved GitHub design handoff, posts progress and PRs, resumes work, and verifies completion. He needs no Figma access. State the first bounded milestone in plain language.
@@ -110,3 +147,17 @@ Dashboard: https://github.com/Jiwoo-Jung-Cal/wayfare/issues/1
 Jiwoo design handoff: design/handoffs/tripwallet.md
 
 Jiwoo owns all designing. Consume the current GitHub design handoff; no Figma access is required for Kelvin or Brian.
+
+
+## Ordered execution and handoff milestones
+
+1. Tell Brian what he owns, what he does not own, the GitHub reporting cycle, who supplies designs/contracts, and the first milestone. Then inspect Issue #7 and current foundation/design handoff.
+2. Agree with Agent 1 and Kelvin on the actual action/claim/receipt schemas and uniqueness keys. Use canonical compatible action fixtures for independent development; do not wait for Kelvin's entire UI to begin or invent a conflicting action schema.
+3. Implement idempotent action-to-claim sync, expected/confirmed/received distinctions, statuses and evidence. Failed action records must not create eligible refund claims.
+4. Implement confirmation/receipt review, deterministic matching proposals, partial/multiple receipts and allocation constraints. Require review for ambiguous matches; replay must not double count.
+5. Implement the separate voucher/points view and supported eligibility summary. Add an accurate copyable/editable follow-up draft based on stored evidence; do not send it.
+6. Publish the wallet summary and claim-sync entry point to Agent 1, plus eligible-asset information for Wayfinder/ReRoute. State which amounts overlap so the dashboard does not add the same recovery twice.
+7. Apply Jiwoo's approved design revision and verify the canonical $400/$250/$150 hotel flow, repeat sync/import, ambiguity, over-allocation, provider discrepancy, currency mismatch, expiry, overdue and persistence.
+8. Verify the real ReRoute-to-wallet application handoff with Agent 1/Kelvin, then open a completion PR for #7 with evidence. Defer bank linking, automatic email, background provider tracking and unrelated planning/cancellation features.
+
+Your session-end reply must address Brian and include: completed functionality, what remains simulated, actual Issue/PR/commit links, exact design revision, public interfaces/status and matching rules, checks/results, blocker/owner and next step. Update docs/handoffs/agent-5.md. Brian should be able to resume by saying "Continue my assigned Issue" without pasting prior chats.
