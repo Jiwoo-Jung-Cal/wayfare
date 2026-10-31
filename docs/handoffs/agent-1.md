@@ -15,6 +15,8 @@ test: npm test          (vitest run; non-watch)
 build: npm run build    (output dist/)
 config: none (no secrets, no network, no server needed for these checks)
 optional: npm run server   (API on :8787; see .env.example. Not needed for CI.)
+e2e: npm run e2e           (Playwright; needs Google Chrome, which GitHub ubuntu-latest has. Or set PW_CHANNEL= and
+                            run `npx playwright install --with-deps chromium`. Sample mode; no server or secrets.)
 ```
 
 ## Working behavior
@@ -73,6 +75,16 @@ optional: npm run server   (API on :8787; see .env.example. Not needed for CI.)
   - requests that arrive during a running sync are merged, so a recorded action is never skipped;
   - a pending, retryable notice appears on the dashboard, wallet and reroute routes.
 - **Tests:** `src/app/integration.test.ts` covers the orchestration and the extraction → reviewed-save import step. The steps that need the feature modules are listed as pending (`it.todo`) until Agents 2, 4 and 5 deliver.
+- **Browser E2E** (`e2e/journey.spec.ts`, run with `npm run e2e`): the shell journey in real Chrome. It covers:
+  - load, then import twice with no duplicates;
+  - the disruption;
+  - the clock at 22:59:59Z ("Open") and 23:00:00Z ("Passed");
+  - reload persistence, then a confirmed reset of this workspace only;
+  - claim sync on wallet load, shown in words;
+  - keyboard skip link and navigation;
+  - no horizontal scroll at mobile width.
+  The feature steps are `test.fixme` until the modules exist.
+- **Mutation check:** a deliberately broken deadline rule made the E2E fail.
 - **Waiting on:** #4, #6 and #7. None had pushed commits or opened PRs when checked.
 
 ## Blockers and owners
