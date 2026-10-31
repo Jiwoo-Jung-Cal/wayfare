@@ -12,7 +12,7 @@ Your first response must cover: owned functionalities and exclusions; concrete M
 - Agent: 4; human: Kelvin; token tier: Moderate.
 - Task keys: reroute. Resolve actual Issue numbers from coordination/config.json after setup.
 - Intended GitHub target: Jiwoo-Jung-Cal/wayfare. The private repository is created: https://github.com/Jiwoo-Jung-Cal/wayfare. Verify your own read/write access before starting.
-- Shared Figma Design: https://www.figma.com/design/ZZS9jEmANeCrjGxWxxCofK. The eight owner pages exist; product screens and working code are not implemented yet. Reuse this file.
+- Jiwoo owns the Figma workspace. You need no Figma access; use the approved written specifications and exports in design/. Product code and visual handoffs are not completed yet.
 - Read AGENTS.md, docs/OWNERSHIP.md, your task Issue, and docs/PROGRESS_UPDATES.md. Read only the source/contracts needed for your role. Agent 3 skips the long product brief and other agents' prompts.
 - Verify your GitHub read/write access, current main, task branch and dependency status. If access/setup is blocked, explain the concrete missing step and continue only independent work; do not claim a local draft has been shared.
 - Jiwoo owns all visual design and Figma edits. Kelvin and Brian need no Figma access. Read design/README.md and the approved handoff for your feature. Preserve Jiwoo's design decisions; report missing visual specifications in the Issue.
