@@ -2,12 +2,13 @@
 // Hash routing keeps deep links working on static hosts and embedded previews
 // (e.g. a Figma Code Layer) without server rewrites.
 
-import { Component, type ReactNode } from 'react';
+import { Component, useEffect, type ReactNode } from 'react';
 import { createHashRouter, Navigate, NavLink, Outlet, RouterProvider, useParams } from 'react-router';
 import { appError, DEMO_TRIP_ID, forgetGuestSession, type AppError } from '../core/index.ts';
 import { Button, CapabilityLabel, EmptyState, ErrorState, LoadingState } from '../ui/index.tsx';
 import { AppServicesProvider, CONNECTED_API_URL, useAppServices } from './AppServices.tsx';
 import { DemoControls } from './DemoControls.tsx';
+import { ClaimSyncNotice } from './ClaimSyncNotice.tsx';
 import { TripDashboard, TripList } from './Dashboard.tsx';
 import { FEATURES, ROUTE_TABLE } from './featureRegistry.ts';
 
@@ -106,10 +107,15 @@ function TripHome() {
 
 function FeatureRoute({ path }: { path: (typeof ROUTE_TABLE)[number]['path'] }) {
   const { tripId = '' } = useParams();
-  const { load, featureContext } = useAppServices();
+  const { load, featureContext, runClaimSync } = useAppServices();
   const entry = ROUTE_TABLE.find((r) => r.path === path)!;
   const feature = FEATURES[entry.key];
-  if (load.status === 'ready' && !load.snapshot.trips.some((t) => t.id === tripId)) {
+  const tripExists = load.status === 'ready' && load.snapshot.trips.some((t) => t.id === tripId);
+  // Wallet load re-runs TripWallet's idempotent claim sync, so an interrupted handoff recovers (also after reload).
+  useEffect(() => {
+    if (path === 'wallet' && tripExists) void runClaimSync(tripId, 'wallet_load');
+  }, [path, tripId, tripExists, runClaimSync]);
+  if (load.status === 'ready' && !tripExists) {
     return <EmptyState title="Trip not found">This trip does not exist in your workspace.</EmptyState>;
   }
   if (!feature) {
@@ -123,7 +129,12 @@ function FeatureRoute({ path }: { path: (typeof ROUTE_TABLE)[number]['path'] }) 
     );
   }
   const Page = feature.Page;
-  return <Page tripId={tripId} ctx={featureContext} />;
+  return (
+    <div className="wf-stack">
+      {(path === 'wallet' || path === 'reroute') && <ClaimSyncNotice tripId={tripId} />}
+      <Page tripId={tripId} ctx={featureContext} />
+    </div>
+  );
 }
 
 const router = createHashRouter([

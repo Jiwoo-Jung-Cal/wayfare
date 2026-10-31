@@ -20,7 +20,6 @@ import {
   getOrCreateGuestSession,
   getOrCreateLocalWorkspaceId,
   type AppError,
-  type ClaimSyncResult,
   type Clock,
   type ExtractionService,
   type FeatureContext,
@@ -31,13 +30,9 @@ import {
 } from '../core/index.ts';
 import { Button, ErrorState, LoadingState } from '../ui/index.tsx';
 import { FEATURES } from './featureRegistry.ts';
+import { createClaimSyncOrchestrator, type ClaimSyncReason, type ClaimSyncState } from './claimSync.ts';
 
-export type ClaimSyncState =
-  | { status: 'idle' }
-  | { status: 'syncing'; tripId: Id }
-  | { status: 'synced'; tripId: Id; result: ClaimSyncResult; at: string }
-  | { status: 'pending_retry'; tripId: Id; error: AppError }
-  | { status: 'not_registered'; tripId: Id };
+export type { ClaimSyncState } from './claimSync.ts';
 
 export type LoadState = { status: 'loading' } | { status: 'error'; error: AppError } | { status: 'ready'; snapshot: WorkspaceSnapshot };
 
@@ -48,7 +43,7 @@ type AppServices = {
   clock: Clock;
   refresh(): Promise<void>;
   claimSync: ClaimSyncState;
-  runClaimSync(tripId: Id): Promise<void>;
+  runClaimSync(tripId: Id, reason: ClaimSyncReason): Promise<void>;
   featureContext: FeatureContext;
 };
 
@@ -135,7 +130,6 @@ function ServicesInner({ children, backend }: { children: ReactNode; backend: Ba
   const repo = backend.repo;
   const [load, setLoad] = useState<LoadState>({ status: 'loading' });
   const [claimSync, setClaimSync] = useState<ClaimSyncState>({ status: 'idle' });
-  const syncing = useRef(false);
 
   const refresh = useCallback(async () => {
     try {
@@ -156,34 +150,27 @@ function ServicesInner({ children, backend }: { children: ReactNode; backend: Ba
   clockRef.current = clock;
   const extraction = useMemo(() => backend.extraction(() => clockRef.current.now()), [backend]);
 
-  // Late-bound so featureContext and runClaimSync can reference each other.
+  // Late-bound so the orchestrator always sees the current feature context.
   const ctxRef = useRef<FeatureContext | null>(null);
+  const refreshRef = useRef(refresh);
+  refreshRef.current = refresh;
+
+  const orchestrator = useMemo(
+    () =>
+      createClaimSyncOrchestrator({
+        provider: () => FEATURES.tripwallet?.syncClaimsFromActions,
+        context: () => ctxRef.current,
+        onState: setClaimSync,
+        onSettled: () => refreshRef.current(),
+      }),
+    [],
+  );
 
   const runClaimSync = useCallback(
-    async (tripId: Id) => {
-      const wallet = FEATURES.tripwallet;
-      if (!wallet?.syncClaimsFromActions) {
-        setClaimSync({ status: 'not_registered', tripId });
-        return;
-      }
-      if (syncing.current || !ctxRef.current) return;
-      syncing.current = true;
-      setClaimSync({ status: 'syncing', tripId });
-      try {
-        const r = await wallet.syncClaimsFromActions({ tripId }, ctxRef.current);
-        setClaimSync(
-          r.ok
-            ? { status: 'synced', tripId, result: r.value, at: new Date().toISOString() }
-            : { status: 'pending_retry', tripId, error: r.error },
-        );
-      } catch (e) {
-        setClaimSync({ status: 'pending_retry', tripId, error: appError('internal', (e as Error).message, { retryable: true }) });
-      } finally {
-        syncing.current = false;
-        await refresh();
-      }
+    async (tripId: Id, reason: ClaimSyncReason) => {
+      await orchestrator.run(tripId, reason);
     },
-    [refresh],
+    [orchestrator],
   );
 
   const featureContext = useMemo<FeatureContext>(
@@ -195,7 +182,7 @@ function ServicesInner({ children, backend }: { children: ReactNode; backend: Ba
       // Action success is already durable when this is called; claim-sync status is tracked separately.
       notifyActionRecorded: async ({ tripId }) => {
         await refresh();
-        await runClaimSync(tripId);
+        await runClaimSync(tripId, 'action_recorded');
       },
     }),
     [repo, clock, extraction, refresh, runClaimSync],

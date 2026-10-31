@@ -5,6 +5,7 @@ import { Link } from 'react-router';
 import { deadlineStatus, type Id, type WorkspaceSnapshot } from '../core/index.ts';
 import { Card, EmptyState, InstantText, MoneyText, Notice, StatusBadge, type Tone } from '../ui/index.tsx';
 import { useAppServices } from './AppServices.tsx';
+import { ClaimSyncNotice } from './ClaimSyncNotice.tsx';
 import { FEATURES, ROUTE_TABLE } from './featureRegistry.ts';
 
 const BOOKING_TONE: Record<string, Tone> = { confirmed: 'positive', disrupted: 'danger', cancelled: 'neutral', replaced: 'neutral', changed: 'info' };
@@ -31,7 +32,7 @@ export function TripList({ snapshot }: { snapshot: WorkspaceSnapshot }) {
 }
 
 export function TripDashboard({ tripId }: { tripId: Id }) {
-  const { load, clock, claimSync, runClaimSync, featureContext } = useAppServices();
+  const { load, clock, featureContext } = useAppServices();
   if (load.status !== 'ready') return null;
   const s = load.snapshot;
   const trip = s.trips.find((t) => t.id === tripId);
@@ -64,15 +65,7 @@ export function TripDashboard({ tripId }: { tripId: Id }) {
           {disruptions.find((d) => d.status === 'active')!.description} <Link to={`/trips/${tripId}/reroute`}>Open ReRoute</Link>
         </Notice>
       )}
-      {claimSync.status === 'pending_retry' && claimSync.tripId === tripId && (
-        <Notice tone="warning">
-          Recovery actions are saved, but claim sync to TripWallet failed: {claimSync.error.message}{' '}
-          <button className="wf-button" onClick={() => void runClaimSync(tripId)}>Retry claim sync</button>
-        </Notice>
-      )}
-      {claimSync.status === 'not_registered' && claimSync.tripId === tripId && (
-        <Notice tone="warning">Recovery actions are saved. Claim sync is pending: the TripWallet module is not registered yet.</Notice>
-      )}
+      <ClaimSyncNotice tripId={tripId} />
 
       <div className="wf-grid">
         <Card title="Selected plan">

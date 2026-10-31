@@ -1,8 +1,8 @@
 # Agent 1 handoff
 
-Status: milestone 1 (shell, contracts v1, sample persistence) is in PR #12. Milestone 2 (API server, guest sessions, connected repository, model adapter, booking extraction) is on branch `agent-1/extraction`, stacked on #12.
+Status: foundation v1 and milestone 2 are merged on main (`bf4d2c7`, PRs #12 and #13). Integration (#8) has started on branch `agent-1/integration`, and the feature modules have not been delivered yet.
 Task Issue: https://github.com/Jiwoo-Jung-Cal/wayfare/issues/3 (foundation). Integration follows on #8.
-Branch / commit / PR: `agent-1/foundation` (PR #12) and `agent-1/extraction` (stacked PR, linked from #3).
+Branch / commit / PR: main `bf4d2c7` (#12, #13 merged). Integration work is on `agent-1/integration` (PR linked from #8).
 
 ## For Agent 3 (CI)
 
@@ -60,6 +60,20 @@ optional: npm run server   (API on :8787; see .env.example. Not needed for CI.)
 - **Connected mode** (`VITE_WAYFARE_API_URL`): data lives in a server workspace. The connected path has been verified locally only.
 - **AI extraction:** live only when `ANTHROPIC_API_KEY` is set on the server, which has **not been verified**. Without it, the sample documents are simulated and other text returns `not_configured`.
 - **Provider actions** (cancellations, refunds) are always simulated.
+
+## Access status (checked 2026-10-31)
+
+- **Live AI:** not verified. The server environment has no `ANTHROPIC_API_KEY` or `WAYFARE_ANTHROPIC_API_KEY`, and no `ant` CLI. Agent 1 does not reuse its own coding-assistant credentials for the app.
+- **Figma:** unverified. This Agent 1 session's connectors are only Claude Docs and scheduled-tasks, with no Figma connector, so the Code Layer, seat, import and preview checks could not be run. Nothing was imported, and nothing is claimed.
+
+## Integration (#8) progress
+
+- **Done in the shell:**
+  - claim sync runs after a recorded action, on wallet load, and on manual retry;
+  - requests that arrive during a running sync are merged, so a recorded action is never skipped;
+  - a pending, retryable notice appears on the dashboard, wallet and reroute routes.
+- **Tests:** `src/app/integration.test.ts` covers the orchestration and the extraction → reviewed-save import step. The steps that need the feature modules are listed as pending (`it.todo`) until Agents 2, 4 and 5 deliver.
+- **Waiting on:** #4, #6 and #7. None had pushed commits or opened PRs when checked.
 
 ## Blockers and owners
 
