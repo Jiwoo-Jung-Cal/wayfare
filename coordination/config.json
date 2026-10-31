@@ -1,0 +1,23 @@
+{
+  "repository": "Jiwoo-Jung-Cal/wayfare",
+  "intendedOwner": "Jiwoo-Jung-Cal",
+  "repositoryName": "wayfare",
+  "setupStatus": "Private repository created; task and workflow installation in progress",
+  "dashboardIssue": 1,
+  "figmaQueueIssue": 2,
+  "taskIssues": {
+    "foundation": 3,
+    "wayfinder-intake": 4,
+    "coordination": 5,
+    "reroute": 6,
+    "tripwallet": 7,
+    "integration": 8,
+    "release": 9
+  },
+  "collaborators": {
+    "Kelvin": null,
+    "Brian": null
+  },
+  "primaryFigmaUrl": "https://www.figma.com/design/ZZS9jEmANeCrjGxWxxCofK",
+  "designOwner": "Jiwoo"
+}
