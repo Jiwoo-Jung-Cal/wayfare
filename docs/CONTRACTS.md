@@ -108,6 +108,10 @@ if (r.ok) await ctx.notifyActionRecorded({ tripId: DEMO_TRIP_ID, actionRecordId:
 2. The shell calls TripWallet's `feature.syncClaimsFromActions({ tripId }, ctx)`. It does this after every recorded action and again on wallet load.
 3. TripWallet builds claims from `listActions`, then calls `ensureClaims`.
 4. If the sync fails, the shell keeps the action and shows a "Retry claim sync" state. A recorded action and a successful claim sync are reported separately.
+5. Opening `/trips/:tripId/wallet` always re-runs the sync, so an interrupted handoff recovers, including after a reload.
+6. Requests that arrive while a sync is running are merged into one follow-up run, so a newly recorded action is never skipped.
+
+The orchestration lives in `src/app/claimSync.ts` and the status notice in `src/app/ClaimSyncNotice.tsx` (shown on the dashboard, wallet and reroute routes). `src/app/integration.test.ts` tests the orchestration against a test double of the sync. Brian's real `syncClaimsFromActions` must be idempotent: calling it twice must not create a second claim.
 
 ## Feature registration
 
