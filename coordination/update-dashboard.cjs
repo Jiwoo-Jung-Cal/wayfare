@@ -32,7 +32,7 @@ function stateFor(task, issue, latest, issues, prs) {
 
 function render(tasks, issues, reports, prs, config, now) {
   const lines = [MARKER, '# WayFare — team progress', '',
-    'Updated from GitHub Issues, agent progress reports, and pull requests. Code is shared through branches/PRs; editable screens remain in Figma.', '',
+    'Updated from GitHub Issues, agent progress reports, and pull requests. Code is shared through branches/PRs.', '', 'Jiwoo owns all visual design and Figma editing. Kelvin and Brian implement approved GitHub design handoffs and need no Figma access.', '',
     '| Task | Owner / budget | State | Latest progress | Next step / blocker | PR |',
     '| --- | --- | --- | --- | --- | --- |'];
   for (const task of tasks) {
@@ -47,10 +47,10 @@ function render(tasks, issues, reports, prs, config, now) {
     '## Shared links', '',
     `- Repository: https://github.com/${config.repository}`,
     config.primaryFigmaUrl ? `- Figma Design: ${config.primaryFigmaUrl}` : '- Figma Design: not linked',
-    config.figmaQueueIssue ? `- Figma writer queue: https://github.com/${config.repository}/issues/${config.figmaQueueIssue}` : '- Figma writer queue: not created',
+    config.figmaQueueIssue ? `- Jiwoo design handoffs: https://github.com/${config.repository}/issues/${config.figmaQueueIssue}` : '- Jiwoo design handoffs: not created',
     '- Editable Figma and implementation mapping: docs/DESIGN_MAP.md in the repository.', '',
     '## Update rule', '',
-    'Every agent reports at session start, before pausing/handing off, when blocked, and after a commit/PR milestone. Include work completed, next step, branch/commit/PR, verification, Figma links, and dependencies. Do not post secrets or full chats.', '',
+    'Every agent reports at session start, before pausing/handing off, when blocked, and after a commit/PR milestone. Include work completed, next step, branch/commit/PR, verification, approved design-handoff revision, and dependencies. Do not post secrets or full chats.', '',
     'This workflow refreshes shared status without LLM calls. It does not wake inactive chatbots. Latest report details remain in the task Issue comments.', '',
     `Last dashboard refresh: ${now.toISOString()}`);
   return lines.join('\n');
