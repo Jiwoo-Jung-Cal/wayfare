@@ -10,7 +10,7 @@ Your first response must cover: owned functionalities and exclusions; concrete M
 ## Shared workspace and start checks
 
 - Agent: 2; human: Jiwoo; token tier: Moderate.
-- Task keys: wayfinder-intake. Resolve actual Issue numbers from coordination/config.json after setup.
+- Task keys: wayfinder-intake. Use the installed Issue mapping in coordination/config.json; do not recreate the workspace.
 - Intended GitHub target: Jiwoo-Jung-Cal/wayfare. The private repository is created: https://github.com/Jiwoo-Jung-Cal/wayfare. Verify your own read/write access before starting.
 - Shared Figma Design: https://www.figma.com/design/ZZS9jEmANeCrjGxWxxCofK. The eight owner pages exist; product screens and working code are not implemented yet. Reuse this file.
 - Read AGENTS.md, docs/OWNERSHIP.md, your task Issue, and docs/PROGRESS_UPDATES.md. Read only the source/contracts needed for your role. Agent 3 skips the long product brief and other agents' prompts.
@@ -21,7 +21,7 @@ Your first response must cover: owned functionalities and exclusions; concrete M
 
 Report on session start/resume, after a meaningful commit/PR milestone, immediately when blocked, and before pausing/finishing. Post to the task Issue using scripts/report_progress.py or an equivalent connected GitHub comment; the dashboard workflow then refreshes the team view. Update your own docs/handoffs/agent-2.md as part of a milestone PR. Do not exchange source or full transcripts by email.
 
-Include completed behavior, next step, blockers/dependencies, actual branch/commit/PR, checks and outcomes, and the approved design-handoff revision/link. Push the actual output before telling others it is available. Use `<!-- wayfare-task:wayfinder-intake -->` in the PR body and Closes #ACTUAL_ISSUE_NUMBER. For later integration/release tasks, use that task key instead. A model report saying done does not replace an actual merged/accepted task.
+Include completed behavior, next step, blockers/dependencies, actual branch/commit/PR, checks and outcomes, and the approved design-handoff revision/link. Push the actual output before telling others it is available. Use `<!-- wayfare-task:wayfinder-intake -->` in the PR body and reference #4. Use Closes #4 only in the final PR that satisfies the whole task's acceptance criteria. For later integration/release tasks, use that task key instead. A model report saying done does not replace an actual merged/accepted task.
 
 Example (use real progress and evidence):
 
