@@ -7,9 +7,15 @@
 
 import { describe, expect, it } from 'vitest';
 import {
+  DEMO_EXPECTED,
   DEMO_IDS,
   DEMO_TIMES,
+  ActionRecordSchema,
   appError,
+  demoCancelTripActions,
+  demoDisruption,
+  demoDocument,
+  sum,
   createClock,
   createLocalRepository,
   createSampleExtractionService,
@@ -27,6 +33,8 @@ import {
   type WorkspaceRepository,
 } from '../core/index.ts';
 import { createClaimSyncOrchestrator, type ClaimSyncState } from './claimSync.ts';
+import { FEATURES } from './featureRegistry.ts';
+import type { FeatureModule, Money } from '../core/index.ts';
 
 const WS = 'ws-journey';
 
@@ -198,10 +206,92 @@ describe('integrated demo journey (#8)', () => {
     expect(bookings.reduce((s, b) => s + ('amountMinor' in b.paid ? b.paid.amountMinor : 0), 0)).toBe(90000);
   });
 
-  it.todo('selects a plan through the Wayfinder module (Agent 2, #4)');
-  it.todo('triggers the flight cancellation through ReRoute.triggerDemoDisruption (Agent 4, #6)');
-  it.todo('approves the cancel-trip option and records hotel action before the deadline (Agent 4, #6)');
-  it.todo('creates the $400 hotel claim via TripWallet.syncClaimsFromActions (Agent 5, #7)');
-  it.todo('matches the $250 receipt, shows $150 outstanding, then completes with $150 (Agent 5, #7)');
-  it.todo('verifies the completed state after reload and that repeated approval/import does not double records');
+});
+
+
+// ---------------------------------------------------------------------------
+// Journey checks that run against REAL feature modules as soon as they are
+// registered (src/features/<key>/index.ts). Each check is also self-tested
+// against a labeled test double so the check itself is known to be correct.
+
+type DisruptionTrigger = NonNullable<FeatureModule['triggerDemoDisruption']>;
+type ClaimSync = NonNullable<FeatureModule['syncClaimsFromActions']>;
+
+async function checkDisruptionTrigger(trigger: DisruptionTrigger) {
+  const { repo } = await bookedRepo();
+  const ctx = context(repo);
+  const first = unwrap(await trigger({ tripId: DEMO_IDS.trip }, ctx));
+  const again = unwrap(await trigger({ tripId: DEMO_IDS.trip }, ctx));
+  expect(again.disruptionId).toBe(first.disruptionId);
+  const disruptions = unwrap(await repo.listDisruptions(DEMO_IDS.trip));
+  expect(disruptions).toHaveLength(1);
+  expect(disruptions[0]).toMatchObject({ id: first.disruptionId, bookingId: DEMO_IDS.bookings.flight, type: 'cancellation', capability: 'simulated' });
+}
+
+async function checkClaimSyncFromCancelTrip(sync: ClaimSync) {
+  const { repo } = await bookedRepo();
+  const ctx = context(repo);
+  const fx = { workspaceId: WS, now: ctx.clock.now() };
+  unwrap(await repo.putDocument(await demoDocument(fx, DEMO_IDS.documents.disruptionNotice)));
+  unwrap(await repo.recordDisruption(demoDisruption(fx)));
+  for (const action of demoCancelTripActions(fx)) {
+    const booking = unwrap(await repo.getBooking(action.bookingId));
+    unwrap(await repo.recordBookingAction({ action, expectedBookingRevision: booking.revision }));
+  }
+  unwrap(await sync({ tripId: DEMO_IDS.trip }, ctx));
+  const second = unwrap(await sync({ tripId: DEMO_IDS.trip }, ctx));
+  expect(second.created).toBe(0);
+
+  const claims = unwrap(await repo.listClaims(DEMO_IDS.trip));
+  expect(claims).toHaveLength(4);
+  expect(claims.map((c) => `${c.actionRecordId}/${c.recoveryComponentId}`).sort()).toEqual(
+    demoCancelTripActions(fx).map((a) => `${a.id}/${a.expectedRecovery[0]!.id}`).sort(),
+  );
+  expect(sum(claims.map((c) => c.expected as Money), 'USD')).toEqual(DEMO_EXPECTED.cancelTripOption.expectedCashRecovery);
+  const hotel = claims.find((c) => c.bookingId === DEMO_IDS.bookings.hotel)!;
+  expect(hotel.expected).toEqual(DEMO_EXPECTED.hotelClaim.expected);
+  // Noncash assets are never turned into cash claims.
+  expect(unwrap(await repo.listAssets()).every((a) => a.status === 'available')).toBe(true);
+}
+
+describe('journey checks against registered feature modules', () => {
+  const reroute = FEATURES.reroute;
+  const wallet = FEATURES.tripwallet;
+
+  it('canonical cancel-trip actions are schema-valid and expect $820 cash', () => {
+    const actions = demoCancelTripActions({ workspaceId: WS, now: DEMO_TIMES.clockStart });
+    for (const a of actions) expect(ActionRecordSchema.safeParse(a).success).toBe(true);
+    const cash = actions.flatMap((a) => a.expectedRecovery.map((c) => (c.value.unit === 'money' ? (c.value.amount as Money) : null)));
+    expect(sum(cash as Money[], 'USD')).toEqual(DEMO_EXPECTED.cancelTripOption.expectedCashRecovery);
+  });
+
+  it.skipIf(!reroute?.triggerDemoDisruption)('ReRoute (#6): triggerDemoDisruption records the flight cancellation once', async () => {
+    await checkDisruptionTrigger(reroute!.triggerDemoDisruption!);
+  });
+
+  it.skipIf(!wallet?.syncClaimsFromActions)('TripWallet (#7): syncClaimsFromActions creates the $820 / $400-hotel claims idempotently', async () => {
+    await checkClaimSyncFromCancelTrip(wallet!.syncClaimsFromActions!);
+  });
+
+  it('self-test: disruption check passes against the shell fallback double', async () => {
+    const fallback: DisruptionTrigger = async (_input, ctx) => {
+      const fx = { workspaceId: WS, now: ctx.clock.now() };
+      const doc = await ctx.repo.putDocument(await demoDocument(fx, DEMO_IDS.documents.disruptionNotice));
+      if (!doc.ok) return doc;
+      const r = await ctx.repo.recordDisruption(demoDisruption(fx));
+      return r.ok ? ok({ disruptionId: r.value.disruption.id }) : r;
+    };
+    await checkDisruptionTrigger(fallback);
+  });
+
+  it('self-test: claim-sync check passes against the wallet test double', async () => {
+    await checkClaimSyncFromCancelTrip(walletStub);
+  });
+
+  // These steps have no data-level public operation in the v1 FeatureModule
+  // contract; they will be covered by the browser E2E once the pages exist.
+  it.todo('selects a plan in Wayfinder and the dashboard shows it (Agent 2, #4; browser E2E)');
+  it.todo('approves the cancel-trip option in ReRoute before the hotel deadline (Agent 4, #6; browser E2E)');
+  it.todo('matches the $250 receipt -> $150 outstanding, then $150 -> resolved (Agent 5, #7; browser E2E)');
+  it.todo('completed state survives reload; repeated approval/receipt import does not double records (browser E2E)');
 });
