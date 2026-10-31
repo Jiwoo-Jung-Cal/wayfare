@@ -1,8 +1,8 @@
-# Bootstrap the coordination workspace
+# Existing coordination workspace
 
-This starter is prepared; remote GitHub setup is not complete until verified.
+The workspace is already installed at https://github.com/Jiwoo-Jung-Cal/wayfare. Use the existing task Issues and instructions. Do not create another repository or duplicate task Issues. See SETUP_STATUS.md for verification and remaining teammate access.
 
-Preferred route: finish the requested GitHub sign-in, create the private repository, and use the connected GitHub tools to populate this workspace and create the Issues. Reuse the existing Figma file from WORKSPACE_LINKS.md.
+The setup script remains available as an idempotent utility for a separately authorized initial installation. It preserves an already-installed remote workspace and makes no changes by default.
 
 Alternative for a machine already authenticated through the official GitHub CLI:
 
