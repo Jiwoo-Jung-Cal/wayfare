@@ -1,6 +1,6 @@
 # Shared progress updates
 
-The source of truth is the GitHub task Issue and its structured reports. Native designs remain in the shared Figma file. Remote setup is pending; local files alone are not a live shared dashboard.
+The source of truth is the GitHub task Issue and its structured reports. Native designs remain in the shared Figma file. The shared dashboard is live at https://github.com/Jiwoo-Jung-Cal/wayfare/issues/1; updates are verified through GitHub Actions.
 
 ## Reporting cadence
 
@@ -36,7 +36,7 @@ Follow that marker with a fenced json object containing agent (number), task, st
 
 The table shows seven task Issues, owners/budgets, effective state, latest summary, next step/blocker, and linked PRs. Dependencies must be completed before a consuming task becomes Ready. The dashboard is eventual, not instantaneous. Check the workflow run if an update does not appear; the original task comment is still the authoritative posted report.
 
-A PR must contain its marker, for example <!-- wayfare-task:reroute -->, and Closes #ACTUAL_ISSUE_NUMBER. Use real issue numbers after setup. Do not close a task merely because a model says it is done.
+A PR must contain its task marker, for example <!-- wayfare-task:reroute -->, and reference the actual task Issue from coordination/config.json. Milestone PRs use Relates to #6 for ReRoute; only the final PR meeting all task acceptance criteria uses Closes #6. Do not close a task merely because a model says it is done.
 
 ## Design handoff
 
