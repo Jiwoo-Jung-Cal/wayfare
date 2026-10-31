@@ -1,0 +1,9 @@
+[
+  {"key":"foundation","agent":1,"human":"Jiwoo","budget":"High","title":"Shared foundation and contract v1","seed":"tasks/01-foundation.md","dependsOn":[]},
+  {"key":"wayfinder-intake","agent":2,"human":"Jiwoo","budget":"Moderate","title":"Wayfinder and booking intake UI","seed":"tasks/02-wayfinder-intake.md","dependsOn":["foundation"]},
+  {"key":"coordination","agent":3,"human":"Jiwoo","budget":"Low","title":"Coordination and app CI wiring","seed":"tasks/03-coordination-ci.md","dependsOn":[]},
+  {"key":"reroute","agent":4,"human":"Kelvin","budget":"Moderate","title":"ReRoute and CancelClock","seed":"tasks/04-reroute.md","dependsOn":["foundation"]},
+  {"key":"tripwallet","agent":5,"human":"Brian","budget":"Moderate","title":"TripWallet and reconciliation","seed":"tasks/05-tripwallet.md","dependsOn":["foundation"]},
+  {"key":"integration","agent":1,"human":"Jiwoo","budget":"High","title":"Integrated demo and Figma runtime","seed":"tasks/06-integration.md","dependsOn":["wayfinder-intake","reroute","tripwallet"]},
+  {"key":"release","agent":3,"human":"Jiwoo","budget":"Low","title":"Release checks and submission evidence","seed":"tasks/07-release-pass.md","dependsOn":["integration"]}
+]
