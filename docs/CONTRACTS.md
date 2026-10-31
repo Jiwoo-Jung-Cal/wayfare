@@ -135,6 +135,10 @@ Export `feature: FeatureModule` from `src/features/<key>/index.ts(x)`. The shell
 - The flight is refunded $320 only when the carrier cancels (`tier-demo-flight-provider-cancels`).
 - Activity: $60 before `2026-11-20T17:00:00Z`. Transfer: $40 before `2026-11-20T12:00:00Z`.
 - Replacement quote `quote-demo-replacement-flight` ($360). Disruption `dis-demo-flight-cancel` (built by `demoDisruption`).
+- Cancel-trip handoff fixture: `demoCancelTripActions(ctx)` returns the four `ActionRecord`s for approving the cancel-trip option (`opt-demo-cancel-trip`) at the clock start.
+  - IDs: `act-demo-cancel-{flight,hotel,activity,transfer}`, each with one cash component `rc-demo-<kind>-cash` ($320 + $400 + $60 + $40 = $820).
+  - ReRoute's approval should produce equivalent records. TripWallet's `syncClaimsFromActions` must turn them into exactly four claims, idempotently.
+  - `src/app/integration.test.ts` runs these checks automatically against each real module once it is registered.
 - Hotel refund confirmation: $400 due `2026-11-25T23:00:00Z` (`DEMO_HOTEL_REFUND_CONFIRMATION`).
 - Receipts `rcpt-demo-hotel-1` ($250, ref `HLH-RF-0001`) and `rcpt-demo-hotel-2` ($150, ref `HLH-RF-0002`).
 - Assets `asset-demo-voucher` ($75 Bayline Air, not cash) and `asset-demo-points` (8,000 Harbor Line Rewards).

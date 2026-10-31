@@ -10,6 +10,7 @@ import { usd, unknownValue, type Money } from '../money.ts';
 import type { Instant } from '../time.ts';
 import { DEMO_CLOCK_START } from '../time.ts';
 import type {
+  ActionRecord,
   Booking,
   DataProvenance,
   Disruption,
@@ -82,6 +83,23 @@ export const DEMO_IDS = {
     replacementFlight: 'quote-demo-replacement-flight',
   },
   disruption: 'dis-demo-flight-cancel',
+  recoveryOptions: {
+    continue: 'opt-demo-continue',
+    cancelTrip: 'opt-demo-cancel-trip',
+  },
+  /** ActionRecords for the approved cancel-trip option (ReRoute output = TripWallet input). */
+  cancelTripActions: {
+    flight: 'act-demo-cancel-flight',
+    hotel: 'act-demo-cancel-hotel',
+    activity: 'act-demo-cancel-activity',
+    transfer: 'act-demo-cancel-transfer',
+  },
+  recoveryComponents: {
+    flight: 'rc-demo-flight-cash',
+    hotel: 'rc-demo-hotel-cash',
+    activity: 'rc-demo-activity-cash',
+    transfer: 'rc-demo-transfer-cash',
+  },
   receipts: {
     hotel1: 'rcpt-demo-hotel-1',
     hotel2: 'rcpt-demo-hotel-2',
@@ -531,6 +549,47 @@ export function demoDisruption(ctx: DemoContext): Disruption {
     status: 'active',
     createdAt: ctx.now,
   };
+}
+
+/**
+ * Canonical ActionRecords for approving the cancel-trip option at the demo
+ * clock start (before every deadline). This freezes the ReRoute -> TripWallet
+ * handoff: ReRoute's approval should produce records equivalent to these
+ * (same booking/tier/amount/method per component; its own IDs and keys may
+ * differ), and TripWallet's syncClaimsFromActions must turn them into one
+ * cash claim per component ($320 + $400 + $60 + $40 = $820), idempotently.
+ * Requires the disruption DEMO_IDS.disruption to be recorded first.
+ */
+export function demoCancelTripActions(ctx: DemoContext): ActionRecord[] {
+  const B = DEMO_IDS.bookings;
+  const T = DEMO_IDS.tiers;
+  const A = DEMO_IDS.cancelTripActions;
+  const C = DEMO_IDS.recoveryComponents;
+  const rows = [
+    { id: A.flight, bookingId: B.flight, componentId: C.flight, tierId: T.flightProviderCancels, amount: DEMO_EXPECTED.cancelTripOption.refunds.flight },
+    { id: A.hotel, bookingId: B.hotel, componentId: C.hotel, tierId: T.hotelBefore, amount: DEMO_EXPECTED.cancelTripOption.refunds.hotel },
+    { id: A.activity, bookingId: B.activity, componentId: C.activity, tierId: T.activityBefore, amount: DEMO_EXPECTED.cancelTripOption.refunds.activity },
+    { id: A.transfer, bookingId: B.transfer, componentId: C.transfer, tierId: T.transferBefore, amount: DEMO_EXPECTED.cancelTripOption.refunds.transfer },
+  ];
+  return rows.map((r) => ({
+    id: r.id,
+    workspaceId: ctx.workspaceId,
+    tripId: DEMO_TRIP_ID,
+    bookingId: r.bookingId,
+    recoveryOptionId: DEMO_IDS.recoveryOptions.cancelTrip,
+    disruptionId: DEMO_IDS.disruption,
+    action: 'cancel',
+    replacementQuoteId: null,
+    idempotencyKey: `reroute:${DEMO_IDS.recoveryOptions.cancelTrip}:${r.bookingId}`,
+    expectedRecovery: [
+      { id: r.componentId, kind: 'cash_refund', value: { unit: 'money', amount: r.amount }, method: 'original_payment', refundTierId: r.tierId, dueAt: null, dueAtSource: null },
+    ],
+    resultingBookingState: 'cancelled',
+    result: { status: 'simulated', detail: 'Sample mode: cancellation not sent to the provider' },
+    capability: 'simulated',
+    approvedAt: ctx.now,
+    createdAt: ctx.now,
+  }));
 }
 
 // ---------------------------------------------------------------------------
