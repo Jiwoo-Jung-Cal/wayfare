@@ -2,7 +2,7 @@
   "repository": "Jiwoo-Jung-Cal/wayfare",
   "intendedOwner": "Jiwoo-Jung-Cal",
   "repositoryName": "wayfare",
-  "setupStatus": "Private repository created; task and workflow installation in progress",
+  "setupStatus": "Coordination installed; live dashboard and workflows verified; teammate invitations pending handles",
   "dashboardIssue": 1,
   "figmaQueueIssue": 2,
   "taskIssues": {
@@ -19,5 +19,6 @@
     "Brian": null
   },
   "primaryFigmaUrl": "https://www.figma.com/design/ZZS9jEmANeCrjGxWxxCofK",
-  "designOwner": "Jiwoo"
+  "designOwner": "Jiwoo",
+  "branchProtection": "not enforced on the current private-repository plan"
 }
