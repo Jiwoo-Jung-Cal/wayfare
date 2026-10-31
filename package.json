@@ -14,9 +14,11 @@
     "preview": "vite preview",
     "typecheck": "tsc -p tsconfig.json",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "server": "node server/node.ts"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "1.2.0",
     "react": "19.3.1",
     "react-dom": "19.3.1",
     "react-router": "7.18.4",

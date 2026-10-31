@@ -1,8 +1,8 @@
 # Agent 1 handoff
 
-Status: foundation milestone 1 in review (shell + contracts v1 + sample persistence). Extraction backend, server adapter and the connected repository are next.
+Status: milestone 1 (shell, contracts v1, sample persistence) is in PR #12. Milestone 2 (API server, guest sessions, connected repository, model adapter, booking extraction) is on branch `agent-1/extraction`, stacked on #12.
 Task Issue: https://github.com/Jiwoo-Jung-Cal/wayfare/issues/3 (foundation). Integration follows on #8.
-Branch / commit / PR: `agent-1/foundation`. See the PR linked from #3 (`<!-- wayfare-task:foundation -->`).
+Branch / commit / PR: `agent-1/foundation` (PR #12) and `agent-1/extraction` (stacked PR, linked from #3).
 
 ## For Agent 3 (CI)
 
@@ -14,6 +14,7 @@ typecheck: npm run typecheck
 test: npm test          (vitest run; non-watch)
 build: npm run build    (output dist/)
 config: none (no secrets, no network, no server needed for these checks)
+optional: npm run server   (API on :8787; see .env.example. Not needed for CI.)
 ```
 
 ## Working behavior
@@ -55,7 +56,10 @@ config: none (no secrets, no network, no server needed for these checks)
 
 ## Live versus simulated
 
-Everything is sample mode. Provider actions are simulated. There is no AI call yet and no server.
+- **Sample mode (default):** data lives in the browser. Extraction is simulated and recognizes the sample documents only.
+- **Connected mode** (`VITE_WAYFARE_API_URL`): data lives in a server workspace. The connected path has been verified locally only.
+- **AI extraction:** live only when `ANTHROPIC_API_KEY` is set on the server, which has **not been verified**. Without it, the sample documents are simulated and other text returns `not_configured`.
+- **Provider actions** (cancellations, refunds) are always simulated.
 
 ## Blockers and owners
 
@@ -66,9 +70,9 @@ Everything is sample mode. Provider actions are simulated. There is no AI call y
 
 ## Next bounded step
 
-1. `server/` with the web-standard handler: guest session per workspace, the HTTP repository, and a server-only model adapter.
-2. The booking-extraction endpoint, with a deterministic sample extractor labeled "simulated".
-3. Extraction request/result/error examples for Agent 2.
+1. Jiwoo merges #12 and then the extraction PR. Agent 3 wires CI.
+2. With an API key: run one live extraction of a sample confirmation and record the request ID and model here.
+3. Integration on #8: register the features from Agents 2, 4 and 5; verify the claim-sync handoff; run the browser journey test; check Figma runtime access.
 
 ## Tool/workflow decision
 

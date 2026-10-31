@@ -14,9 +14,10 @@ Owner: Agent 1. Source of truth is the code below; this page explains it and giv
 | Typecheck | `npm run typecheck` |
 | Tests (non-watch) | `npm test` |
 | Production build | `npm run build` (output `dist/`, relative base, hash routing) |
-| Required config | none for sample mode. No secrets, network or server needed for typecheck/test/build. |
+| API server (optional) | `npm run server` (Node 24 runs `server/node.ts` directly; default port 8787) |
+| Required config | none for sample mode. No secrets, network or server needed for typecheck/test/build. Connected mode: see `.env.example`. |
 
-Pinned stack: React 19.3.1, react-router 7.18.4 (hash router), Zod 4.6.7, Vite 8.3.5, TypeScript 6.0.3, Vitest 5.0.5. Root dependency changes go through Agent 1.
+Pinned stack: React 19.3.1, react-router 7.18.4 (hash router), Zod 4.6.7, Vite 8.3.5, TypeScript 6.0.3, Vitest 5.0.5, and `@anthropic-ai/sdk` 1.2.0 (server only). Root dependency changes go through Agent 1.
 
 ## Import path
 
@@ -38,7 +39,10 @@ Relative imports with explicit `.ts`/`.tsx` extensions are used everywhere, so t
 | Feature registration | `src/core/feature.ts` | Published |
 | Canonical fixture | `src/core/fixtures/demoNyc.ts`, `documents.ts`, `seed.ts` | Published |
 | Shared UI components | `src/ui/index.tsx`, tokens `src/styles/tokens.css` | Functional placeholders (design pending) |
-| Booking extraction, model adapter, connected repository | `server/` | Not yet published (next milestone) |
+| Booking extraction contract | `src/core/extraction.ts` | Published |
+| Sample extractor (simulated) | `src/core/fixtures/sampleExtractions.ts` | Implemented and tested |
+| Connected clients (HTTP repo, extraction, guest session) | `src/core/http/httpClient.ts` | Implemented and tested |
+| API server, guest sessions, model adapter | `server/api.ts`, `server/workspaces.ts`, `server/ai/modelAdapter.ts`, `server/extraction.ts` | Implemented and tested. The live AI path is unverified: no key is configured. |
 
 ## Semantics
 
@@ -116,7 +120,7 @@ Export `feature: FeatureModule` from `src/features/<key>/index.ts(x)`. The shell
 | `reroute` | `/trips/:tripId/reroute` | Agent 4 | `triggerDemoDisruption`, `DashboardPanel` |
 | `tripwallet` | `/trips/:tripId/wallet` | Agent 5 | `syncClaimsFromActions` (required for the handoff), `DashboardPanel` |
 
-`Page` receives `{ tripId, ctx }`. `ctx` holds `repo`, `clock`, `refresh()` and `notifyActionRecorded()`. Do not import another feature's files.
+`Page` receives `{ tripId, ctx }`. `ctx` holds `repo`, `clock`, `extraction` (an `ExtractionService`), `refresh()` and `notifyActionRecorded()`. Do not import another feature's files.
 
 ## Canonical scenario (`src/core/fixtures/demoNyc.ts`)
 
@@ -140,4 +144,68 @@ Seed stages: `planning` creates the trip, plans, quote and assets. `booked` adds
 | Mode | Implementation | Durable | Shared | Notes |
 | --- | --- | --- | --- | --- |
 | Sample | `createLocalRepository` (localStorage key `wayfare:v1:workspace:<id>`) | Survives reload in this browser | No; one workspace per browser | Corrupt data is reported as an error and is never silently reseeded. |
-| Connected | Server API plus guest session (next milestone) | Server | No; scoped per session | Failures are shown as errors and never fall back to sample data. |
+| Connected | `createHttpRepository` → `server/` (set `VITE_WAYFARE_API_URL`) | One JSON file per workspace under `WAYFARE_DATA_DIR` | No; one guest session (bearer token) per workspace | Failures are shown as errors. Sample mode is used only if the user explicitly chooses it. |
+
+## Booking extraction (for Agent 2's intake UI)
+
+Call it through `ctx.extraction.extractBooking(request)`. This is the same API in both modes. It **never saves**.
+
+Steps:
+1. **Request.** `ExtractBookingRequest` is `{ tripId, text }`. The text must be 20 to 20,000 characters.
+2. **Result.** A `BookingExtraction` contains:
+   - `capability`: `live` or `simulated`, plus `requestId` and `model`.
+   - `fixture`: the canonical IDs when the text is a sample document.
+   - `booking.*`: each field is `{ status: 'found', value, excerpt, confidence }` or `{ status: 'unknown', reason }`.
+   - `policy`: `{ refundability, refundTiers[], deadlines[], unknownFields[] }` and `warnings[]`.
+3. **Review UI.** Agent 2 renders the result and collects edits (`BookingReviewEdits`).
+4. **Build the save input.** `reviewedBookingInput({ extraction, sourceText, workspaceId, tripId, now: ctx.clock.now(), edits })` returns a `SaveReviewedBookingInput`. If required facts are still unknown it returns `validation_failed` with one `issues[]` entry per field: `kind`, `provider`, `reference`, `startsAt`, `localTimezone`.
+5. **Save.** `ctx.repo.saveReviewedBooking(input)`. Re-importing the same text returns `replayed: true`.
+
+| Situation | Result |
+| --- | --- |
+| Sample confirmation text, any mode without AI | `capability: 'simulated'`, computed by the same deterministic normalization as live output |
+| Server with AI configured | `capability: 'live'`, using `claude-opus-5-5` by default |
+| Unrecognized text, no AI configured | `not_configured` error. It never produces a fabricated extraction. |
+| Not a booking (for example `doc-demo-malformed`) | `validation_failed`, `details.reason: 'not_a_booking'` |
+| Policy terms absent (`doc-demo-unknown-policy`) | `refundability: 'unknown'`, no tiers, saved with `reviewState: 'needs_review'` |
+| Provider timeout, rate limit, outage or refusal | `timeout`, `rate_limited`, `unavailable` or `provider_error`, with `retryable` set |
+
+Safety:
+- The AI returns only strings: local wall times plus an IANA timezone, and decimal amounts. Code converts them to UTC instants and integer minor units.
+- Any value whose excerpt is not found verbatim in the source becomes `unknown`, with a warning.
+- The document is wrapped as `<document>` data, and the system prompt says to ignore instructions inside it.
+
+Example (abridged) for the hotel sample:
+
+```json
+{ "ok": true, "value": { "requestId": "req-…", "capability": "simulated", "model": null,
+  "fixture": { "bookingId": "bk-demo-hotel", "policyId": "pol-demo-hotel", "dependsOn": ["bk-demo-flight-out"] },
+  "booking": { "paid": { "status": "found", "value": { "amountMinor": 45000, "currency": "USD" }, "excerpt": "Total charged: $450.00 USD", "confidence": "high" } },
+  "policy": { "refundability": "partially_refundable",
+    "refundTiers": [{ "label": "Cancel before 6:00 PM ET Nov 19: $400 refund", "window": { "startsAtOrAfter": null, "endsBefore": "2026-11-19T23:00:00Z" }, "refund": { "amountMinor": 40000, "currency": "USD" }, "condition": "any", "method": "original_payment", "excerpt": "…" }],
+    "deadlines": [{ "label": "Hotel $400 refund deadline", "at": "2026-11-19T23:00:00Z", "displayTimezone": "America/New_York", "sourceWording": "6:00 PM ET on November 19, 2026", "excerpt": "…" }],
+    "unknownFields": [] }, "warnings": [] } }
+```
+
+Error example: `{ "ok": false, "error": { "code": "not_configured", "message": "Live AI extraction is not configured. Sample mode only recognizes the WayFare sample documents.", "retryable": false, "requestId": "req-…" } }`
+
+## API server (`server/`)
+
+The handler is web-standard: `(Request) => Promise<Response>`. `server/node.ts` adapts it to Node, and the same handler can be wrapped for an edge runtime.
+
+| Route | Auth | Body → result |
+| --- | --- | --- |
+| `GET /api/health` | none | `{ ai: { configured, provider, model?, reason? }, persistence }`, with no secrets |
+| `POST /api/session` | none | creates a guest workspace (seeded `planning`) and returns `{ token, workspaceId }`. Only the SHA-256 of the token is stored. |
+| `POST /api/repo/:operation` | Bearer | `{ args: [...] }` → the `Result` of that `WorkspaceRepository` operation, from an allowlist with arity checks |
+| `POST /api/extract/booking` | Bearer | `ExtractBookingRequest` → `Result<BookingExtraction>` |
+
+- HTTP status follows the error code: 400 validation, 401, 403, 404, 409 conflict or duplicate, 412, 429, 502 provider, 503 not_configured or unavailable, 504 timeout.
+- Every response carries `x-request-id`.
+- CORS allows only the exact origins in `WAYFARE_ALLOWED_ORIGINS`. A browser request from any other origin gets 403. Add the Figma or hosting preview origin there explicitly; do not use a wildcard.
+- Model provider: a single adapter (`server/ai/modelAdapter.ts`) using the official Anthropic SDK.
+  - It uses `beta.messages.parse` with a Zod structured-output format and sets effort explicitly (`medium` by default).
+  - It enables server-side `fallbacks: "default"`.
+  - It applies an input limit and a timeout (60 s, one retry), and maps errors most-specific-first.
+  - Logs carry the request ID, model, token counts and latency, never document text.
+  - It is not a public proxy: only server handlers call it.

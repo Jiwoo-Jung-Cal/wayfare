@@ -4,9 +4,9 @@
 
 import { Component, type ReactNode } from 'react';
 import { createHashRouter, Navigate, NavLink, Outlet, RouterProvider, useParams } from 'react-router';
-import { appError, DEMO_TRIP_ID, type AppError } from '../core/index.ts';
-import { CapabilityLabel, EmptyState, ErrorState, LoadingState } from '../ui/index.tsx';
-import { AppServicesProvider, useAppServices } from './AppServices.tsx';
+import { appError, DEMO_TRIP_ID, forgetGuestSession, type AppError } from '../core/index.ts';
+import { Button, CapabilityLabel, EmptyState, ErrorState, LoadingState } from '../ui/index.tsx';
+import { AppServicesProvider, CONNECTED_API_URL, useAppServices } from './AppServices.tsx';
 import { DemoControls } from './DemoControls.tsx';
 import { TripDashboard, TripList } from './Dashboard.tsx';
 import { FEATURES, ROUTE_TABLE } from './featureRegistry.ts';
@@ -25,7 +25,7 @@ class RouteErrorBoundary extends Component<{ children: ReactNode }, { error: App
 }
 
 function Layout() {
-  const { load, repo, refresh } = useAppServices();
+  const { load, repo, extraction, refresh } = useAppServices();
   const tripId = load.status === 'ready' ? (load.snapshot.trips[0]?.id ?? null) : null;
   return (
     <div className="wf-shell">
@@ -48,14 +48,34 @@ function Layout() {
                 </NavLink>
               ))}
           </nav>
-          <CapabilityLabel status={repo.capabilities.mode === 'sample' ? 'sample' : 'live'}>
-            {repo.capabilities.mode === 'sample' ? 'provider actions simulated' : 'connected'}
-          </CapabilityLabel>
+          <span className="wf-row" title={`${repo.capabilities.description} ${extraction.description}`}>
+            <CapabilityLabel status={repo.capabilities.mode === 'sample' ? 'sample' : 'live'}>
+              {repo.capabilities.mode === 'sample' ? 'saved in this browser' : 'server workspace'}
+            </CapabilityLabel>
+            <CapabilityLabel status={extraction.capability === 'live' ? 'live' : 'simulated'}>AI extraction</CapabilityLabel>
+            <CapabilityLabel status="simulated">provider actions</CapabilityLabel>
+          </span>
         </div>
       </header>
       <main id="wf-content" className="wf-main">
         {load.status === 'loading' && <LoadingState label="Loading your workspace…" />}
-        {load.status === 'error' && <ErrorState error={load.error} title="Could not load your workspace" onRetry={() => void refresh()} />}
+        {load.status === 'error' && (
+          <div className="wf-stack">
+            <ErrorState error={load.error} title="Could not load your workspace" onRetry={() => void refresh()} />
+            {load.error.code === 'unauthorized' && CONNECTED_API_URL && (
+              <div>
+                <Button
+                  onClick={() => {
+                    forgetGuestSession(CONNECTED_API_URL!, window.localStorage);
+                    window.location.reload();
+                  }}
+                >
+                  Start a new guest session
+                </Button>
+              </div>
+            )}
+          </div>
+        )}
         {load.status === 'ready' && (
           <RouteErrorBoundary>
             <Outlet />
