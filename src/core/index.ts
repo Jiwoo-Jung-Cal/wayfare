@@ -22,3 +22,20 @@ export {
 export * from './fixtures/demoNyc.ts';
 export { buildDemoSnapshot, emptySnapshot } from './fixtures/seed.ts';
 export * as sampleDocuments from './fixtures/documents.ts';
+export * from './extraction.ts';
+export {
+  SAMPLE_RAW_EXTRACTIONS,
+  createSampleExtractionService,
+  fixtureForHash,
+  sampleExtractBooking,
+} from './fixtures/sampleExtractions.ts';
+export {
+  createHttpExtractionService,
+  createHttpRepository,
+  fetchHealth,
+  forgetGuestSession,
+  getOrCreateGuestSession,
+  type ApiClientOptions,
+  type FetchLike,
+  type ServerHealth,
+} from './http/httpClient.ts';
