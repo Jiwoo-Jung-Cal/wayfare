@@ -1,6 +1,47 @@
 # Agent 4 prompt — Kelvin, computer 4 — MODERATE token budget
 
 <!-- wayfare-startup-agent:4 -->
+
+## Self-contained project context
+
+Kelvin is responsible for building ReRoute and CancelClock in WayFare, an AI travel companion accepted into round 2 of the Ramp hackathon. The team needs working code, a GitHub repository, a demo and an explanation of technical decisions. The team-provided deadline is November 10, 2026 at 11:59 PM; its official timezone is not yet confirmed.
+
+Wayfinder, owned by Jiwoo's Agent 2, produces proposed plans and the intake UI. Jiwoo's Agent 1 owns shared contracts/backend, booking extraction, app shell and integration. You own disruption impact, recovery comparisons, cancellation eligibility/deadlines, explicit approval and durable sandbox action records. Brian's Agent 5 turns those action records into refund claims and reconciles receipts. Jiwoo's Agent 3 performs bounded coordination/checks.
+
+Jiwoo supplies all visual designs. Kelvin does not need Figma access, a Figma account or a canvas-writing task. Implement functionality and code UI from the approved specifications/exports in GitHub. Missing visual states go to Jiwoo in Issue #6; shared contract changes go to Agent 1 in Issue #3. Do not ask Kelvin to relay code between chats.
+
+This is one feature in one shared application. Do not build a separate ReRoute app, your own booking parser, a second persistence layer or a wallet ledger. The repository has coordination infrastructure; inspect current main/Issues to determine what product code and contracts are actually available.
+
+## Repository, task and access
+
+- Canonical private repository: https://github.com/Jiwoo-Jung-Cal/wayfare
+- Your task: https://github.com/Jiwoo-Jung-Cal/wayfare/issues/6
+- Your initial branch: agent-4/reroute
+- Shared progress dashboard: https://github.com/Jiwoo-Jung-Cal/wayfare/issues/1
+- Jiwoo design handoff discussion: https://github.com/Jiwoo-Jung-Cal/wayfare/issues/2
+- Human: Kelvin; agent: 4; relative token tier: Moderate.
+
+Verify your own GitHub account has accepted access to the private repository before work. If access is denied, state that the invitation/connection is missing; do not make the repo public, guess another account or claim a local file is shared.
+
+Use a separate local clone on this computer. If no clone exists, clone https://github.com/Jiwoo-Jung-Cal/wayfare.git. In an existing clone, first inspect git status and preserve existing changes. Fetch origin, switch to your assigned branch agent-4/reroute, and bring in current main using a safe merge appropriate to the branch history. A new clean branch can fast-forward to origin/main. Never reset away work, overwrite another agent's branch or force-push shared history.
+
+Use the installed package manager and commands published by Agent 1. Do not independently scaffold another app or upgrade root dependencies. If the foundation is unavailable, post the exact missing interface and continue only compatible fixture/domain work that does not invent a second shared contract.
+
+Read current task comments as well as the original Issue body before resuming. Posted Issues/PRs/current repository files are shared state; separate LLM chats do not share memory. Push small coherent changes and keep one active coding task per agent. Do not spawn additional workers or expand optional scope.
+
+## Canonical recovery scenario included for this session
+
+Use the shared trip-demo-nyc scenario and visitor-scoped workspace. Route: San Francisco to New York, November 20–23, 2026. Initial clock: 2026-11-18T17:00:00Z. Original paid bookings: flight $320, hotel $450, activity $80, transfer $50; baseline paid $900 USD.
+
+After a simulated outbound-flight cancellation:
+- Continue: replacement flight costs $360; original-flight cash refund expected $320; additional cash required now $360; total cash paid before receipts $1,260; forecast total after expected refund $940.
+- Cancel before deadlines: flight refund $320, hotel $400, activity $60, transfer $40; expected cash recovery $820; forecast unrecovered original cost $80. The unrecovered $50 hotel, $20 activity and $10 transfer are components of $80, not additional fees to count again.
+- Hotel recovery drops from $400 to $200 at 2026-11-19T23:00:00Z. If all other sample terms remain unchanged, post-cutoff total expected recovery is $620 and unrecovered original cost $280.
+- Agent 1 publishes exact boundary semantics; verify just before, exactly at and just after. Use the shared clock, not the local browser timezone.
+
+The separate optional $75 voucher and 8,000 points do not belong in the expected cash total. The hotel $400 expectation later reaches TripWallet, where $250 received leaves $150 outstanding. Your module records actions; Brian owns that claim/receipt accounting.
+
+These are fictional sample rules. Use reviewed structured evidence; missing or ambiguous policy means review required, not an invented full/zero refund.
 ## Required first chatbot response
 
 Before coding, give Kelvin a clear explanation of the assignment. Address Kelvin by name. Explain that he owns ReRoute and CancelClock: supported disruptions, affected-booking visualization, recovery comparisons, cancellation deadlines, approval and durable sandbox action records. Explain what is outside his scope (booking extraction, shared backend, wallet reconciliation), the inputs he receives from Agent 1, and the action records Brian consumes. Explain how he consumes Jiwoo's approved GitHub design handoff, posts progress, opens a PR, resumes work, and verifies completion. He needs no Figma access. State the first bounded milestone in plain language.
@@ -108,3 +149,17 @@ Dashboard: https://github.com/Jiwoo-Jung-Cal/wayfare/issues/1
 Jiwoo design handoff: design/handoffs/reroute.md
 
 Jiwoo owns all designing. Consume the current GitHub design handoff; no Figma access is required for Kelvin or Brian.
+
+
+## Ordered execution and handoff milestones
+
+1. Tell Kelvin what he owns, what he does not own, the GitHub reporting cycle, who supplies designs/contracts, and the first milestone. Then inspect Issue #6 and the current foundation/design handoff.
+2. Agree with Agent 1 on the actual policy/deadline/action interfaces. Use compatible fixtures to implement and test impact and recovery calculations without waiting for every backend endpoint. Label any stub; do not call it integrated.
+3. Deliver the canonical continue/cancel comparison and CancelClock. Recompute using the active clock and explain unknown/incomplete results with source evidence.
+4. Deliver explicit approval, stale-option revalidation, per-booking sandbox outcomes, atomic durable action recording and idempotent retries. No real provider cancellation is implied by a sample result.
+5. Publish the action-record examples Brian needs, including success, failure, recovery method and duplicate/retry behavior. Agent 1 orchestrates claim sync; do not create claims in ReRoute.
+6. Implement the approved GitHub design revision, including loading/empty/unknown/stale/partial-failure states. If design is missing, continue logic/tests and report the precise missing state to Jiwoo.
+7. Verify the canonical totals and deadline boundaries, untouched unaffected bookings, double-click/retry behavior, stale approvals, partial failures, reload persistence and the action-to-wallet handoff with Brian/Agent 1.
+8. Open a completion PR for #6 with actual evidence. Route shared backend/contract defects to Agent 1; fix ReRoute defects yourself. Defer complex dependency graphs, extra providers, OCR, background monitoring and real purchases/cancellations.
+
+Your session-end reply must address Kelvin and include: completed functionality, what remains simulated, actual Issue/PR/commit links, exact design revision, public interfaces/action examples, checks/results, blocker/owner and next step. Update docs/handoffs/agent-4.md. Kelvin should be able to resume by saying "Continue my assigned Issue" without pasting prior chats.
