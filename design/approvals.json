@@ -1,0 +1,10 @@
+{
+  "designOwner": "Jiwoo",
+  "figmaUrl": "https://www.figma.com/design/ZZS9jEmANeCrjGxWxxCofK",
+  "features": {
+    "foundation": {"status":"pending","revision":null,"handoff":"design/handoffs/foundation.md"},
+    "wayfinder-intake": {"status":"pending","revision":null,"handoff":"design/handoffs/wayfinder-intake.md"},
+    "reroute": {"status":"pending","revision":null,"handoff":"design/handoffs/reroute.md"},
+    "tripwallet": {"status":"pending","revision":null,"handoff":"design/handoffs/tripwallet.md"}
+  }
+}
