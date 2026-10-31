@@ -1,0 +1,32 @@
+name: Bounded agent task
+description: One owner, explicit paths, dependencies, and acceptance.
+title: "[Task] "
+body:
+  - type: input
+    id: owner
+    attributes:
+      label: Agent and human owner
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope and allowed paths
+    validations:
+      required: true
+  - type: textarea
+    id: dependencies
+    attributes:
+      label: Dependencies and producing Issues or PRs
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria and verification
+    validations:
+      required: true
+  - type: textarea
+    id: handoff
+    attributes:
+      label: Actual completion PR, Figma links and results
