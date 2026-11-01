@@ -1,6 +1,6 @@
 # WayFare architecture and technical decisions
 
-Owner: Agent 1. Written against main `45dbc20` (November 1, 2026). Setup, configuration and release steps are in [RELEASE_GUIDE.md](RELEASE_GUIDE.md), the contract details are in [CONTRACTS.md](CONTRACTS.md), and live status is tracked in [#8](https://github.com/Jiwoo-Jung-Cal/wayfare/issues/8).
+Owner: Agent 1. Updated against main `c5784df` (November 1, 2026). Setup, configuration and release steps are in [RELEASE_GUIDE.md](RELEASE_GUIDE.md), the contract details are in [CONTRACTS.md](CONTRACTS.md), and live status is tracked in [#8](https://github.com/Jiwoo-Jung-Cal/wayfare/issues/8).
 
 ## What WayFare automates
 
@@ -21,7 +21,7 @@ flowchart LR
     WF["Wayfinder<br/>/plan"]
     IN["Intake<br/>/import"]
     RR["ReRoute<br/>/reroute (pending)"]
-    TW["TripWallet<br/>/wallet (pending)"]
+    TW["TripWallet<br/>/wallet"]
     Core["src/core<br/>Zod schema v1 · money · clock · Result<br/>repository interface · extraction contract<br/>canonical fixture"]
     Shell --> WF & IN & RR & TW
     WF & IN & RR & TW --> Core
@@ -47,12 +47,12 @@ flowchart LR
 | Path | Owner | Responsibility | Status on main |
 | --- | --- | --- | --- |
 | `src/core/` | Agent 1 | Schema v1, money, instants and clock, Result/AppError, repository interface and store, extraction contract and normalization, canonical fixture, HTTP clients | Done |
-| `src/app/`, `src/ui/`, `src/styles/` | Agent 1 | Shell, routes, dashboard, demo controls, claim-sync orchestrator, shared components, placeholder tokens | Done (visual design pending) |
+| `src/app/`, `src/ui/`, `src/styles/` | Agent 1 | Shell, routes, dashboard, demo controls, claim-sync orchestrator, shared components, design tokens | Done; design draft r1 applied (approval pending) |
 | `server/` | Agent 1 | API handler, guest sessions, persistence, model adapter, extraction endpoint | Done locally; not hosted |
 | `src/features/wayfinder/` | Agent 2 | Preference-driven plan comparison and selection | Merged (#17) |
 | `src/features/intake/` | Agent 2 | Paste → extract → review → save | Merged (#17) |
 | `src/features/reroute/` | Agent 4 (Kelvin) | Recovery options, eligibility, CancelClock, action records | Not delivered (#6) |
-| `src/features/tripwallet/` | Agent 5 (Brian) | Claim sync, receipt matching, balances, credits and points | Not delivered (#7) |
+| `src/features/tripwallet/` | Agent 5 (Brian) | Claim sync, receipt matching, balances, credits and points | Functional milestone merged (#25, integrated in #27) |
 | `e2e/`, `src/app/integration.test.ts` | Agent 1 | Browser journey and cross-module integration tests | Done for delivered modules |
 | `.github/`, `coordination/` | Agent 3 | CI, progress dashboard | Done |
 
@@ -75,8 +75,8 @@ Each step lists who owns it and whether it works today.
 6. **Approve** (ReRoute). One atomic, idempotent `ActionRecord` per booking. Approval is simulated and never claims a real cancellation. *Pending #6.*
 7. **Claims** (shell orchestration plus TripWallet).
    - After each recorded action, and on every wallet load, the shell calls TripWallet's idempotent `syncClaimsFromActions`.
-   - If that fails, the action is kept and a "Retry claim sync" state is shown. *Orchestration is done and tested; the TripWallet logic is pending #7.*
-8. **Reconcile** (TripWallet). The provider confirms $400 due by Nov 25. A $250 receipt leaves $150 outstanding, and a further $150 completes it. The $75 voucher and 8,000 points stay separate from cash. *Pending #7.*
+   - If that fails, the action is kept and a "Retry claim sync" state is shown. *Working: the orchestration and TripWallet's claim sync (#25) are merged and tested. Until ReRoute exists, the tests seed the canonical action records.*
+8. **Reconcile** (TripWallet). The provider confirms $400 due by Nov 25. A $250 receipt leaves $150 outstanding, and a further $150 completes it. The $75 voucher and 8,000 points stay separate from cash. *Working (#25/#27). Receipt facts come from user-reviewed sample inputs, and wallet AI extraction is not connected. Allocation is atomic across browser tabs, and the browser tests drive import, matching, duplicates, the follow-up draft and reload.*
 
 The dashboard shows each owner's stored results and recalculates nothing itself, so a figure has exactly one source.
 
@@ -108,7 +108,7 @@ Five AI coding agents worked in parallel on one GitHub repository, each with a s
 
 - **Coordination:** one Issue per task, structured progress comments that feed an automatic dashboard (#1), and short-lived branches and PRs with task markers.
 - **Shared code:** Agent 1 publishes the contracts and fixtures first, then integrates, so feature agents build against stable imports rather than guessing interfaces.
-- **Design:** Jiwoo alone owns visual design. Code uses neutral placeholder tokens (`--wf-*` CSS variables) until a design revision is approved.
+- **Design:** Jiwoo owns visual design and approval. Agent 1 built draft r1 in Figma at Jiwoo's direction (`docs/DESIGN_MAP.md`). At Jiwoo's request, the app uses r1 as its interim look: `--wf-*` tokens, Inter and Roboto Mono, and the shared components. Formal approval is still pending in `design/approvals.json`.
 
 ## Security and privacy
 
@@ -131,8 +131,8 @@ Five AI coding agents worked in parallel on one GitHub repository, each with a s
 
 ## Known limitations (current)
 
-- ReRoute and TripWallet are not delivered, so the recovery and reconciliation half of the journey is pending.
+- ReRoute (#6) is not delivered. The disruption → options → approval steps are therefore missing from the running app, and the full approval-to-wallet journey is not yet verified end to end.
 - Live AI extraction has never been run, because no API key is configured. The sample extractor is labeled "Simulated".
 - The connected API is not hosted. File persistence and in-memory rate limits assume a single server instance.
-- Visual design is pending Jiwoo's approval; the screens are functional previews.
+- Design draft r1 is applied as the interim look, but Jiwoo's approval is pending. Feature-specific r1 compositions (plan cards, TripWallet stage cards) are still to be adopted by their owners.
 - Single traveler, single currency (USD), fictional providers. Real bookings, cancellations, payments, OCR and email are out of scope.
