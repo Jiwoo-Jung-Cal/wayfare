@@ -51,6 +51,11 @@ export function getOrCreateLocalWorkspaceId(storage: KeyValueStorage): Id {
 
 export function storagePersistence(storage: KeyValueStorage, workspaceId: Id): SnapshotPersistence {
   const key = workspaceStorageKey(workspaceId);
+  if (typeof window !== 'undefined' && storage === window.localStorage) {
+    // localStorage's per-renderer cache may lag another tab even after a Web
+    // Lock is released. IndexedDB reads see committed transactions across tabs.
+    return indexedDbPersistence(storage, key);
+  }
   return {
     withExclusive: storageLock(storage, key),
     async load(): Promise<Result<WorkspaceSnapshot | null>> {
@@ -68,6 +73,65 @@ export function storagePersistence(storage: KeyValueStorage, workspaceId: Id): S
         return ok(undefined);
       } catch (e) {
         return err('unavailable', `Browser storage write failed: ${(e as Error).message}`);
+      }
+    },
+  };
+}
+
+function indexedDbPersistence(legacyStorage: KeyValueStorage, key: string): SnapshotPersistence {
+  let opening: Promise<IDBDatabase> | null = null;
+  const database = () => opening ??= new Promise<IDBDatabase>((resolve, reject) => {
+    if (typeof indexedDB === 'undefined') { reject(new Error('IndexedDB is unavailable')); return; }
+    const request = indexedDB.open('wayfare-v1', 1);
+    request.onupgradeneeded = () => {
+      if (!request.result.objectStoreNames.contains('workspaces')) request.result.createObjectStore('workspaces');
+    };
+    request.onsuccess = () => {
+      const db = request.result;
+      db.onversionchange = () => { db.close(); opening = null; };
+      resolve(db);
+    };
+    request.onerror = () => reject(request.error ?? new Error('Could not open browser storage'));
+    request.onblocked = () => reject(new Error('Browser storage upgrade is blocked'));
+  }).catch(error => { opening = null; throw error; });
+
+  return {
+    withExclusive: storageLock(legacyStorage, key),
+    async load() {
+      try {
+        const db = await database();
+        const value = await new Promise<WorkspaceSnapshot | undefined>((resolve, reject) => {
+          const tx = db.transaction('workspaces', 'readonly');
+          const request = tx.objectStore('workspaces').get(key);
+          let data: WorkspaceSnapshot | undefined;
+          request.onsuccess = () => { data = request.result as WorkspaceSnapshot | undefined; };
+          tx.oncomplete = () => resolve(data);
+          tx.onabort = () => reject(tx.error ?? new Error('Browser storage read aborted'));
+          tx.onerror = () => reject(tx.error ?? new Error('Browser storage read failed'));
+        });
+        if (value !== undefined) return ok(value);
+        // Preserve pre-upgrade sample workspaces. The next mutation commits
+        // this legacy snapshot into the canonical IndexedDB store.
+        const legacy = legacyStorage.getItem(key);
+        return ok(legacy === null ? null : JSON.parse(legacy) as WorkspaceSnapshot);
+      } catch {
+        return err('unavailable', 'Could not read the browser workspace database');
+      }
+    },
+    async save(snapshot) {
+      try {
+        const db = await database();
+        await new Promise<void>((resolve, reject) => {
+          const tx = db.transaction('workspaces', 'readwrite');
+          tx.objectStore('workspaces').put(snapshot, key);
+          // Do not release the Web Lock at request success: wait for COMMIT.
+          tx.oncomplete = () => resolve();
+          tx.onabort = () => reject(tx.error ?? new Error('Browser storage write aborted'));
+          tx.onerror = () => reject(tx.error ?? new Error('Browser storage write failed'));
+        });
+        return ok(undefined);
+      } catch {
+        return err('unavailable', 'Could not commit the browser workspace database');
       }
     },
   };
