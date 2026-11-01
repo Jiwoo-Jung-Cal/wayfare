@@ -23,6 +23,7 @@ export * from './fixtures/demoNyc.ts';
 export { buildDemoSnapshot, emptySnapshot } from './fixtures/seed.ts';
 export * as sampleDocuments from './fixtures/documents.ts';
 export * from './extraction.ts';
+export * from './walletEvidence.ts';
 export {
   SAMPLE_RAW_EXTRACTIONS,
   createSampleExtractionService,
@@ -31,6 +32,7 @@ export {
 } from './fixtures/sampleExtractions.ts';
 export {
   createHttpExtractionService,
+  createHttpWalletEvidenceService,
   createHttpRepository,
   fetchHealth,
   forgetGuestSession,

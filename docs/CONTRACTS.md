@@ -224,3 +224,48 @@ The handler is web-standard: `(Request) => Promise<Response>`. `server/node.ts` 
   - It applies an input limit and a timeout (60 s, one retry), and maps errors most-specific-first.
   - Logs carry the request ID, model, token counts and latency, never document text.
   - It is not a public proxy: only server handlers call it.
+
+
+## TripWallet shared integration additions (#7 / #8)
+
+### Atomic receipt allocation
+
+Keep using `saveClaim(claim, { expectedRevision })`. Every snapshot mutation now validates receipt allocation totals across **all claims in the workspace**, inside the serialized commit. This also covers preallocated `ensureClaims` inserts and receipt edits. A receipt must exist; positive allocations must match receipt/known claim currencies and any assigned trip; duplicate allocation IDs within a claim are rejected. Aggregate allocations may not exceed the receipt's minor-unit amount. Valid split allocations are supported; TripWallet's MVP can continue allocating the full receipt to one claim.
+
+Over-allocation returns `conflict` with `details.receiptId`; reload current claims/receipts and ask the user to resolve the match. The failed mutation changes no claim, revision or receipt. `Receipt.matchState` remains separate metadata; use claim allocations as the authoritative ledger.
+
+Browser persistence acquires an origin-wide Web Lock named by the workspace storage key, reloads current storage **after** acquiring it, validates and saves before releasing it. This prevents two tabs with stale snapshots from spending the same receipt or overwriting unrelated records. Browser contexts without Web Locks fail explicitly rather than pretending a tab-local queue is sufficient. Tests/non-browser memory storage share a queue by storage identity/workspace. Connected API requests use the server's existing one-repository-per-workspace queue and the same invariant. The JSON-file demo server remains a single Node process, not a multi-host transactional database.
+
+### Wallet evidence transport (feature-owned handler)
+
+Shared request: `WalletEvidenceRequest` from `src/core/index.ts`:
+
+```ts
+{ tripId: DEMO_IDS.trip, kind: 'receipt' /* or 'refund_confirmation' */, text: 'source evidence, 20–20,000 characters' }
+```
+
+The shell supplies optional/backwards-compatible `ctx.walletEvidence: WalletEvidenceService`. Call:
+
+```ts
+const r = await ctx.walletEvidence?.extract(request, YourFeatureOwnedOutputSchema);
+// Result<{ data: z.infer<typeof YourFeatureOwnedOutputSchema>, capability: 'live' | 'simulated', model: string | null, requestId: string }>
+```
+
+The output schema stays on the client for validation; neither it nor a model/system prompt is sent over HTTP. Sample mode returns `not_configured`; keep reviewed fields and explicit fictional sample inputs available. Connected mode posts to authenticated `POST /api/extract/wallet`. It verifies trip ownership, uses the existing workspace extraction rate limit, preserves request IDs/errors and never falls back silently. Health exposes `walletEvidence.handlerRegistered`; this describes registration, not proof of a live AI call.
+
+Brian owns `src/features/tripwallet/server.ts`, exporting:
+
+```ts
+import type { WalletEvidenceHandler } from '../../../server/walletEvidence.ts';
+export const walletEvidenceHandler: WalletEvidenceHandler = {
+  async extract(request, ctx) {
+    // Own receipt/refund-confirmation schemas, prompts, provenance and normalization here.
+    // ctx: workspaceId, repo, adapter (server-only ModelAdapter | null), requestId, now().
+    // Call ctx.adapter.generateStructured with your server-owned prompt and schema.
+    // Return Result<{ data, capability: 'live' | 'simulated', model: string | null }>.
+    // Unknown fields remain unknown; review before saving. Never write claims/receipts here.
+  },
+};
+```
+
+The Node entry point loads that fixed feature module at startup. Restart after adding it. An absent handler is reported as `not_configured`; an invalid existing module fails startup instead of disappearing silently. `server/featureHandlers.ts` and `server/walletEvidence.ts` remain Agent 1 infrastructure. No browser bundle imports the model adapter or server handler. No live wallet AI is claimed until Brian registers the handler, credentials are configured, and a real call is verified.

@@ -7,6 +7,8 @@ import type { WorkspaceRepository, RepositoryCapabilities } from '../repository.
 import { ExtractBookingRequestSchema, type BookingExtraction, type ExtractBookingRequest, type ExtractionService } from '../extraction.ts';
 import type { Id } from '../ids.ts';
 import type { KeyValueStorage } from '../store/localRepository.ts';
+import type { z } from 'zod';
+import { WalletEvidenceRequestSchema, WalletEvidenceEnvelopeSchema, type WalletEvidenceService } from '../walletEvidence.ts';
 
 export type FetchLike = (input: string, init?: RequestInit) => Promise<Response>;
 
@@ -78,7 +80,25 @@ export function createHttpExtractionService(opts: ApiClientOptions & { aiConfigu
   };
 }
 
-export type ServerHealth = { service: string; time: string; ai: { configured: boolean; provider: string; model?: string; reason?: string }; persistence: string };
+export function createHttpWalletEvidenceService(opts: ApiClientOptions & { handlerRegistered: boolean }): WalletEvidenceService {
+  return {
+    available: opts.handlerRegistered,
+    description: 'Server-backed wallet evidence transport. Each result identifies live or simulated extraction; review is required.',
+    async extract<S extends z.ZodType>(request: Parameters<WalletEvidenceService['extract']>[0], schema: S) {
+      const input = parseWith(WalletEvidenceRequestSchema, request);
+      if (!input.ok) return input;
+      const result = await call<unknown>(opts, '/api/extract/wallet', input.value);
+      if (!result.ok) return result;
+      const envelope = parseWith(WalletEvidenceEnvelopeSchema, result.value, 'Invalid wallet evidence response');
+      if (!envelope.ok) return envelope;
+      const data = parseWith(schema, envelope.value.data, 'Wallet evidence did not match the feature schema');
+      if (!data.ok) return data;
+      return { ok: true as const, value: { ...envelope.value, data: data.value } };
+    },
+  };
+}
+
+export type ServerHealth = { service: string; time: string; ai: { configured: boolean; provider: string; model?: string; reason?: string }; persistence: string; walletEvidence?: { handlerRegistered: boolean } };
 
 export async function fetchHealth(baseUrl: string, fetchImpl?: FetchLike): Promise<Result<ServerHealth>> {
   const doFetch = fetchImpl ?? ((i: string, init?: RequestInit) => globalThis.fetch(i, init));

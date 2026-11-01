@@ -15,6 +15,7 @@ import type { ModelAdapter } from './ai/modelAdapter.ts';
 import { extractBooking } from './extraction.ts';
 import type { WorkspaceRegistry } from './workspaces.ts';
 import { createRateLimiter } from './rateLimit.ts';
+import { extractWalletEvidence, type WalletEvidenceHandler } from './walletEvidence.ts';
 
 /** Repository operations callable over HTTP, with their maximum argument count. */
 export const REPOSITORY_OPERATIONS = {
@@ -79,6 +80,7 @@ export type ApiDeps = {
   config: ServerConfig;
   registry: WorkspaceRegistry;
   adapter: ModelAdapter | null;
+  walletEvidenceHandler?: WalletEvidenceHandler | null;
   now?: () => Date;
   log?: (event: Record<string, unknown>) => void;
 };
@@ -124,7 +126,8 @@ export function createApiHandler(deps: ApiDeps): (request: Request, info?: Reque
       if (request.method === 'GET' && path === '/api/health') {
         return respond(200, {
           ok: true,
-          value: { service: 'wayfare-api', time: toInstant(now()), ai: describeAi(deps.config.ai), persistence: deps.registry.persistence },
+          value: { service: 'wayfare-api', time: toInstant(now()), ai: describeAi(deps.config.ai), persistence: deps.registry.persistence,
+            walletEvidence: { handlerRegistered: Boolean(deps.walletEvidenceHandler) } },
         });
       }
 
@@ -142,6 +145,17 @@ export function createApiHandler(deps: ApiDeps): (request: Request, info?: Reque
 
       const body = await readJson(request, deps.config.maxBodyBytes);
       if (!body.ok) return fail(body.error);
+
+      if (path === '/api/extract/wallet') {
+        const gate = extractLimiter.take(`ws:${ws.value.workspaceId}`);
+        if (!gate.allowed) return limited('extractions for this workspace', gate.retryAfterSeconds);
+        const r = await extractWalletEvidence(body.value, deps.walletEvidenceHandler ?? null, {
+          workspaceId: ws.value.workspaceId, repo: ws.value.repo, adapter: deps.adapter,
+          requestId, now: () => toInstant(now()),
+        });
+        log({ event: 'extract_wallet', requestId, workspaceId: ws.value.workspaceId, ok: r.ok, code: r.ok ? null : r.error.code, ms: Date.now() - started });
+        return result(r);
+      }
 
       if (path === '/api/extract/booking') {
         const gate = extractLimiter.take(`ws:${ws.value.workspaceId}`);
