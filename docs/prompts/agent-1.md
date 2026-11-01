@@ -2,6 +2,10 @@
 
 <!-- wayfare-startup-agent:1 -->
 
+## Jiwoo-directed native Figma design follow-up
+
+When Jiwoo delegates the editable Figma design pass to this agent, also follow [agent-1-figma-design.md](agent-1-figma-design.md). That task explicitly authorizes Agent 1 to create native screens/components under Jiwoo's direction, while Jiwoo retains final visual approval. It is a focused follow-up, not a reassignment of Kelvin's or Brian's engineering work. Outside that invoked pass, preserve the original design boundaries below.
+
 ## Self-contained project context
 
 WayFare has advanced to round 2 of the Ramp hackathon. Build working code and a demonstrable product that automates the financial work of travel. Submission needs the GitHub repository, a working demo, and an explanation of tool/workflow decisions. The team-provided deadline is November 10, 2026 at 11:59 PM; its official timezone is not yet confirmed.
