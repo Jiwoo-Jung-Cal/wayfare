@@ -10,9 +10,13 @@ Visual revision: pending in `design/handoffs/wayfinder-intake.md`. The screen is
 
 The flow accepts pasted text or a deliberately selected canonical sample, extracts without saving, edits/reviews facts alongside their original evidence, requires an explicit confirmed-booking attestation, and then saves. Blank prices are unknown, not free. Dates are validated as actual UTC instants; end must follow start, IANA timezone must exist, and the single-currency trip rejects non-USD amounts. Review uses UTC inputs to avoid guessing a timezone during correction.
 
+Review amount strings preserve the original integer minor units exactly, using the shared currency precision. This avoids both two-decimal assumptions for non-USD extractions and floating-point cent rounding on large valid USD amounts. Non-USD amounts are displayed in their original units and still rejected for this USD trip; no conversion or additional currency support is introduced.
+
 Policy tiers/deadlines are displayed next to source excerpts. The reviewer can mark disputed policy terms unknown, preserving the verbatim original document for review. [Agent 1 confirmed this is the intended v1 behavior](https://github.com/Jiwoo-Jung-Cal/wayfare/issues/3#issuecomment-6551589743); no positive policy-edit contract is required for the MVP. Arbitrary positive corrections are outside v1. Missing policy stays `needs_review`. Policy terms are not presented as expected or received money; ReRoute owns recovery eligibility.
 
 Extraction results are schema-checked, bound to the submitted normalized text hash, and rejected when superseded by a newer request or source edit. Input is preserved on extraction failure; draft corrections are preserved on save failure. Save replay returns existing reviewed facts, reports the duplicate explicitly, and never overwrites prior imports with newly entered edits. Later booking corrections need a distinct reviewed-edit flow.
+
+The request guard is checked again after asynchronous hash verification, before showing a source-mismatch error. An obsolete extraction cannot replace newer input state with a late verification error. Regression tests reproduce the previous race with a controlled pending digest.
 
 ## Sources/capability
 

@@ -1,8 +1,8 @@
 import {
   BookingExtractionSchema, BookingSchema, ExtractBookingRequestSchema, PolicyEvidenceSchema,
-  appError, err, fromZodError, isUnknown, isValidTimeZone, normalizeDocumentText, ok, parseMajorUnits, reviewedBookingInput, sha256Hex, unknownValue,
+  appError, err, fromZodError, isUnknown, isValidTimeZone, minorDigits, normalizeDocumentText, ok, parseMajorUnits, reviewedBookingInput, sha256Hex, unknownValue,
   type BookingExtraction, type BookingKind, type BookingReviewEdits, type ExtractionService,
-  type ExtractedField, type FeatureContext, type Result, type SaveReviewedBookingResult,
+  type ExtractedField, type FeatureContext, type Money, type Result, type SaveReviewedBookingResult,
 } from '../../core/index.ts';
 
 export type ReviewDraft = {
@@ -12,6 +12,14 @@ export type ReviewDraft = {
 };
 const value = <T>(f: ExtractedField<T>, empty: T): T => f.status === 'found' ? f.value : empty;
 
+/** Preserve original minor units exactly; a review field must not round or convert a price. */
+function reviewAmount({ amountMinor, currency }: Money): string {
+  const precision = minorDigits(currency);
+  const digits = Math.abs(amountMinor).toString().padStart(precision + 1, '0');
+  const sign = amountMinor < 0 ? '-' : '';
+  return precision === 0 ? `${sign}${digits}` : `${sign}${digits.slice(0, -precision)}.${digits.slice(-precision)}`;
+}
+
 export function reviewDraft(x: BookingExtraction): ReviewDraft {
   const paid = x.booking.paid;
   return {
@@ -19,7 +27,7 @@ export function reviewDraft(x: BookingExtraction): ReviewDraft {
     reference: value(x.booking.reference, ''), title: value(x.booking.title, ''),
     startsAt: value(x.booking.startsAt, ''), endsAt: value(x.booking.endsAt, ''),
     localTimezone: value(x.booking.localTimezone, ''),
-    amount: paid.status === 'found' ? (paid.value.amountMinor / 100).toFixed(2) : '',
+    amount: paid.status === 'found' ? reviewAmount(paid.value) : '',
     currency: paid.status === 'found' ? paid.value.currency : '',
     confirmed: false, policyUncertain: false,
   };
@@ -42,7 +50,9 @@ export function createIntakeExtractor(service: ExtractionService) {
       if (result.ok) {
         const check = BookingExtractionSchema.safeParse(result.value);
         if (!check.success) return err('provider_error', 'Extraction returned invalid booking facts; nothing was saved');
-        if (result.value.document.contentHash !== await sha256Hex(normalizeDocumentText(text))) {
+        const contentHash = await sha256Hex(normalizeDocumentText(text));
+        if (ticket !== generation) return null;
+        if (result.value.document.contentHash !== contentHash) {
           return err('provider_error', 'Extraction does not match the submitted document; nothing was saved');
         }
       }

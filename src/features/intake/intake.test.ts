@@ -1,7 +1,7 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
   DEMO_EXPECTED, DEMO_IDS, DEMO_TIMES, DEMO_TRIP_ID, createClock, createLocalRepository,
-  createSampleExtractionService, err, isUnknown, memoryStorage, ok, sampleDocuments, sumMaybe, unwrap, usd,
+  createSampleExtractionService, err, isUnknown, memoryStorage, money, normalizeDocumentText, ok, sampleDocuments, sumMaybe, unwrap, usd,
   type BookingExtraction, type MaybeMoney, type Result,
 } from '../../core/index.ts';
 import { createIntakeExtractor, reviewDraft, saveReviewedIntake, validateReview } from './review.ts';
@@ -17,6 +17,23 @@ async function setup(text = sampleDocuments.HOTEL_CONFIRMATION) {
 }
 
 describe('reviewed booking intake', () => {
+  it.each([
+    { currency: 'JPY', amountMinor: 12345, text: '12345' },
+    { currency: 'KWD', amountMinor: 12345, text: '12.345' },
+    { currency: 'USD', amountMinor: Number.MAX_SAFE_INTEGER - 1, text: '90071992547409.90' },
+    { currency: 'USD', amountMinor: 1, text: '0.01' },
+  ])('keeps the original amount exact in review: $currency $amountMinor minor units', async ({ currency, amountMinor, text }) => {
+    const x = await extraction();
+    const paid = money(amountMinor, currency);
+    x.booking.paid = { status: 'found', value: paid, excerpt: 'Test price', confidence: 'high' };
+    const draft = reviewDraft(x);
+    expect(draft.amount).toBe(text);
+    expect(draft.currency).toBe(currency);
+    const checked = validateReview({ ...draft, confirmed: true });
+    if (currency === 'USD') expect(unwrap(checked).paid).toEqual(paid);
+    else expect(!checked.ok && checked.error.issues!.some((i) => i.path === 'currency')).toBe(true);
+  });
+
   it('imports all four canonical confirmations into the shared $900 booked scenario', async () => {
     const repo = createLocalRepository({ storage: memoryStorage(), workspaceId: 'ws-canonical-intake' });
     const amounts: MaybeMoney[] = [];
@@ -137,6 +154,26 @@ describe('reviewed booking intake', () => {
     const runner = createIntakeExtractor({ capability: 'simulated', description: 'test', extractBooking: async () => ok(x) });
     const result = await runner.extract(DEMO_TRIP_ID, sampleDocuments.UNKNOWN_POLICY_CONFIRMATION);
     expect(result && !result.ok && result.error.code).toBe('provider_error');
+  });
+
+  it('discards a stale source-mismatch error if input changes while its hash is being verified', async () => {
+    const text = sampleDocuments.HOTEL_CONFIRMATION;
+    const x = await extraction(text);
+    x.document.contentHash = '0'.repeat(64);
+    const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(normalizeDocumentText(text)));
+    let started!: () => void;
+    const hashing = new Promise<void>((resolve) => { started = resolve; });
+    let finish!: (value: ArrayBuffer) => void;
+    const delayedDigest = new Promise<ArrayBuffer>((resolve) => { finish = resolve; });
+    const spy = vi.spyOn(crypto.subtle, 'digest').mockImplementationOnce(() => { started(); return delayedDigest; });
+    try {
+      const runner = createIntakeExtractor({ capability: 'simulated', description: 'test', extractBooking: async () => ok(x) });
+      const pending = runner.extract(DEMO_TRIP_ID, text);
+      await hashing;
+      runner.invalidate();
+      finish(digest);
+      expect(await pending).toBeNull();
+    } finally { spy.mockRestore(); }
   });
 
   it('returns a failed write without changing the input or pretending it saved', async () => {
