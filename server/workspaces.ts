@@ -26,7 +26,7 @@ import {
 type SessionIndex = Record<string, { workspaceId: Id; createdAt: string }>;
 
 export interface WorkspaceRegistry {
-  createSession(): Promise<Result<{ token: string; workspaceId: Id }>>;
+  createSession(): Promise<Result<{ token: string; workspaceId: Id; expiresAt: string }>>;
   /** Resolve a bearer token to its workspace repository. */
   repositoryFor(token: string): Promise<Result<{ workspaceId: Id; repo: StoreRepository }>>;
   readonly persistence: 'memory' | 'file';
@@ -66,8 +66,12 @@ function filePersistence(path: string): SnapshotPersistence {
   };
 }
 
-export function createWorkspaceRegistry(opts: { dataDir: string | null; now?: () => Date }): WorkspaceRegistry {
+const DEFAULT_SESSION_TTL_MS = 7 * 24 * 3_600_000;
+
+export function createWorkspaceRegistry(opts: { dataDir: string | null; now?: () => Date; sessionTtlMs?: number }): WorkspaceRegistry {
   const now = opts.now ?? (() => new Date());
+  const ttlMs = opts.sessionTtlMs ?? DEFAULT_SESSION_TTL_MS;
+  const expiresAt = (createdAt: string) => toInstant(Date.parse(createdAt) + ttlMs);
   const repos = new Map<Id, StoreRepository>();
   let sessions: SessionIndex | null = null;
   const sessionsPath = opts.dataDir ? join(opts.dataDir, 'sessions.json') : null;
@@ -133,7 +137,7 @@ export function createWorkspaceRegistry(opts: { dataDir: string | null; now?: ()
         // Materialize the workspace now so the first read is fast and errors surface here.
         const snap = await repoFor(workspaceId, createdAt).getWorkspace();
         if (!snap.ok) return snap;
-        return ok({ token, workspaceId });
+        return ok({ token, workspaceId, expiresAt: expiresAt(createdAt) });
       } catch {
         return err('unavailable', 'Could not create a guest session');
       }
@@ -142,6 +146,9 @@ export function createWorkspaceRegistry(opts: { dataDir: string | null; now?: ()
       if (!token) return err('unauthorized', 'Missing session token; create a guest session first', { retryable: false });
       const entry = (await loadSessions())[await sha256Hex(token)];
       if (!entry) return err('unauthorized', 'Unknown or expired session token', { retryable: false });
+      if (now().getTime() >= Date.parse(expiresAt(entry.createdAt))) {
+        return err('unauthorized', 'Guest session expired; start a new guest session', { retryable: false, details: { reason: 'session_expired' } });
+      }
       return ok({ workspaceId: entry.workspaceId, repo: repoFor(entry.workspaceId, entry.createdAt) });
     },
   };

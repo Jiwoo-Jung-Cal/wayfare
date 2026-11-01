@@ -14,6 +14,7 @@ import { describeAi, type ServerConfig } from './config.ts';
 import type { ModelAdapter } from './ai/modelAdapter.ts';
 import { extractBooking } from './extraction.ts';
 import type { WorkspaceRegistry } from './workspaces.ts';
+import { createRateLimiter } from './rateLimit.ts';
 
 /** Repository operations callable over HTTP, with their maximum argument count. */
 export const REPOSITORY_OPERATIONS = {
@@ -82,20 +83,32 @@ export type ApiDeps = {
   log?: (event: Record<string, unknown>) => void;
 };
 
-export function createApiHandler(deps: ApiDeps): (request: Request) => Promise<Response> {
+/** Connection facts the runtime adapter knows but a web Request does not carry. */
+export type RequestInfo = { clientIp?: string };
+
+export function createApiHandler(deps: ApiDeps): (request: Request, info?: RequestInfo) => Promise<Response> {
   const now = deps.now ?? (() => new Date());
   const log = deps.log ?? (() => undefined);
+  const hour = 3_600_000;
+  const clock = () => now().getTime();
+  const sessionLimiter = createRateLimiter({ limit: deps.config.sessionLimitPerHour, windowMs: hour, now: clock });
+  const extractLimiter = createRateLimiter({ limit: deps.config.extractLimitPerHour, windowMs: hour, now: clock });
 
-  return async (request) => {
+  return async (request, info = {}) => {
     const requestId = `req-${globalThis.crypto.randomUUID()}`;
     const origin = request.headers.get('origin');
     const corsHeaders = corsFor(origin, deps.config.allowedOrigins);
-    const respond = (status: number, body: unknown) =>
+    const respond = (status: number, body: unknown, extraHeaders: Record<string, string> = {}) =>
       new Response(JSON.stringify(body), {
         status,
-        headers: { 'content-type': 'application/json', 'x-request-id': requestId, 'cache-control': 'no-store', ...corsHeaders },
+        headers: { 'content-type': 'application/json', 'x-request-id': requestId, 'cache-control': 'no-store', ...corsHeaders, ...extraHeaders },
       });
-    const fail = (error: AppError) => respond(STATUS[error.code], { ok: false, error: { ...error, requestId } });
+    const fail = (error: AppError) => {
+      const retryAfter = error.details?.retryAfterSeconds;
+      return respond(STATUS[error.code], { ok: false, error: { ...error, requestId } }, typeof retryAfter === 'number' ? { 'retry-after': String(retryAfter) } : {});
+    };
+    const limited = (what: string, retryAfterSeconds: number) =>
+      fail(appError('rate_limited', `Too many ${what}; try again in ${retryAfterSeconds} seconds`, { details: { retryAfterSeconds } }));
     const result = (r: Result<unknown>) => (r.ok ? respond(200, r) : fail(r.error));
 
     // Browsers send Origin; reject origins that are not explicitly allowed.
@@ -117,7 +130,11 @@ export function createApiHandler(deps: ApiDeps): (request: Request) => Promise<R
 
       if (request.method !== 'POST') return fail(appError('not_found', `No route ${request.method} ${path}`, { retryable: false }));
 
-      if (path === '/api/session') return result(await deps.registry.createSession());
+      if (path === '/api/session') {
+        const gate = sessionLimiter.take(`ip:${info.clientIp ?? 'unknown'}`);
+        if (!gate.allowed) return limited('new guest sessions from this client', gate.retryAfterSeconds);
+        return result(await deps.registry.createSession());
+      }
 
       const token = (request.headers.get('authorization') ?? '').replace(/^Bearer\s+/i, '').trim();
       const ws = await deps.registry.repositoryFor(token);
@@ -127,6 +144,8 @@ export function createApiHandler(deps: ApiDeps): (request: Request) => Promise<R
       if (!body.ok) return fail(body.error);
 
       if (path === '/api/extract/booking') {
+        const gate = extractLimiter.take(`ws:${ws.value.workspaceId}`);
+        if (!gate.allowed) return limited('extractions for this workspace', gate.retryAfterSeconds);
         const r = await extractBooking(body.value, requestId, { adapter: deps.adapter, now: () => toInstant(now()) });
         log({ event: 'extract_booking', requestId, workspaceId: ws.value.workspaceId, ok: r.ok, code: r.ok ? null : r.error.code, ms: Date.now() - started });
         return result(r);
