@@ -1,42 +1,42 @@
 # Agent 3 handoff
 
-Status: blocked — application CI awaits Agent 1's verified foundation commands.
 Task: https://github.com/Jiwoo-Jung-Cal/wayfare/issues/5
 Branch: agent-3/coordination
-Pass: October 31, 2026
-Inspected main: cdbfdf1cb1a71a809dc371de5531af6aa29577bc
+PR: https://github.com/Jiwoo-Jung-Cal/wayfare/pull/11
+Status: application CI proposed; Agent 1 owns technical acceptance and merge.
+Foundation inspected: main b723c5b73d24c2bb8e211604f104d45ed29a9e4e.
 
-## Current evidence
+## Implementation
 
-- Private repository read/write access verified through the connected GitHub tools.
-- Read current ownership, coordination, setup, reporting, own handoff, and Issues #3/#5 with comments. Reused the installed reporter/configuration; no duplicate tracker or Issues.
-- Main contains coordination/design/documentation directories but no root application manifest or lockfile.
-- Foundation #3 has no published command handoff; docs/handoffs/agent-1.md still says “not started.”
-- Start/blocker report posted and read back: https://github.com/Jiwoo-Jung-Cal/wayfare/issues/5#issuecomment-6549685301
-- Exact producer request posted to foundation #3: https://github.com/Jiwoo-Jung-Cal/wayfare/issues/3#issuecomment-6549692460
-- Own branch was five commits behind main with no unique commits; fast-forwarded without force before this handoff edit. Only this handoff is changed by this milestone.
+Agent 1 published the actual commands in #5 and docs/handoffs/agent-1.md. PRs #12/#13 and browser E2E PR #16 are on main.
 
-The setup assistant previously verified nine coordination tests and a live dashboard refresh. Those are historical results, not tests rerun in this pass.
+.github/workflows/app-checks.yml uses Node 24.21.0 and npm 11.19.0 at the repository root:
+- npm ci
+- npm run typecheck
+- npm test (non-watch)
+- npm run build
+- npm run e2e (sample mode, installed Google Chrome)
 
-## Missing producer output — Agent 1 / #3
+These checks require no app server, app secret or live AI service. Package/browser dependencies still need runner network access.
 
-Publish the actual foundation commit/PR, runtime/version, package manager/version, manifest/lockfile paths, working directory, and exact clean-install, typecheck, non-watch test, and production-build commands. Include required CI configuration names (no values), fixture/server/network needs, and verified results.
+Application checks run on pull_request and pushes to main with contents: read, no persisted checkout credentials, a timeout, and cancellation of superseded runs. Failed browser reports/traces are retained for seven days when generated.
 
-No package commands, application workflow, product changes, or root configuration were invented. #5 remains open until genuine application CI is wired and verified.
+The privileged team-progress workflow is unchanged and continues to execute trusted default-branch coordination code. Existing coordination checks are reused. Root package/lockfiles and product code are unchanged.
 
-## Checks in this pass
+## Verification evidence
 
-Executed python3 scripts/report_progress.py with --task coordination --status blocked and --dry-run: exit 0; produced the installed structured report, which was posted through the connector and read back.
+The authoritative current head SHA, actual command outcomes, skipped/pending counts, and workflow URLs are recorded in the structured reports on #5 and in PR #11. A green coordination workflow alone is not evidence that application CI passed.
 
-Application checks: not run — commands and application scaffold are missing.
-New tests: none; this milestone changes documentation only.
+Local Git authentication is unavailable in this session. Application verification uses the connected repository's real GitHub Actions runner; no local app execution is claimed. The proposed workflow is also parsed and checked locally for its static command/event/permission configuration.
 
-## Next bounded pass
+Historical bootstrap evidence remains in #5. Do not reuse old test counts as current results.
 
-After Agent 1 publishes the real commands in #3, inspect the intended commit and wire a small read-only application PR workflow. Preserve trusted default-branch code in the privileged progress workflow; run actual established checks once and route application failures to their owners.
+## Known limits and next steps
 
-Release #9 stays deferred until integrated release evidence from #8 is available. Technical acceptance and merge decisions stay with Agent 1 and eligible human reviewers.
+Agent 1's browser suite has intentionally skipped feature steps while #4/#6/#7 are unfinished, and integration tests include pending feature cases. Report those counts explicitly; passing the available checks does not verify the complete feature journey.
 
-## Design and review boundaries
+Live AI extraction, hosted API access, approved visual designs and Figma runtime version remain separate verification items owned by Agent 1/Jiwoo. This pass makes no new capability or access claims.
 
-Jiwoo owns every visual design and Figma edit. No visual work is assigned here. Current main is unprotected; do not claim enforced branch protection or change visibility/billing. This pass does not verify or change teammate access.
+After real application and coordination checks pass, Agent 1 reviews/merges PR #11; close #5 only through the completion PR with its evidence. Route feature failures to their owners and shared/backend/integration failures to Agent 1.
+
+Release #9 remains deferred until #8 supplies integrated release evidence. Jiwoo owns every visual design and Figma edit. Branch-protection enforcement and teammate access were not changed.

@@ -1,0 +1,59 @@
+/*
+ * WayFare design tokens: CODE API (variable names) + PLACEHOLDER VALUES.
+ *
+ * Visual approval: PENDING. Jiwoo owns every visual choice. These values are
+ * neutral functional placeholders, not branding. When Jiwoo approves a
+ * foundation revision (design/approvals.json), Agent 1 replaces the values
+ * here; feature code keeps using the same variable names and must not
+ * hard-code colors, sizes or fonts.
+ */
+:root {
+  /* Color: surfaces and text */
+  --wf-color-bg: #f6f6f4;
+  --wf-color-surface: #ffffff;
+  --wf-color-surface-muted: #efefec;
+  --wf-color-text: #1b1b1a;
+  --wf-color-text-muted: #5b5b57;
+  --wf-color-border: #d6d6d1;
+  --wf-color-focus: #2d5bd7;
+
+  /* Color: intent (always paired with words, never color alone) */
+  --wf-color-accent: #2d5bd7;
+  --wf-color-accent-text: #ffffff;
+  --wf-color-positive: #1e7a46;
+  --wf-color-positive-bg: #e3f3e9;
+  --wf-color-warning: #8a5a00;
+  --wf-color-warning-bg: #fbf0d9;
+  --wf-color-danger: #b42318;
+  --wf-color-danger-bg: #fbe5e3;
+  --wf-color-info: #2d5bd7;
+  --wf-color-info-bg: #e5ecfb;
+  --wf-color-neutral-bg: #ececea;
+
+  /* Typography */
+  --wf-font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --wf-font-mono: ui-monospace, 'SFMono-Regular', Consolas, monospace;
+  --wf-text-xs: 0.75rem;
+  --wf-text-sm: 0.875rem;
+  --wf-text-md: 1rem;
+  --wf-text-lg: 1.25rem;
+  --wf-text-xl: 1.625rem;
+  --wf-weight-regular: 400;
+  --wf-weight-strong: 600;
+  --wf-line-height: 1.45;
+
+  /* Spacing, radius, elevation */
+  --wf-space-1: 0.25rem;
+  --wf-space-2: 0.5rem;
+  --wf-space-3: 0.75rem;
+  --wf-space-4: 1rem;
+  --wf-space-5: 1.5rem;
+  --wf-space-6: 2rem;
+  --wf-radius-sm: 4px;
+  --wf-radius-md: 8px;
+  --wf-shadow-card: 0 1px 2px rgb(0 0 0 / 0.06);
+
+  /* Layout */
+  --wf-content-max: 72rem;
+  --wf-nav-breakpoint: 48rem; /* documentation only; media queries use 48rem */
+}
