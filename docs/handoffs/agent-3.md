@@ -1,22 +1,42 @@
 # Agent 3 handoff
 
-Status: coordination bootstrap completed by the setup assistant; application CI wiring awaits Agent 1's foundation.
-Task Issue: https://github.com/Jiwoo-Jung-Cal/wayfare/issues/5
+Task: https://github.com/Jiwoo-Jung-Cal/wayfare/issues/5
 Branch: agent-3/coordination
+PR: https://github.com/Jiwoo-Jung-Cal/wayfare/pull/11
+Status: application CI proposed; Agent 1 owns technical acceptance and merge.
+Foundation inspected: main b723c5b73d24c2bb8e211604f104d45ed29a9e4e.
 
-## Verified behavior
+## Implementation
 
-- Private shared repository, pinned dashboard, Jiwoo design handoff and seven task Issues are live.
-- A real structured report in Issue #5 appeared automatically on dashboard #1.
-- Five agent branches and separate role instructions are prepared.
-- Nine coordination tests passed locally and live workflows succeeded.
+Agent 1 published the actual commands in #5 and docs/handoffs/agent-1.md. PRs #12/#13 and browser E2E PR #16 are on main.
 
-## Design and access
+.github/workflows/app-checks.yml uses Node 24.21.0 and npm 11.19.0 at the repository root:
+- npm ci
+- npm run typecheck
+- npm test (non-watch)
+- npm run build
+- npm run e2e (sample mode, installed Google Chrome)
 
-Jiwoo owns all visual design/Figma editing. Kelvin and Brian implement code from approved repository handoffs and need no Figma access. Their verified GitHub usernames are still required before invitations.
+These checks require no app server, app secret or live AI service. Package/browser dependencies still need runner network access.
 
-## Remaining bounded work
+Application checks run on pull_request and pushes to main with contents: read, no persisted checkout credentials, a timeout, and cancellation of superseded runs. Failed browser reports/traces are retained for seven days when generated.
 
-After foundation #3 publishes actual app scripts, wire real typecheck/test/build CI. Keep status updates bounded and route product defects to owners. No application debugging is assigned to this low-token role.
+The privileged team-progress workflow is unchanged and continues to execute trusted default-branch coordination code. Existing coordination checks are reused. Root package/lockfiles and product code are unchanged.
 
-The current private plan does not enforce branch protection; use the documented PR workflow and actual checks without claiming enforced rules.
+## Verification evidence
+
+The authoritative current head SHA, actual command outcomes, skipped/pending counts, and workflow URLs are recorded in the structured reports on #5 and in PR #11. A green coordination workflow alone is not evidence that application CI passed.
+
+Local Git authentication is unavailable in this session. Application verification uses the connected repository's real GitHub Actions runner; no local app execution is claimed. The proposed workflow is also parsed and checked locally for its static command/event/permission configuration.
+
+Historical bootstrap evidence remains in #5. Do not reuse old test counts as current results.
+
+## Known limits and next steps
+
+Agent 1's browser suite has intentionally skipped feature steps while #4/#6/#7 are unfinished, and integration tests include pending feature cases. Report those counts explicitly; passing the available checks does not verify the complete feature journey.
+
+Live AI extraction, hosted API access, approved visual designs and Figma runtime version remain separate verification items owned by Agent 1/Jiwoo. This pass makes no new capability or access claims.
+
+After real application and coordination checks pass, Agent 1 reviews/merges PR #11; close #5 only through the completion PR with its evidence. Route feature failures to their owners and shared/backend/integration failures to Agent 1.
+
+Release #9 remains deferred until #8 supplies integrated release evidence. Jiwoo owns every visual design and Figma edit. Branch-protection enforcement and teammate access were not changed.
