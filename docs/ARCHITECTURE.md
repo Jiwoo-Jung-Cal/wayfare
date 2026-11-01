@@ -1,6 +1,6 @@
 # WayFare architecture and technical decisions
 
-Owner: Agent 1. Written against main `96be803` (November 1, 2026). Setup, configuration and release steps are in [RELEASE_GUIDE.md](RELEASE_GUIDE.md), the contract details are in [CONTRACTS.md](CONTRACTS.md), and live status is tracked in [#8](https://github.com/Jiwoo-Jung-Cal/wayfare/issues/8).
+Owner: Agent 1. Written against main `45dbc20` (November 1, 2026). Setup, configuration and release steps are in [RELEASE_GUIDE.md](RELEASE_GUIDE.md), the contract details are in [CONTRACTS.md](CONTRACTS.md), and live status is tracked in [#8](https://github.com/Jiwoo-Jung-Cal/wayfare/issues/8).
 
 ## What WayFare automates
 
@@ -98,7 +98,7 @@ The dashboard shows each owner's stored results and recalculates nothing itself,
 The testing pyramid, from the bottom up:
 - **Unit tests** for money, deadline boundaries, store constraints, extraction normalization and API security.
 - **Integration tests** for orchestration, plus gated checks that switch on automatically when ReRoute or TripWallet register.
-- **Browser E2E** through the real UI: sample mode, connected mode with two isolated visitors, and mobile widths.
+- **Browser E2E** through the real UI: sample mode, connected mode with two isolated visitors (#23), and mobile widths.
 - **Mutation checks:** I deliberately broke a deadline rule and confirmed the E2E failed.
 - **CI** runs all of it on every PR and every push to main.
 
@@ -119,14 +119,14 @@ Five AI coding agents worked in parallel on one GitHub repository, each with a s
   - This is covered by API tests and by the two-visitor browser test.
 - **CORS** allows only the exact origins listed. Any other browser origin gets 403.
 - **Untrusted documents.** Pasted text is wrapped as `<document>` data with instructions to ignore embedded commands. Size is limited to 20,000 characters, and logs never contain document text.
-- **Hardening in review (PR #22):** sessions expire (7 days by default), and there are rate limits on creating sessions (per IP) and on extractions (per workspace), returning 429 with `Retry-After`.
+- **Hardening (#22):** sessions expire (7 days by default), and there are rate limits on creating sessions (per IP) and on extractions (per workspace), returning 429 with `Retry-After`.
 
 ## Deployment options (decision pending)
 
 | Surface | What it needs | Verified |
 | --- | --- | --- |
 | **Static sample demo** (GitHub Pages, any static host, a Figma-embedded build) | `npm run build`, then serve `dist/`. The relative base and hash routing need no server rewrites. | Yes. The production build was served from a sub-path (`/wayfare/demo/`) on a bare static server: the deep link to `/plan` loaded, imported bookings survived a reload, and there were no page errors or failed requests. |
-| **Connected API** | Node 24 with a persistent disk, or the handler wrapped for an edge runtime. Set `WAYFARE_ALLOWED_ORIGINS` to the exact app origin, `ANTHROPIC_API_KEY` for live AI, and build the app with `VITE_WAYFARE_API_URL`. | Local only, in unit, API, browser and CI tests. Not hosted. |
+| **Connected API** | Node 24 with a persistent disk, or the handler wrapped for an edge runtime. Set `WAYFARE_ALLOWED_ORIGINS` to the exact app origin, `ANTHROPIC_API_KEY` for live AI, and build the app with `VITE_WAYFARE_API_URL`. Behind a proxy, set `WAYFARE_TRUST_PROXY=1`. | Local only, in unit, API, browser (two-visitor) and CI tests. Not hosted. |
 | **Figma Code Layer** | Figma access and seat confirmation by Jiwoo. | Unverified. There was no Figma connector in the integration sessions. |
 
 ## Known limitations (current)
