@@ -10,7 +10,7 @@ Visual revision: pending in `design/handoffs/wayfinder-intake.md`. The screen is
 
 The flow accepts pasted text or a deliberately selected canonical sample, extracts without saving, edits/reviews facts alongside their original evidence, requires an explicit confirmed-booking attestation, and then saves. Blank prices are unknown, not free. Dates are validated as actual UTC instants; end must follow start, IANA timezone must exist, and the single-currency trip rejects non-USD amounts. Review uses UTC inputs to avoid guessing a timezone during correction.
 
-Policy tiers/deadlines are displayed next to source excerpts. The reviewer can mark disputed policy terms unknown, preserving the verbatim original document for review. Arbitrary positive policy correction remains a shared-interface request on #3; this feature does not invent new rules or a second policy schema. Missing policy stays `needs_review`. Policy terms are not presented as expected or received money; ReRoute owns recovery eligibility.
+Policy tiers/deadlines are displayed next to source excerpts. The reviewer can mark disputed policy terms unknown, preserving the verbatim original document for review. [Agent 1 confirmed this is the intended v1 behavior](https://github.com/Jiwoo-Jung-Cal/wayfare/issues/3#issuecomment-6551589743); no positive policy-edit contract is required for the MVP. Arbitrary positive corrections are outside v1. Missing policy stays `needs_review`. Policy terms are not presented as expected or received money; ReRoute owns recovery eligibility.
 
 Extraction results are schema-checked, bound to the submitted normalized text hash, and rejected when superseded by a newer request or source edit. Input is preserved on extraction failure; draft corrections are preserved on save failure. Save replay returns existing reviewed facts, reports the duplicate explicitly, and never overwrites prior imports with newly entered edits. Later booking corrections need a distinct reviewed-edit flow.
 
@@ -22,7 +22,9 @@ Selectable samples come directly from `DEMO_DOCUMENT_SOURCES` / `DEMO_IDS`: flig
 
 Run `npm test -- src/features/intake`, `npm test`, and `npm run build` at the root. Tests cover canonical extraction/save/evidence, explicit edits, duplicate replay, reload, source binding, unknown/disputed policy, missing price/required facts, invalid currency/date/amount/timezone, missing confirmation, failed write, malformed input, unconfigured AI, provider failure, and stale responses. No markup-only tests or root tooling changes were added.
 
-Reproducible UI check (browser interaction/narrow layout remain unverified on this computer):
+The functional implementation was merged in PR #17. Agent 1 added intake browser coverage in PR #18 and the shared narrow-screen fix in PR #19. On main `96be8039cfc242619e7cd0661eb036fab7b3aea3`, [application CI](https://github.com/Jiwoo-Jung-Cal/wayfare/actions/runs/41260960403/job/124713950843) passed typecheck, unit/integration tests (101 passed, 2 skipped, 3 todo), build, and browser journeys (9 passed, 3 skipped). Browser coverage includes hotel review/evidence, the exclusive policy deadline, save/duplicate replay, unknown-policy display, malformed/unconfigured extraction with input preserved, and route overflow checks at device width, 360px and 320px. Jiwoo's visual approval is still pending. Agent 2 verified the CI results and logs; these browser checks ran in GitHub Actions, not on Agent 2's computer.
+
+Reproducible UI checks, including additional cases covered by the feature tests:
 
 1. Start the existing app with `npm run dev -- --host 127.0.0.1`. Use the shell's planning seed in a fresh test workspace; open `http://127.0.0.1:5173/#/trips/trip-demo-nyc/import`.
 2. Use the default hotel sample, extract, and inspect the fictional $450 charge, source excerpts, refund rules and deadline timezone. Nothing is saved yet.
@@ -34,4 +36,4 @@ Reproducible UI check (browser interaction/narrow layout remain unverified on th
 
 ## Decision
 
-Use the shared extraction/save boundary rather than adding a backend or model SDK. Reuse the shared document hash and repository idempotency rather than a feature-local persistence layer. The alternative of directly writing editable extraction output would lose validation, source binding and duplicate guarantees. Restrict policy edits to an unknown/review state until Agent 1 supplies a source-validated correction contract.
+Use the shared extraction/save boundary rather than adding a backend or model SDK. Reuse the shared document hash and repository idempotency rather than a feature-local persistence layer. The alternative of directly writing editable extraction output would lose validation, source binding and duplicate guarantees. Per Agent 1's v1 decision, restrict policy edits to an unknown/review state. A future positive correction contract would require source-validated excerpts and a separate scoped request.

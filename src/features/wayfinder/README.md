@@ -20,7 +20,9 @@ These are **listed-component budgets**, not all-inclusive trip prices: return tr
 
 Run `npm test -- src/features/wayfinder` and `npm run build` from the repository root. Tests cover valid/invalid/unsupported preferences, changed ranking/itinerary, exact and over-budget comparisons, unknown/mixed prices, altered provider candidates, provider failure, stale responses, selection replay, reload and separation from bookings.
 
-Reproducible UI check (browser execution remains pending in this session):
+The functional implementation was merged in PR #17. Agent 1 added the planning/dashboard journey in PR #18 and the shared narrow-screen fix in PR #19. On main `96be8039cfc242619e7cd0661eb036fab7b3aea3`, [application CI](https://github.com/Jiwoo-Jung-Cal/wayfare/actions/runs/41260960403/job/124713950843) passed typecheck, unit/integration tests (101 passed, 2 skipped, 3 todo), build, and browser journeys (9 passed, 3 skipped). Browser coverage includes comparison, unknown-price selection protection, plan selection/dashboard reload, replay, and route overflow checks at device width, 360px and 320px. This verifies behavior; Jiwoo's visual approval remains pending.
+
+Reproducible UI checks, including preference changes covered by the feature tests:
 
 1. `npm ci`, then `npm run dev -- --host 127.0.0.1`; open `http://127.0.0.1:5173/#/trips/trip-demo-nyc/plan` in a browser on that computer.
 2. Generate default options. Saver precedes Nonstop; Flex has an unknown total and cannot be selected. Expand cost sources.

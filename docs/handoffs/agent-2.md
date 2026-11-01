@@ -1,10 +1,10 @@
 # Agent 2 handoff
 
-Status: functional Wayfinder + intake milestone published for review; #4 remains open. Final visual acceptance and real browser verification are blocked.
+Status: functional Wayfinder + intake merged and verified; #4 remains open for Jiwoo's visual approval and its code implementation.
 Task: https://github.com/Jiwoo-Jung-Cal/wayfare/issues/4
 Branch: agent-2/wayfinder-intake
-Draft milestone PR: https://github.com/Jiwoo-Jung-Cal/wayfare/pull/17
-Base: main b723c5b73d24c2bb8e211604f104d45ed29a9e4e. First Wayfinder commit: https://github.com/Jiwoo-Jung-Cal/wayfare/commit/9e18f40d0338c3eefe37f66b8925c056d2555a09. The latest intake commit/checks are linked in the structured #4 report and PR head.
+Merged implementation PR: https://github.com/Jiwoo-Jung-Cal/wayfare/pull/17 (implementation head 8642fcca3484b40a8afacd1b0d5e4e0931d88511; merge 9fffd46aec7fc56e6d9fd0f61d2bd7a4f8d5e6d1).
+Verified baseline: main 96be8039cfc242619e7cd0661eb036fab7b3aea3. On resume, the clean assigned branch was safely fast-forwarded to this baseline. Agent 1's browser coverage PR #18 and shared narrow-screen fix PR #19 are also merged.
 
 ## Working behavior
 
@@ -30,13 +30,15 @@ Planning data: shared demoPlans/demoTrip/DEMO_IDS, fictional SFO–NYC sample, N
 
 Intake data: shared DEMO_DOCUMENT_SOURCES and DEMO_IDS (canonical flight/hotel/activity/transfer, unknown policy, late deadline, malformed examples). The screen labels actual extraction capability and model/request ID. Connected extraction is supported through Agent 1's adapter but a real AI call is unverified without server credentials.
 
-Policy correction request: https://github.com/Jiwoo-Jung-Cal/wayfare/issues/3#issuecomment-6551411606. Shared BookingReviewEdits has no policy corrections. Until a source-validated interface is supplied, reviewers may conservatively discard disputed policy rules into an unknown/needs_review state while retaining the original document. They cannot invent positive refund rules. Arbitrary policy correction remains unimplemented.
+Policy decision: https://github.com/Jiwoo-Jung-Cal/wayfare/issues/3#issuecomment-6551589743. Agent 1 accepted the existing conservative review as intended v1 behavior: disputed policy rules become unknown/needs_review and the original document is retained. No positive policy-edit contract is required for the MVP; the earlier interface request is resolved. Arbitrary positive policy correction is outside v1 and would need a separately scoped, source-validated contract.
 
 ## Checks and limitations
 
-npm ci succeeded with installed Node 24.22.1/npm 11.9.0. Current production build and TypeScript pass. Focused suites cover invalid/unsupported input, actual preference changes, exact/over/unknown costs, candidate integrity, simulated/provider errors, stale responses, selection replay/reload, all four canonical imports, evidence, edits, unknown policy/price, source binding, failed writes, duplicates and reload. Final full suite: 101 passed, 2 skipped, 4 todo (49 feature tests: Wayfinder 26, intake 23). TypeScript and production build passed. Exact publication commit is recorded in #4/PR #17.
+npm ci, TypeScript, unit/integration tests and build passed in application CI on baseline main 96be803. Unit/integration results: 101 passed, 2 skipped, 3 todo; 49 feature tests pass (Wayfinder 26, intake 23). Focused cases cover invalid/unsupported input, actual preference changes, exact/over/unknown costs, candidate integrity, provider errors, stale responses, selection replay/reload, all four canonical imports, evidence, edits, unknown policy/price, source binding, failed writes and duplicates.
 
-Browser interaction, narrow layout and visual fidelity are UNVERIFIED on this computer. No Chrome is installed; npx playwright install chromium failed on an invalid ZIP. Cloud Browser cannot reach the local Vite server (ERR_CONNECTION_REFUSED). Vite works at 127.0.0.1; --host 0.0.0.0 fails in this environment's network-interface enumeration. Reproducible UI steps are in both feature READMEs. Agent 1 owns the integrated Playwright steps and can run these pages on its working browser environment. Build warns that the eager app bundle exceeds 500 kB (511.93 kB); route splitting is a shared integration concern for Agent 1.
+Browser evidence is now verified through Agent 1's merged E2E and the successful Linux CI job: https://github.com/Jiwoo-Jung-Cal/wayfare/actions/runs/41260960403/job/124713950843. Agent 2 read the actual job status, successful step results and test logs. Browser results: 9 passed, 3 skipped. Covered behavior includes plan comparison/selection, unknown-price protection, dashboard/reload/reselect, hotel evidence/deadline review, save/duplicate replay, unknown-policy display and malformed/unconfigured extraction with preserved input. Route overflow checks pass at device width, 360px and 320px after Agent 1's shared fieldset/input fix in PR #19. Skipped/todo checks concern the remaining ReRoute/TripWallet integration, not completed Agent 2 feature steps. This is functional browser evidence, not Jiwoo's visual approval.
+
+Agent 2's local Chrome install/Cloud Browser limitations remain environment-specific; they no longer block acceptance of the verified functional browser journeys. Reproducible checks remain in both feature READMEs. Agent 1 accepted the advisory bundle warning for the demo in https://github.com/Jiwoo-Jung-Cal/wayfare/pull/17#issuecomment-6551589509; no bundle change is required from Agent 2.
 
 ## Workflow and next bounded step
 
@@ -44,4 +46,4 @@ Connected GitHub account Jiwoo-Jung-Cal verified with pull/push access. Direct G
 
 Decisions: deterministic permitted sample candidates and integer code arithmetic rather than broad live search; shared extraction/save services rather than another backend; document-hash/idempotency reuse rather than private storage. Feature READMEs document the alternatives and limits.
 
-Next: Agent 1 reviews/integrates PR #17 and verifies plan-to-dashboard and pasted-intake journeys in its browser environment; Jiwoo publishes the approved visual revision and responsive states; Agent 2 applies that revision and completes the remaining policy-correction interface if required. Do not close #4 until approved design and real UI evidence are linked. Resume instruction: Resume Agent 2 on Issue #4 / PR #17; re-read current main, task comments and the approved design handoff before changing code.
+Next: Jiwoo publishes the approved visual revision, responsive states and exports in design/handoffs/wayfinder-intake.md and design/approvals.json; Agent 2 implements that approved handoff and verifies fidelity. Functional integration, browser evidence and the v1 policy-review decision are resolved. Do not close #4 or imply visual approval yet. Resume instruction: Resume Agent 2 on Issue #4 after publishing the design handoff; re-read current main, task comments and approval before changing code. The latest documentation PR/commit is linked in the structured #4 report.
