@@ -2,7 +2,7 @@
   "repository": "Jiwoo-Jung-Cal/wayfare",
   "intendedOwner": "Jiwoo-Jung-Cal",
   "repositoryName": "wayfare",
-  "setupStatus": "Coordination installed; live dashboard and workflows verified; teammate invitations pending handles",
+  "setupStatus": "Coordination and application CI installed; Brian write access verified; Kelvin handle not recorded",
   "dashboardIssue": 1,
   "figmaQueueIssue": 2,
   "taskIssues": {
@@ -16,7 +16,7 @@
   },
   "collaborators": {
     "Kelvin": null,
-    "Brian": null
+    "Brian": "brianren-cmd"
   },
   "primaryFigmaUrl": "https://www.figma.com/design/ZZS9jEmANeCrjGxWxxCofK",
   "designOwner": "Jiwoo",
