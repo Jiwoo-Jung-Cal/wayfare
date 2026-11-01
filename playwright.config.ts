@@ -6,7 +6,11 @@ import { defineConfig, devices } from '@playwright/test';
 // Override with PW_CHANNEL=msedge, or PW_CHANNEL= (empty) after
 // `npx playwright install chromium` to use the bundled Chromium.
 const channel = process.env.PW_CHANNEL ?? 'chrome';
-const PORT = 5174;
+const PORT = 5174; // sample mode (no server)
+const CONNECTED_PORT = 5175; // connected mode (app -> local API)
+const API_PORT = 8788;
+const reuse = !process.env.CI;
+const connected = /connected\.spec\.ts$/;
 
 export default defineConfig({
   testDir: './e2e',
@@ -20,15 +24,43 @@ export default defineConfig({
     ...(channel ? { channel } : {}),
   },
   projects: [
-    { name: 'desktop', use: { ...devices['Desktop Chrome'], ...(channel ? { channel } : {}) } },
-    { name: 'mobile', use: { ...devices['Pixel 7'], ...(channel ? { channel } : {}) }, grep: /@mobile/ },
+    { name: 'desktop', testIgnore: connected, use: { ...devices['Desktop Chrome'], ...(channel ? { channel } : {}) } },
+    { name: 'mobile', testIgnore: connected, use: { ...devices['Pixel 7'], ...(channel ? { channel } : {}) }, grep: /@mobile/ },
+    {
+      name: 'connected',
+      testMatch: connected,
+      use: { ...devices['Desktop Chrome'], ...(channel ? { channel } : {}), baseURL: `http://localhost:${CONNECTED_PORT}` },
+    },
   ],
-  webServer: {
-    // Sample mode: VITE_WAYFARE_API_URL is cleared so the E2E never depends on a server or AI key.
-    command: `npx vite --port ${PORT} --strictPort`,
-    url: `http://localhost:${PORT}`,
-    reuseExistingServer: !process.env.CI,
-    env: { VITE_WAYFARE_API_URL: '' },
-    timeout: 60_000,
-  },
+  webServer: [
+    {
+      // Sample mode: VITE_WAYFARE_API_URL is cleared so these tests never depend on a server or AI key.
+      command: `npx vite --port ${PORT} --strictPort`,
+      url: `http://localhost:${PORT}`,
+      reuseExistingServer: reuse,
+      env: { VITE_WAYFARE_API_URL: '' },
+      timeout: 60_000,
+    },
+    {
+      // Local API in memory. AI is forced off so E2E never makes paid model calls, even if a key is set.
+      command: 'node server/node.ts',
+      url: `http://localhost:${API_PORT}/api/health`,
+      reuseExistingServer: reuse,
+      env: {
+        PORT: String(API_PORT),
+        WAYFARE_DATA_DIR: 'memory',
+        WAYFARE_AI_PROVIDER: 'none',
+        WAYFARE_ALLOWED_ORIGINS: `http://localhost:${CONNECTED_PORT}`,
+        WAYFARE_SESSION_LIMIT_PER_HOUR: '1000',
+      },
+      timeout: 60_000,
+    },
+    {
+      command: `npx vite --port ${CONNECTED_PORT} --strictPort`,
+      url: `http://localhost:${CONNECTED_PORT}`,
+      reuseExistingServer: reuse,
+      env: { VITE_WAYFARE_API_URL: `http://localhost:${API_PORT}` },
+      timeout: 60_000,
+    },
+  ],
 });
