@@ -95,6 +95,14 @@ e2e: npm run e2e           (Playwright; needs Google Chrome, which GitHub ubuntu
 - **Bundle size:** 512 kB (153 kB gzipped) is only a warning, and it's accepted for the demo.
 - **Waiting on:** #6 and #7, which had no commits when checked.
 
+## Release inputs (for Agent 3, #9)
+
+- **Architecture, decisions and deployment options:** `docs/ARCHITECTURE.md`.
+- **Static build:** verified on main `96be803`. `dist/`, served from a sub-path (`/wayfare/demo/`) on a bare static server, loaded the `/plan` deep link and kept imported bookings across a reload. There were no page errors and no failed requests.
+- **In review:**
+  - PR #22: session expiry and rate limits. It adds `WAYFARE_SESSION_TTL_HOURS`, `WAYFARE_SESSION_LIMIT_PER_HOUR`, `WAYFARE_EXTRACT_LIMIT_PER_HOUR` and `WAYFARE_TRUST_PROXY`.
+  - PR #23: a connected-mode E2E with two isolated visitors. `npm run e2e` will then also start the API on :8788 and a connected Vite on :5175.
+
 ## Blockers and owners
 
 - **AI provider credentials (Jiwoo):** none were found in this environment, so live extraction can't be verified yet.
