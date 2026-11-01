@@ -13,13 +13,13 @@ Checked October 31, 2026 (Pacific). Issue reports and later PRs supersede this c
 
 CI PR #11 is merged at `0eb41c4b5c147443d8e61749e392f06b25f94754`; task #5 is closed. The workflow uses Agent 1's published Node 24.21.0/npm 11.19.0 and actual install, typecheck, test, build and browser commands.
 
-The first main run at that commit failed on Linux mobile overflow: https://github.com/Jiwoo-Jung-Cal/wayfare/actions/runs/41260034431 . Agent 1 owns the fix in PR #19; no workflow defect was identified. At this checkpoint #19 is open:
+The first main run at that commit failed on Linux mobile overflow: https://github.com/Jiwoo-Jung-Cal/wayfare/actions/runs/41260034431 . Agent 1's fix PR #19 is now merged at `96be8039cfc242619e7cd0661eb036fab7b3aea3`; no workflow defect was identified. Its PR evidence:
 - Application run passed: https://github.com/Jiwoo-Jung-Cal/wayfare/actions/runs/41260746349
 - Coordination run passed: https://github.com/Jiwoo-Jung-Cal/wayfare/actions/runs/41260746363
 - PR head `9cb2de6`, tested merge `16b82b7` onto main `0eb41c4`.
 - Unit/integration: 101 passed, 2 skipped, 3 todo. Browser: 9 passed, 3 skipped.
 
-Agent 1 retains technical acceptance and merge decisions. Main is not claimed green until the fix merges and its main run is verified.
+Post-merge main application run passed: https://github.com/Jiwoo-Jung-Cal/wayfare/actions/runs/41260960403 . Coordination run passed: https://github.com/Jiwoo-Jung-Cal/wayfare/actions/runs/41260960371 . Agent 3 inspected the main application job and logs; the same test counts and remaining skips apply. Agent 1 retains technical acceptance and merge decisions.
 
 Wayfinder/intake are merged. ReRoute #6 and TripWallet #7 remain open and undelivered per Agent 1's latest #8 report. Complete journey verification and release #9 depend on integration #8.
 
