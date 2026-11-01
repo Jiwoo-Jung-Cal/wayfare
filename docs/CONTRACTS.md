@@ -152,7 +152,7 @@ Seed stages: `planning` creates the trip, plans, quote and assets. `booked` adds
 
 | Mode | Implementation | Durable | Shared | Notes |
 | --- | --- | --- | --- | --- |
-| Sample | `createLocalRepository` (localStorage key `wayfare:v1:workspace:<id>`) | Survives reload in this browser | No; one workspace per browser | Corrupt data is reported as an error and is never silently reseeded. |
+| Sample | `createLocalRepository` (IndexedDB `wayfare-v1` / `workspaces`; key `wayfare:v1:workspace:<id>`) | Survives reload in this browser | One visitor workspace; tabs on the same origin share it | Existing localStorage snapshots migrate on the next mutation. Corrupt data is reported as an error and is never silently reseeded. |
 | Connected | `createHttpRepository` → `server/` (set `VITE_WAYFARE_API_URL`) | One JSON file per workspace under `WAYFARE_DATA_DIR` | No; one guest session (bearer token) per workspace | Failures are shown as errors. Sample mode is used only if the user explicitly chooses it. |
 
 ## Booking extraction (for Agent 2's intake UI)
@@ -234,7 +234,7 @@ Keep using `saveClaim(claim, { expectedRevision })`. Every snapshot mutation now
 
 Over-allocation returns `conflict` with `details.receiptId`; reload current claims/receipts and ask the user to resolve the match. The failed mutation changes no claim, revision or receipt. `Receipt.matchState` remains separate metadata; use claim allocations as the authoritative ledger.
 
-Browser persistence acquires an origin-wide Web Lock named by the workspace storage key, reloads current storage **after** acquiring it, validates and saves before releasing it. This prevents two tabs with stale snapshots from spending the same receipt or overwriting unrelated records. Browser contexts without Web Locks fail explicitly rather than pretending a tab-local queue is sufficient. Tests/non-browser memory storage share a queue by storage identity/workspace. Connected API requests use the server's existing one-repository-per-workspace queue and the same invariant. The JSON-file demo server remains a single Node process, not a multi-host transactional database.
+Browser persistence acquires an origin-wide Web Lock named by the workspace storage key, then reads the canonical snapshot from IndexedDB. It validates the mutation and waits for the write transaction to commit before releasing the lock. Each operation reloads after acquiring the lock, including operations on previously cached repositories. localStorage alone was insufficient: separate renderer caches can lag after lock release. The active workspace ID remains in localStorage; pre-upgrade localStorage snapshots are read only when no IndexedDB snapshot exists and migrate on the next mutation. Browser contexts without Web Locks or IndexedDB fail explicitly rather than silently using an unsafe fallback. Tests/non-browser memory storage share a queue by storage identity/workspace. Connected API requests use the server's existing one-repository-per-workspace queue and the same invariant. The JSON-file demo server remains a single Node process, not a multi-host transactional database.
 
 ### Wallet evidence transport (feature-owned handler)
 
