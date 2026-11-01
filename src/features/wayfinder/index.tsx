@@ -28,11 +28,14 @@ export function WayfinderPage({ tripId, ctx }: FeaturePageProps) {
   const [dirty, setDirty] = useState(false);
   const [saving, setSaving] = useState<string | null>(null);
   const [message, setMessage] = useState('');
+  const [loadAttempt, setLoadAttempt] = useState(0);
   const busy = useRef(false);
+  const retry = useRef<() => void>(() => {});
   const generator = useMemo(() => createPlanGenerator(), [tripId]);
   useEffect(() => {
     let active = true;
-    setInitializing(true);
+    setInitializing(true); setError(null);
+    retry.current = () => setLoadAttempt((n) => n + 1);
     Promise.all([ctx.repo.getTrip(tripId), ctx.repo.listPlans(tripId)]).then(([trip, plans]) => {
       if (!active) return;
       setInitializing(false);
@@ -42,7 +45,7 @@ export function WayfinderPage({ tripId, ctx }: FeaturePageProps) {
       setSaved(plans.value.find((p) => p.id === trip.value.selectedPlanId) ?? null);
     }).catch(() => { if (active) { setInitializing(false); setError(appError('unavailable', 'Could not load the saved trip')); } });
     return () => { active = false; generator.invalidate(); };
-  }, [ctx.repo, tripId, generator]);
+  }, [ctx.repo, tripId, generator, loadAttempt]);
 
   function change<K extends keyof Preferences>(key: K, value: Preferences[K]) {
     generator.invalidate(); setLoading(false); setDirty(true); setError(null); setMessage('');
@@ -50,6 +53,7 @@ export function WayfinderPage({ tripId, ctx }: FeaturePageProps) {
   }
   async function generate() {
     if (!workspaceId) return;
+    retry.current = () => { void generate(); };
     setLoading(true); setError(null); setMessage('');
     const response = await generator.generate(preferences, { tripId, workspaceId, now: ctx.clock.now() });
     if (!response) return;
@@ -59,6 +63,7 @@ export function WayfinderPage({ tripId, ctx }: FeaturePageProps) {
   }
   async function select(plan: PlanOption) {
     if (busy.current) return;
+    retry.current = () => { void select(plan); };
     busy.current = true; setSaving(plan.id); setError(null); setMessage('');
     try {
       const response = await selectPlanningOption(ctx.repo, plan, ctx.clock.now());
@@ -96,7 +101,7 @@ export function WayfinderPage({ tripId, ctx }: FeaturePageProps) {
       </fieldset>
     </form></Card>
     {loading && <LoadingState label="Comparing sample candidates; previous results remain below…" />}
-    {error && <ErrorState error={error} onRetry={() => void generate()} />}
+    {error && <ErrorState error={error} onRetry={() => retry.current()} />}
     {message && <p role="status">{message}</p>}
     {dirty && result && <Notice>Preferences changed. These are previous results; regenerate before selecting.</Notice>}
     {result && <section aria-label="Plan comparison" className="wf-stack">
