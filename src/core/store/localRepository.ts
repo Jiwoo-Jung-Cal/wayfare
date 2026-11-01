@@ -14,6 +14,32 @@ export type KeyValueStorage = Pick<Storage, 'getItem' | 'setItem' | 'removeItem'
 export const ACTIVE_WORKSPACE_KEY = 'wayfare:v1:active-workspace';
 export const workspaceStorageKey = (workspaceId: Id) => `wayfare:v1:workspace:${workspaceId}`;
 
+// Non-browser storage (tests) shares a queue by storage identity and workspace.
+// Real browsers MUST use origin-wide Web Locks, never a tab-local substitute.
+const memoryQueues = new WeakMap<KeyValueStorage, Map<string, Promise<unknown>>>();
+
+function storageLock(storage: KeyValueStorage, key: string): NonNullable<SnapshotPersistence['withExclusive']> {
+  return async <T>(operation: () => Promise<Result<T>>): Promise<Result<T>> => {
+    const locks = typeof navigator === 'undefined' ? undefined : navigator.locks;
+    if (locks) {
+      try {
+        return await locks.request(key, { mode: 'exclusive' }, operation);
+      } catch {
+        return err('unavailable', 'Could not acquire the shared browser workspace lock');
+      }
+    }
+    if (typeof window !== 'undefined') {
+      return err('unsupported', 'Safe browser persistence requires Web Locks in a secure browser context');
+    }
+    let queues = memoryQueues.get(storage);
+    if (!queues) { queues = new Map(); memoryQueues.set(storage, queues); }
+    const previous = queues.get(key) ?? Promise.resolve();
+    const run = previous.then(operation, operation);
+    queues.set(key, run.catch(() => undefined));
+    return run;
+  };
+}
+
 /** The workspace ID for this browser, created on first visit. */
 export function getOrCreateLocalWorkspaceId(storage: KeyValueStorage): Id {
   const existing = storage.getItem(ACTIVE_WORKSPACE_KEY);
@@ -26,6 +52,7 @@ export function getOrCreateLocalWorkspaceId(storage: KeyValueStorage): Id {
 export function storagePersistence(storage: KeyValueStorage, workspaceId: Id): SnapshotPersistence {
   const key = workspaceStorageKey(workspaceId);
   return {
+    withExclusive: storageLock(storage, key),
     async load(): Promise<Result<WorkspaceSnapshot | null>> {
       const raw = storage.getItem(key);
       if (raw === null) return ok(null);

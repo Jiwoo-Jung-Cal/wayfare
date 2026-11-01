@@ -119,3 +119,10 @@ e2e: npm run e2e           (Playwright; needs Google Chrome, which GitHub ubuntu
 ## Tool/workflow decision
 
 See docs/decisions/agent-1-foundation.md.
+
+
+## Brian shared-contract requests (#7)
+
+Branch: agent-1/tripwallet-shared-contracts. Base: 6279d8c0e4bd5e8da215193f9eff39b88f23c6a9. Implements atomic workspace-wide receipt allocation bounds plus browser cross-tab lock/reload, and a server-only feature-owned wallet evidence handler seam with typed client transport. Existing `saveClaim` and `Receipt.matchState` usage remain compatible; `FeatureContext.walletEvidence` is optional for existing fixtures.
+
+Local checks: typecheck/build pass; full unit/integration suite 116 passed, 2 skipped, 3 todo (11 new focused checks). Disabling the shared lock/reload causes the independent-stale-repositories regression to fail; the correct implementation is restored. Browser race coverage is in e2e/allocation.spec.ts. Local browser installation returned an invalid archive; actual browser verification must be recorded from the PR's GitHub Actions runner before merge. Live wallet AI remains unverified and the feature handler remains Brian-owned.

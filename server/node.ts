@@ -7,6 +7,7 @@ import { createApiHandler } from './api.ts';
 import { createAnthropicAdapter, consoleLogger } from './ai/modelAdapter.ts';
 import { describeAi, loadConfig } from './config.ts';
 import { createWorkspaceRegistry } from './workspaces.ts';
+import { loadWalletEvidenceHandler } from './featureHandlers.ts';
 
 const config = loadConfig();
 const adapter = config.ai.provider === 'anthropic' ? createAnthropicAdapter(config.ai) : null;
@@ -14,6 +15,7 @@ const handler = createApiHandler({
   config,
   registry: createWorkspaceRegistry({ dataDir: config.dataDir, sessionTtlMs: config.sessionTtlMs }),
   adapter,
+  walletEvidenceHandler: await loadWalletEvidenceHandler(),
   log: consoleLogger,
 });
 
