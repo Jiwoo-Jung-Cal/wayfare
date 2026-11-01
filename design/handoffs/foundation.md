@@ -4,7 +4,7 @@ Design owner: Jiwoo. Visual approval: **pending**. Latest draft: **r1-draft (202
 
 Jiwoo supplies typography, colors, spacing, responsive rules, and states for buttons, inputs, cards, status/money displays, navigation, dialogs, loading and errors. Agent 1 translates approved tokens and components into code and documents the supported API.
 
-No visual system is approved yet. Until Jiwoo approves a revision, code keeps the neutral placeholder values in `src/styles/tokens.css`. Do not present r1 as approved.
+No visual system is approved yet. **Interim use:** on 2026-11-01 Jiwoo asked to build the demo with the current design for now, so draft r1's tokens, fonts (Inter, Roboto Mono via `@fontsource`) and shared component styles are applied in code. Formal approval is still pending, and `design/approvals.json` is unchanged. Do not present r1 as approved.
 
 ## Draft r1: what exists in Figma
 
@@ -99,4 +99,4 @@ Approved revision: pending. Draft r1 (2026-11-01) is awaiting Jiwoo's review.
 Export paths: `design/exports/foundation/`, `design/exports/prototype/`
 Written specifications: this file and `docs/DESIGN_MAP.md`
 Approval Issue/commit: Issue #2 (pending)
-Implementation PR: not started. Tokens are implemented in code only after approval.
+Implementation PR: draft r1 applied as the interim working design (branch `agent-1/apply-design-r1`). Formal approval is still pending.
