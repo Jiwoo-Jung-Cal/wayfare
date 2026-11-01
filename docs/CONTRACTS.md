@@ -14,6 +14,7 @@ Owner: Agent 1. Source of truth is the code below; this page explains it and giv
 | Typecheck | `npm run typecheck` |
 | Tests (non-watch) | `npm test` |
 | Production build | `npm run build` (output `dist/`, relative base, hash routing) |
+| Browser E2E | `npm run e2e` (Playwright 1.64.1; starts Vite on :5174 in sample mode; uses installed Google Chrome via `channel: 'chrome'`, override with `PW_CHANNEL`) |
 | API server (optional) | `npm run server` (Node 24 runs `server/node.ts` directly; default port 8787) |
 | Required config | none for sample mode. No secrets, network or server needed for typecheck/test/build. Connected mode: see `.env.example`. |
 
