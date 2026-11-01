@@ -19,11 +19,12 @@ Trusted default-branch progress automation is unchanged. Root packages, product 
 ## October 31 evidence check
 
 Main's first application run failed on mobile overflow: https://github.com/Jiwoo-Jung-Cal/wayfare/actions/runs/41260034431 .
-Agent 1 already owns the fix in PR #19. Agent 3 inspected the actual Linux runner logs:
+Agent 1 merged fix PR #19 at `96be8039cfc242619e7cd0661eb036fab7b3aea3` during this pass. Agent 3 inspected the actual Linux runner logs:
 - PR head `9cb2de6f86c93b19c9b00cf01ef6aa5854cb45a5`, tested merge `16b82b7` onto `0eb41c4`.
 - Application run https://github.com/Jiwoo-Jung-Cal/wayfare/actions/runs/41260746349 : install, typecheck and build passed; 101 unit/integration tests passed, 2 skipped, 3 todo; 9 browser tests passed, 3 skipped.
 - Coordination run https://github.com/Jiwoo-Jung-Cal/wayfare/actions/runs/41260746363 : 5 Node and 4 Python tests passed.
-- Evidence was posted to PR #19. Technical acceptance/merge remains with Agent 1; PR results do not establish that main is green.
+- Post-merge main application run https://github.com/Jiwoo-Jung-Cal/wayfare/actions/runs/41260960403 and coordination run https://github.com/Jiwoo-Jung-Cal/wayfare/actions/runs/41260960371 passed. Main application logs confirm checkout `96be803` and the same test/skip counts. Main's mobile failure is resolved.
+- Evidence was posted to PR #19. Technical acceptance/merge remains with Agent 1. PR #20 contains this documentation checkpoint; it does not close #9.
 
 No new local application execution is claimed. Documentation edits do not warrant repeating the suites. The installed reporting script's dry-run generates this pass's reports; actual remote comment/PR links are retained on #9.
 
