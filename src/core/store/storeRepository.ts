@@ -44,6 +44,8 @@ import type {
 import { buildDemoSnapshot } from '../fixtures/seed.ts';
 
 export type SnapshotPersistence = {
+  /** Lock shared persistence across repository instances (and browser tabs). */
+  withExclusive?<T>(operation: () => Promise<Result<T>>): Promise<Result<T>>;
   load(): Promise<Result<WorkspaceSnapshot | null>>;
   save(snapshot: WorkspaceSnapshot): Promise<Result<void>>;
 };
@@ -79,7 +81,15 @@ export class StoreRepository implements WorkspaceRepository {
   // -- plumbing ------------------------------------------------------------
 
   private serialize<T>(fn: () => Promise<Result<T>>): Promise<Result<T>> {
-    const run = this.queue.then(fn, fn);
+    const operation = () => this.persistence.withExclusive
+      ? this.persistence.withExclusive(async () => {
+          // A different tab/instance may have committed since our last read.
+          // Reload only AFTER acquiring the shared lock, and hold it through save.
+          this.state = null;
+          return fn();
+        })
+      : fn();
+    const run = this.queue.then(operation, operation);
     this.queue = run.catch(() => undefined);
     return run;
   }
@@ -118,11 +128,45 @@ export class StoreRepository implements WorkspaceRepository {
       const draft = clone(s.value);
       const r = await fn(draft, createClock(draft.clock).now());
       if (!r.ok) return r;
+      const allocations = StoreRepository.validateReceiptAllocations(draft);
+      if (!allocations.ok) return allocations;
       const saved = await this.persistence.save(draft);
       if (!saved.ok) return saved;
       this.state = draft;
       return ok(clone(r.value));
     });
+  }
+
+  /** Workspace-wide invariant, inside the same transaction as every mutation. */
+  private static validateReceiptAllocations(draft: WorkspaceSnapshot): Result<void> {
+    const spent = new Map<Id, bigint>();
+    for (const claim of draft.claims) {
+      const allocationIds = new Set<Id>();
+      for (const allocation of claim.allocations) {
+        if (allocationIds.has(allocation.id)) return err('validation_failed', 'Allocation IDs must be unique within a claim');
+        allocationIds.add(allocation.id);
+        const receipt = draft.receipts.find((r) => r.id === allocation.receiptId);
+        if (!receipt) return err('not_found', `Receipt ${allocation.receiptId} not found`);
+        if (receipt.tripId !== null && receipt.tripId !== claim.tripId) {
+          return err('validation_failed', 'Receipt and claim belong to different trips');
+        }
+        if (allocation.amount.currency !== receipt.amount.currency ||
+          ('amountMinor' in claim.expected && allocation.amount.currency !== claim.expected.currency) ||
+          ('amountMinor' in claim.providerConfirmed && allocation.amount.currency !== claim.providerConfirmed.currency)) {
+          return err('validation_failed', 'Receipt allocation currency must match the receipt and claim');
+        }
+        if (allocation.amount.amountMinor <= 0) return err('validation_failed', 'Receipt allocations must be positive');
+        const total = (spent.get(receipt.id) ?? 0n) + BigInt(allocation.amount.amountMinor);
+        if (total > BigInt(receipt.amount.amountMinor)) {
+          return err('conflict', 'Receipt is already allocated or its available amount was exceeded; reload claims and retry', {
+            retryable: false,
+            details: { receiptId: receipt.id, allocatedMinor: total.toString(), availableMinor: receipt.amount.amountMinor },
+          });
+        }
+        spent.set(receipt.id, total);
+      }
+    }
+    return ok(undefined);
   }
 
   private static scoped<T extends { workspaceId: Id }>(draft: WorkspaceSnapshot, entity: T): Result<T> {
@@ -520,6 +564,9 @@ export class StoreRepository implements WorkspaceRepository {
   saveClaim(claim: RefundClaim, rev: Revision) {
     return this.write((d, now) => {
       if (rev.expectedRevision === null) return err('unsupported', 'Create claims with ensureClaims');
+      const parsed = StoreRepository.parseScoped(d, RefundClaimSchema, claim);
+      if (!parsed.ok) return parsed;
+      claim = parsed.value;
       const current = d.claims.find((c) => c.id === claim.id);
       if (current && (current.actionRecordId !== claim.actionRecordId || current.recoveryComponentId !== claim.recoveryComponentId)) {
         return err('validation_failed', 'A claim cannot be moved to a different action component');

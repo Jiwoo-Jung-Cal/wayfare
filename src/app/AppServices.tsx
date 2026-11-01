@@ -13,15 +13,18 @@ import {
   appError,
   createClock,
   createHttpExtractionService,
+  createHttpWalletEvidenceService,
   createHttpRepository,
   createLocalRepository,
   createSampleExtractionService,
+  createUnavailableWalletEvidenceService,
   fetchHealth,
   getOrCreateGuestSession,
   getOrCreateLocalWorkspaceId,
   type AppError,
   type Clock,
   type ExtractionService,
+  type WalletEvidenceService,
   type FeatureContext,
   type Id,
   type Instant,
@@ -58,7 +61,7 @@ export function useAppServices(): AppServices {
 const MODE_OVERRIDE_KEY = 'wayfare:v1:mode-override';
 const API_URL = (import.meta.env.VITE_WAYFARE_API_URL as string | undefined)?.replace(/\/+$/, '') || null;
 
-type Backend = { repo: WorkspaceRepository; extraction: (now: () => Instant) => ExtractionService };
+type Backend = { repo: WorkspaceRepository; extraction: (now: () => Instant) => ExtractionService; walletEvidence?: WalletEvidenceService };
 type BootState = { status: 'loading' } | { status: 'error'; error: AppError } | { status: 'ready'; backend: Backend };
 
 function sampleBackend(): Backend {
@@ -66,6 +69,7 @@ function sampleBackend(): Backend {
   return {
     repo: createLocalRepository({ storage, workspaceId: getOrCreateLocalWorkspaceId(storage) }),
     extraction: (now) => createSampleExtractionService(now),
+    walletEvidence: createUnavailableWalletEvidenceService(),
   };
 }
 
@@ -80,6 +84,7 @@ async function connectedBackend(baseUrl: string): Promise<{ ok: true; backend: B
     backend: {
       repo: createHttpRepository(opts),
       extraction: () => createHttpExtractionService({ ...opts, aiConfigured: health.value.ai.configured }),
+      walletEvidence: createHttpWalletEvidenceService({ ...opts, handlerRegistered: health.value.walletEvidence?.handlerRegistered ?? false }),
     },
   };
 }
@@ -149,6 +154,7 @@ function ServicesInner({ children, backend }: { children: ReactNode; backend: Ba
   const clockRef = useRef(clock);
   clockRef.current = clock;
   const extraction = useMemo(() => backend.extraction(() => clockRef.current.now()), [backend]);
+  const walletEvidence = useMemo(() => backend.walletEvidence ?? createUnavailableWalletEvidenceService(), [backend]);
 
   // Late-bound so the orchestrator always sees the current feature context.
   const ctxRef = useRef<FeatureContext | null>(null);
@@ -178,6 +184,7 @@ function ServicesInner({ children, backend }: { children: ReactNode; backend: Ba
       repo,
       clock,
       extraction,
+      walletEvidence,
       refresh,
       // Action success is already durable when this is called; claim-sync status is tracked separately.
       notifyActionRecorded: async ({ tripId }) => {
@@ -185,7 +192,7 @@ function ServicesInner({ children, backend }: { children: ReactNode; backend: Ba
         await runClaimSync(tripId, 'action_recorded');
       },
     }),
-    [repo, clock, extraction, refresh, runClaimSync],
+    [repo, clock, extraction, walletEvidence, refresh, runClaimSync],
   );
   ctxRef.current = featureContext;
 

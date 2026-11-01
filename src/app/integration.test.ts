@@ -269,7 +269,9 @@ describe('journey checks against registered feature modules', () => {
     await checkDisruptionTrigger(reroute!.triggerDemoDisruption!);
   });
 
-  it.skipIf(!wallet?.syncClaimsFromActions)('TripWallet (#7): syncClaimsFromActions creates the $820 / $400-hotel claims idempotently', async () => {
+  it('TripWallet (#7): registered sync creates the $820 / $400-hotel claims idempotently', async () => {
+    // TripWallet is delivered: discovery failure must fail this gate, never skip it.
+    expect(wallet?.syncClaimsFromActions).toBeTypeOf('function');
     await checkClaimSyncFromCancelTrip(wallet!.syncClaimsFromActions!);
   });
 
@@ -291,6 +293,6 @@ describe('journey checks against registered feature modules', () => {
   // These steps have no data-level public operation in the v1 FeatureModule
   // contract; they will be covered by the browser E2E once the pages exist.
   it.todo('approves the cancel-trip option in ReRoute before the hotel deadline (Agent 4, #6; browser E2E)');
-  it.todo('matches the $250 receipt -> $150 outstanding, then $150 -> resolved (Agent 5, #7; browser E2E)');
+  // Receipt review/matching is exercised through real controls in e2e/journey.spec.ts.
   it.todo('completed state survives reload; repeated approval/receipt import does not double records (browser E2E)');
 });

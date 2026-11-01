@@ -1,46 +1,57 @@
 /*
- * WayFare design tokens: CODE API (variable names) + PLACEHOLDER VALUES.
+ * WayFare design tokens — draft r1 (Figma file ZZS9jEmANeCrjGxWxxCofK, 2026-11-01).
  *
- * Visual approval: PENDING. Jiwoo owns every visual choice. These values are
- * neutral functional placeholders, not branding. When Jiwoo approves a
- * foundation revision (design/approvals.json), Agent 1 replaces the values
- * here; feature code keeps using the same variable names and must not
- * hard-code colors, sizes or fonts.
+ * Jiwoo asked to build the demo with this draft while formal visual approval
+ * is pending (design/approvals.json stays "pending"). Values mirror the Figma
+ * variables 1:1: each Figma variable's WEB code syntax is the name below.
+ * Feature code uses these names only; never hard-code colors, sizes or fonts.
  */
 :root {
   /* Color: surfaces and text */
-  --wf-color-bg: #f6f6f4;
+  --wf-color-bg: #f7f8f9;
   --wf-color-surface: #ffffff;
-  --wf-color-surface-muted: #efefec;
-  --wf-color-text: #1b1b1a;
-  --wf-color-text-muted: #5b5b57;
-  --wf-color-border: #d6d6d1;
-  --wf-color-focus: #2d5bd7;
+  --wf-color-surface-muted: #f1f3f5;
+  --wf-color-text: #161b20;
+  --wf-color-text-muted: #56616b;
+  --wf-color-border: #d3d8dd;
+  --wf-color-border-strong: #8a949e;
+  --wf-color-focus: #0e6f7c;
+
+  /* Color: accent */
+  --wf-color-accent: #0e6f7c;
+  --wf-color-accent-hover: #0b5b66;
+  --wf-color-accent-subtle: #e8f4f5;
+  --wf-color-accent-text: #ffffff;
 
   /* Color: intent (always paired with words, never color alone) */
-  --wf-color-accent: #2d5bd7;
-  --wf-color-accent-text: #ffffff;
-  --wf-color-positive: #1e7a46;
-  --wf-color-positive-bg: #e3f3e9;
-  --wf-color-warning: #8a5a00;
-  --wf-color-warning-bg: #fbf0d9;
+  --wf-color-positive: #1b7340;
+  --wf-color-positive-bg: #e7f5ec;
+  --wf-color-warning: #8a5800;
+  --wf-color-warning-bg: #fdf3dc;
   --wf-color-danger: #b42318;
-  --wf-color-danger-bg: #fbe5e3;
-  --wf-color-info: #2d5bd7;
-  --wf-color-info-bg: #e5ecfb;
-  --wf-color-neutral-bg: #ececea;
+  --wf-color-danger-bg: #fce8e6;
+  --wf-color-info: #2f55c5;
+  --wf-color-info-bg: #e8eefc;
+  --wf-color-neutral-bg: #e6e9ec;
+  /* Sample data, simulated provider actions, unverified live capability */
+  --wf-color-simulated: #5b3fa8;
+  --wf-color-simulated-bg: #f1ecfb;
 
-  /* Typography */
-  --wf-font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-  --wf-font-mono: ui-monospace, 'SFMono-Regular', Consolas, monospace;
-  --wf-text-xs: 0.75rem;
-  --wf-text-sm: 0.875rem;
-  --wf-text-md: 1rem;
-  --wf-text-lg: 1.25rem;
-  --wf-text-xl: 1.625rem;
+  /* Typography (Figma text styles) */
+  --wf-font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --wf-font-mono: 'Roboto Mono', ui-monospace, 'SFMono-Regular', Consolas, monospace;
+  --wf-text-xs: 0.75rem; /* Label/Caption 12/16 */
+  --wf-text-sm: 0.8125rem; /* Body/Small 13/18 */
+  --wf-text-md: 0.9375rem; /* Body/Default 15/22 */
+  --wf-text-h3: 1rem; /* Heading/H3 16/24 */
+  --wf-text-amount: 1.125rem; /* Amount/Medium 18/24 */
+  --wf-text-lg: 1.25rem; /* Heading/H2 20/28 */
+  --wf-text-xl: 1.625rem; /* Heading/H1 26/32 */
+  --wf-text-hero: 2rem; /* Amount/Hero 32/40 */
   --wf-weight-regular: 400;
+  --wf-weight-medium: 500;
   --wf-weight-strong: 600;
-  --wf-line-height: 1.45;
+  --wf-line-height: 1.47;
 
   /* Spacing, radius, elevation */
   --wf-space-1: 0.25rem;
@@ -49,11 +60,13 @@
   --wf-space-4: 1rem;
   --wf-space-5: 1.5rem;
   --wf-space-6: 2rem;
-  --wf-radius-sm: 4px;
-  --wf-radius-md: 8px;
-  --wf-shadow-card: 0 1px 2px rgb(0 0 0 / 0.06);
+  --wf-radius-sm: 6px;
+  --wf-radius-md: 12px;
+  --wf-radius-full: 999px;
+  --wf-shadow-card: 0 1px 2px rgb(16 24 40 / 0.06), 0 1px 3px rgb(16 24 40 / 0.08);
+  --wf-shadow-dialog: 0 12px 32px rgb(16 24 40 / 0.18), 0 2px 6px rgb(16 24 40 / 0.08);
 
   /* Layout */
-  --wf-content-max: 72rem;
+  --wf-content-max: 75rem; /* 1200 px content inside 1440 frames */
   --wf-nav-breakpoint: 48rem; /* documentation only; media queries use 48rem */
 }

@@ -3,7 +3,7 @@
 
 import type { FeatureKey, FeatureModule } from '../core/index.ts';
 
-const modules = import.meta.glob<{ feature?: FeatureModule }>('../features/*/index.{ts,tsx}', { eager: true });
+const modules = import.meta.glob<{ feature?: FeatureModule }>(['../features/*/index.ts', '../features/*/index.tsx'], { eager: true });
 
 export const FEATURES: Partial<Record<FeatureKey, FeatureModule>> = {};
 for (const [path, mod] of Object.entries(modules)) {
