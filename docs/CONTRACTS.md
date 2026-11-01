@@ -1,6 +1,6 @@
 # Shared contracts index (v1)
 
-Owner: Agent 1. Source of truth is the code below; this page explains it and gives examples. Do not copy schemas into feature code. Request changes in #3 (foundation) or #8 (integration).
+Owner: Agent 1. Source of truth is the code below; this page explains it and gives examples. For the system overview and decision rationale, see [ARCHITECTURE.md](ARCHITECTURE.md). Do not copy schemas into feature code. Request changes in #3 (foundation) or #8 (integration).
 
 ## Runtime and commands (verified on Windows 11, Node 24.21.0, npm 11.19.0)
 
@@ -14,7 +14,7 @@ Owner: Agent 1. Source of truth is the code below; this page explains it and giv
 | Typecheck | `npm run typecheck` |
 | Tests (non-watch) | `npm test` |
 | Production build | `npm run build` (output `dist/`, relative base, hash routing) |
-| Browser E2E | `npm run e2e` (Playwright 1.64.1; starts Vite on :5174 in sample mode; uses installed Google Chrome via `channel: 'chrome'`, override with `PW_CHANNEL`) |
+| Browser E2E | `npm run e2e` (Playwright 1.64.1, using the installed Google Chrome via `channel: 'chrome'`; override with `PW_CHANNEL`). It starts sample-mode Vite on :5174, plus the API in memory with AI off on :8788 and connected-mode Vite on :5175 for `e2e/connected.spec.ts`. |
 | API server (optional) | `npm run server` (Node 24 runs `server/node.ts` directly; default port 8787) |
 | Required config | none for sample mode. No secrets, network or server needed for typecheck/test/build. Connected mode: see `.env.example`. |
 
@@ -152,7 +152,7 @@ Seed stages: `planning` creates the trip, plans, quote and assets. `booked` adds
 
 | Mode | Implementation | Durable | Shared | Notes |
 | --- | --- | --- | --- | --- |
-| Sample | `createLocalRepository` (localStorage key `wayfare:v1:workspace:<id>`) | Survives reload in this browser | No; one workspace per browser | Corrupt data is reported as an error and is never silently reseeded. |
+| Sample | `createLocalRepository` (IndexedDB `wayfare-v1` / `workspaces`; key `wayfare:v1:workspace:<id>`) | Survives reload in this browser | One visitor workspace; tabs on the same origin share it | Existing localStorage snapshots migrate on the next mutation. Corrupt data is reported as an error and is never silently reseeded. |
 | Connected | `createHttpRepository` → `server/` (set `VITE_WAYFARE_API_URL`) | One JSON file per workspace under `WAYFARE_DATA_DIR` | No; one guest session (bearer token) per workspace | Failures are shown as errors. Sample mode is used only if the user explicitly chooses it. |
 
 ## Booking extraction (for Agent 2's intake UI)
@@ -211,6 +211,12 @@ The handler is web-standard: `(Request) => Promise<Response>`. `server/node.ts` 
 
 - HTTP status follows the error code: 400 validation, 401, 403, 404, 409 conflict or duplicate, 412, 429, 502 provider, 503 not_configured or unavailable, 504 timeout.
 - Every response carries `x-request-id`.
+- Guest sessions expire `WAYFARE_SESSION_TTL_HOURS` after creation (default 168). After that, requests get 401 `unauthorized` with `details.reason: 'session_expired'`, and the app offers "Start a new guest session". `POST /api/session` also returns `expiresAt`.
+- Rate limits (fixed hourly window, in memory, single instance):
+  - `POST /api/session`: `WAYFARE_SESSION_LIMIT_PER_HOUR` per client IP (default 20).
+  - `POST /api/extract/booking`: `WAYFARE_EXTRACT_LIMIT_PER_HOUR` per workspace (default 30). This protects paid AI calls.
+  - Exceeding a limit returns 429 `rate_limited` with a `Retry-After` header and `details.retryAfterSeconds`.
+  - The client IP is the socket address. Set `WAYFARE_TRUST_PROXY=1` only behind a trusted proxy, to use `X-Forwarded-For` instead.
 - CORS allows only the exact origins in `WAYFARE_ALLOWED_ORIGINS`. A browser request from any other origin gets 403. Add the Figma or hosting preview origin there explicitly; do not use a wildcard.
 - Model provider: a single adapter (`server/ai/modelAdapter.ts`) using the official Anthropic SDK.
   - It uses `beta.messages.parse` with a Zod structured-output format and sets effort explicitly (`medium` by default).
@@ -218,3 +224,48 @@ The handler is web-standard: `(Request) => Promise<Response>`. `server/node.ts` 
   - It applies an input limit and a timeout (60 s, one retry), and maps errors most-specific-first.
   - Logs carry the request ID, model, token counts and latency, never document text.
   - It is not a public proxy: only server handlers call it.
+
+
+## TripWallet shared integration additions (#7 / #8)
+
+### Atomic receipt allocation
+
+Keep using `saveClaim(claim, { expectedRevision })`. Every snapshot mutation now validates receipt allocation totals across **all claims in the workspace**, inside the serialized commit. This also covers preallocated `ensureClaims` inserts and receipt edits. A receipt must exist; positive allocations must match receipt/known claim currencies and any assigned trip; duplicate allocation IDs within a claim are rejected. Aggregate allocations may not exceed the receipt's minor-unit amount. Valid split allocations are supported; TripWallet's MVP can continue allocating the full receipt to one claim.
+
+Over-allocation returns `conflict` with `details.receiptId`; reload current claims/receipts and ask the user to resolve the match. The failed mutation changes no claim, revision or receipt. `Receipt.matchState` remains separate metadata; use claim allocations as the authoritative ledger.
+
+Browser persistence acquires an origin-wide Web Lock named by the workspace storage key, then reads the canonical snapshot from IndexedDB. It validates the mutation and waits for the write transaction to commit before releasing the lock. Each operation reloads after acquiring the lock, including operations on previously cached repositories. localStorage alone was insufficient: separate renderer caches can lag after lock release. The active workspace ID remains in localStorage; pre-upgrade localStorage snapshots are read only when no IndexedDB snapshot exists and migrate on the next mutation. Browser contexts without Web Locks or IndexedDB fail explicitly rather than silently using an unsafe fallback. Tests/non-browser memory storage share a queue by storage identity/workspace. Connected API requests use the server's existing one-repository-per-workspace queue and the same invariant. The JSON-file demo server remains a single Node process, not a multi-host transactional database.
+
+### Wallet evidence transport (feature-owned handler)
+
+Shared request: `WalletEvidenceRequest` from `src/core/index.ts`:
+
+```ts
+{ tripId: DEMO_IDS.trip, kind: 'receipt' /* or 'refund_confirmation' */, text: 'source evidence, 20–20,000 characters' }
+```
+
+The shell supplies optional/backwards-compatible `ctx.walletEvidence: WalletEvidenceService`. Call:
+
+```ts
+const r = await ctx.walletEvidence?.extract(request, YourFeatureOwnedOutputSchema);
+// Result<{ data: z.infer<typeof YourFeatureOwnedOutputSchema>, capability: 'live' | 'simulated', model: string | null, requestId: string }>
+```
+
+The output schema stays on the client for validation; neither it nor a model/system prompt is sent over HTTP. Sample mode returns `not_configured`; keep reviewed fields and explicit fictional sample inputs available. Connected mode posts to authenticated `POST /api/extract/wallet`. It verifies trip ownership, uses the existing workspace extraction rate limit, preserves request IDs/errors and never falls back silently. Health exposes `walletEvidence.handlerRegistered`; this describes registration, not proof of a live AI call.
+
+Brian owns `src/features/tripwallet/server.ts`, exporting:
+
+```ts
+import type { WalletEvidenceHandler } from '../../../server/walletEvidence.ts';
+export const walletEvidenceHandler: WalletEvidenceHandler = {
+  async extract(request, ctx) {
+    // Own receipt/refund-confirmation schemas, prompts, provenance and normalization here.
+    // ctx: workspaceId, repo, adapter (server-only ModelAdapter | null), requestId, now().
+    // Call ctx.adapter.generateStructured with your server-owned prompt and schema.
+    // Return Result<{ data, capability: 'live' | 'simulated', model: string | null }>.
+    // Unknown fields remain unknown; review before saving. Never write claims/receipts here.
+  },
+};
+```
+
+The Node entry point loads that fixed feature module at startup. Restart after adding it. An absent handler is reported as `not_configured`; an invalid existing module fails startup instead of disappearing silently. `server/featureHandlers.ts` and `server/walletEvidence.ts` remain Agent 1 infrastructure. No browser bundle imports the model adapter or server handler. No live wallet AI is claimed until Brian registers the handler, credentials are configured, and a real call is verified.

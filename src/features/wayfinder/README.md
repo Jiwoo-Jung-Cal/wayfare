@@ -1,6 +1,8 @@
 # Wayfinder functional milestone — Agent 2, #4
 
-Visual revision: pending; `design/handoffs/wayfinder-intake.md` is an interaction checklist, not an approved design. This page uses Agent 1's existing placeholder components and tokens without introducing visual assets or new dependencies.
+Implemented interim visual revision: **r1-draft (2026-11-01)** from `design/handoffs/wayfinder-intake.md` and its exports, using the shared tokens/components merged in #29. Agent 1 relayed Jiwoo's authorization to continue the demo with this draft in #4. Formal approval is still pending in `design/approvals.json`; this is not final visual acceptance.
+
+The feature composition implements the 4-up route/3-up preference rows, three comparison cards, hero money figures, selected accent border/secondary button, itemized `KeyValue` cost rows, success/replay notices, field errors and stale-preference warning. Cards stack below 768px; preference rows go 2-up below 1024px and 1-up below 480px. Only feature-local CSS is added; shared tokens/root dependencies are unchanged.
 
 ## Public integration
 
@@ -18,6 +20,10 @@ These are **listed-component budgets**, not all-inclusive trip prices: return tr
 
 ## Verification
 
+Current milestone on merged main `1d42523` plus PR #21: 133 unit/integration tests passed (1 skipped, 2 todo), TypeScript/build passed, and the existing integrated browser suite passed 13 tests (2 ReRoute cases skipped). This includes connected-mode extraction/review persistence and workspace isolation; live AI remains unverified. Local integrated browser runs used a temporary configuration pointing to Chromium 153; no shared configuration or browser dependency was committed.
+
+`node src/features/wayfinder/verify-browser.mjs` starts a disposable sample-only Vite server and verifies both owned features through real controls. It covers preference changes, previous-result protection, unknown/over-budget selection blocking, selection/replay/reload, intake field validation/evidence/corrections, duplicate imports, Start over with preserved input, unconfigured extraction, unknown price/policy, and populated layouts at 1440/1023/768/767/390/360/320px with no page errors or horizontal overflow. Requires an installed Playwright Chromium; alternatively set `PW_EXECUTABLE_PATH` or `PW_CHANNEL`. Set `WAYFARE_VERIFY_OUTPUT` for optional screenshots. This focused script is not yet automatically invoked by shared CI.
+
 Run `npm test -- src/features/wayfinder` and `npm run build` from the repository root. Tests cover valid/invalid/unsupported preferences, changed ranking/itinerary, exact and over-budget comparisons, unknown/mixed prices, altered provider candidates, provider failure, stale responses, selection replay, reload and separation from bookings.
 
 The functional implementation was merged in PR #17. Agent 1 added the planning/dashboard journey in PR #18 and the shared narrow-screen fix in PR #19. On main `96be8039cfc242619e7cd0661eb036fab7b3aea3`, [application CI](https://github.com/Jiwoo-Jung-Cal/wayfare/actions/runs/41260960403/job/124713950843) passed typecheck, unit/integration tests (101 passed, 2 skipped, 3 todo), build, and browser journeys (9 passed, 3 skipped). Browser coverage includes comparison, unknown-price selection protection, plan selection/dashboard reload, replay, and route overflow checks at device width, 360px and 320px. This verifies behavior; Jiwoo's visual approval remains pending.
@@ -27,7 +33,7 @@ Reproducible UI checks, including preference changes covered by the feature test
 1. `npm ci`, then `npm run dev -- --host 127.0.0.1`; open `http://127.0.0.1:5173/#/trips/trip-demo-nyc/plan` in a browser on that computer.
 2. Generate default options. Saver precedes Nonstop; Flex has an unknown total and cannot be selected. Expand cost sources.
 3. Prioritize convenience and regenerate: Nonstop precedes Saver. Prioritize flexibility: Flex comes first while its unknown price remains explicit.
-4. Choose free time and regenerate: the paid activity disappears and the known options decrease by the shared $80 activity amount. Budget $800 now permits those options; restoring the skyline walk makes them over budget.
+4. Choose free time and regenerate: the paid activity disappears and known totals decrease by $80. Budget $800 permits the $735 saver; the $820 nonstop remains over budget. Restoring the skyline walk makes the saver over budget too.
 5. Select a complete option, reload, and verify the selected plan remains. The dashboard still has no imported bookings. Repeat selection; it remains one saved selection.
 6. Enter Paris or different dates; generation reports the unsupported sample scope and preserves previous results. Change input while loading; an older response cannot replace newer input/results.
 

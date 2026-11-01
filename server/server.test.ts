@@ -198,3 +198,64 @@ describe('file persistence', () => {
     }
   });
 });
+
+describe('hardening: session expiry and rate limits', () => {
+  const hotelText = DEMO_DOCUMENT_SOURCES[DEMO_IDS.documents.hotelConfirmation]!.text;
+
+  function hardened(over: Record<string, string>, nowRef: { t: number }) {
+    const config = loadConfig({ WAYFARE_DATA_DIR: 'memory', WAYFARE_AI_PROVIDER: 'none', ...over });
+    const now = () => new Date(nowRef.t);
+    const registry = createWorkspaceRegistry({ dataDir: null, now, sessionTtlMs: config.sessionTtlMs });
+    const handler = createApiHandler({ config, registry, adapter: null, now });
+    const post = (path: string, body: unknown, opts: { token?: string; ip?: string } = {}) =>
+      handler(
+        new Request(`${BASE}${path}`, { method: 'POST', headers: opts.token ? { authorization: `Bearer ${opts.token}` } : {}, body: JSON.stringify(body) }),
+        { clientIp: opts.ip ?? '203.0.113.1' },
+      );
+    return { post };
+  }
+  const json = async (r: Response) => (await r.json()) as { ok: boolean; value?: { token: string; expiresAt: string }; error?: { code: string; details?: Record<string, unknown> } };
+
+  it('expires guest sessions after the configured TTL', async () => {
+    const clock = { t: Date.parse('2026-11-18T17:00:00Z') };
+    const { post } = hardened({ WAYFARE_SESSION_TTL_HOURS: '1' }, clock);
+    const s = await json(await post('/api/session', {}));
+    expect(s.value?.expiresAt).toBe('2026-11-18T18:00:00Z');
+    expect((await post('/api/repo/listTrips', {}, { token: s.value!.token })).status).toBe(200);
+    clock.t += 3_600_000;
+    const expired = await post('/api/repo/listTrips', {}, { token: s.value!.token });
+    expect(expired.status).toBe(401);
+    expect((await json(expired)).error).toMatchObject({ code: 'unauthorized', details: { reason: 'session_expired' } });
+  });
+
+  it('limits guest-session creation per client IP with Retry-After, and resets each hour', async () => {
+    const clock = { t: Date.parse('2026-11-18T17:00:00Z') };
+    const { post } = hardened({ WAYFARE_SESSION_LIMIT_PER_HOUR: '2' }, clock);
+    expect((await post('/api/session', {}, { ip: 'a' })).status).toBe(200);
+    expect((await post('/api/session', {}, { ip: 'a' })).status).toBe(200);
+    const blocked = await post('/api/session', {}, { ip: 'a' });
+    expect(blocked.status).toBe(429);
+    expect(Number(blocked.headers.get('retry-after'))).toBeGreaterThan(0);
+    expect((await json(blocked)).error?.code).toBe('rate_limited');
+    expect((await post('/api/session', {}, { ip: 'b' })).status).toBe(200);
+    clock.t += 3_600_000;
+    expect((await post('/api/session', {}, { ip: 'a' })).status).toBe(200);
+  });
+
+  it('limits extractions per workspace, independently of other workspaces', async () => {
+    const clock = { t: Date.parse('2026-11-18T17:00:00Z') };
+    const { post } = hardened({ WAYFARE_EXTRACT_LIMIT_PER_HOUR: '2' }, clock);
+    const a = (await json(await post('/api/session', {}))).value!.token;
+    const b = (await json(await post('/api/session', {}))).value!.token;
+    const body = { tripId: DEMO_IDS.trip, text: hotelText };
+    expect((await post('/api/extract/booking', body, { token: a })).status).toBe(200);
+    expect((await post('/api/extract/booking', body, { token: a })).status).toBe(200);
+    expect((await post('/api/extract/booking', body, { token: a })).status).toBe(429);
+    expect((await post('/api/extract/booking', body, { token: b })).status).toBe(200);
+  });
+
+  it('defaults are bounded: 7-day sessions, 20 sessions and 30 extractions per hour', () => {
+    const c = loadConfig({});
+    expect(c).toMatchObject({ sessionTtlMs: 7 * 24 * 3_600_000, sessionLimitPerHour: 20, extractLimitPerHour: 30, trustProxy: false });
+  });
+});

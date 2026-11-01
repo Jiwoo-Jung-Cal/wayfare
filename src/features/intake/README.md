@@ -1,6 +1,8 @@
 # Booking intake functional milestone — Agent 2, #4
 
-Visual revision: pending in `design/handoffs/wayfinder-intake.md`. The screen is a functional placeholder built from the shared components; no visual design or Figma work is claimed.
+Implemented interim visual revision: **r1-draft (2026-11-01)** from `design/handoffs/wayfinder-intake.md` and its exports. Shared r1 tokens/components came from #29; Agent 1 relayed Jiwoo's authorization to use the draft for the demo in #4. Formal approval remains pending; no Figma or approval records were changed.
+
+The code now composes a two-column review/original-document layout, two-up field/evidence pairs, confidence badges, a muted policy card with `KeyValue` rows, inline validation, success/duplicate notices and Ghost Start over. Below 1024px the fields and original document stack; mobile Save is full width. The source form remains accessible above review so users can replace input or select another sample. Source edits invalidate review; Start over retains pasted text. Existing `validateReview` is reused during render and save; invalid/incomplete facts or missing attestation disable Save without duplicating validation logic.
 
 ## Public integration
 
@@ -24,6 +26,10 @@ Selectable samples come directly from `DEMO_DOCUMENT_SOURCES` / `DEMO_IDS`: flig
 
 ## Verification
 
+Current milestone on main `1d42523` plus PR #21: TypeScript/build passed; 133 unit/integration tests passed (1 skipped, 2 todo); 13 integrated browser tests passed (2 ReRoute cases skipped). Local Chromium 153 verification uses a temporary executable-path configuration without root configuration/dependency changes. Connected-mode intake is verified; live AI is not.
+
+Run `node src/features/wayfinder/verify-browser.mjs` for the feature-owned browser regression. It starts its own sample-only Vite server and checks both features. Intake checks cover attestation/required fact/currency/date validation, editable facts beside excerpts, original document, save/replay/reload, preserved text on Start over and extraction errors, unknown price/disputed policy, populated desktop/narrow layouts and full-width mobile Save. Supports `PW_EXECUTABLE_PATH`, `PW_CHANNEL` and optional `WAYFARE_VERIFY_OUTPUT` screenshots. Shared CI runs its existing journeys; this extra focused script is reproducible but not auto-wired.
+
 Run `npm test -- src/features/intake`, `npm test`, and `npm run build` at the root. Tests cover canonical extraction/save/evidence, explicit edits, duplicate replay, reload, source binding, unknown/disputed policy, missing price/required facts, invalid currency/date/amount/timezone, missing confirmation, failed write, malformed input, unconfigured AI, provider failure, and stale responses. No markup-only tests or root tooling changes were added.
 
 The functional implementation was merged in PR #17. Agent 1 added intake browser coverage in PR #18 and the shared narrow-screen fix in PR #19. On main `96be8039cfc242619e7cd0661eb036fab7b3aea3`, [application CI](https://github.com/Jiwoo-Jung-Cal/wayfare/actions/runs/41260960403/job/124713950843) passed typecheck, unit/integration tests (101 passed, 2 skipped, 3 todo), build, and browser journeys (9 passed, 3 skipped). Browser coverage includes hotel review/evidence, the exclusive policy deadline, save/duplicate replay, unknown-policy display, malformed/unconfigured extraction with input preserved, and route overflow checks at device width, 360px and 320px. Jiwoo's visual approval is still pending. Agent 2 verified the CI results and logs; these browser checks ran in GitHub Actions, not on Agent 2's computer.
@@ -36,7 +42,7 @@ Reproducible UI checks, including additional cases covered by the feature tests:
 4. Try an invalid currency or date before saving a fresh document: error details identify the field; text and edits remain. Blank paid amount must save as Unknown after review, never $0.
 5. Use the unknown-policy sample: policy remains unknown with no invented refund rule. Mark the hotel's extracted terms uncertain before a fresh import: save retains the original document and a policy needing review.
 6. Use the malformed sample, then unrecognized pasted text without server AI: explicit errors appear and text remains available. Replace text during extraction: no stale review may appear for the old text.
-7. On desktop and a narrow viewport, check keyboard access, readable excerpts, visible errors and no horizontal overflow. This is a functional check only until Jiwoo approves responsive specifications.
+7. On desktop and a narrow viewport, check keyboard access, readable excerpts, visible errors and no horizontal overflow. The r1-draft responsive rules are implemented and browser-checked; Jiwoo's formal visual approval is still pending.
 
 ## Decision
 

@@ -1,6 +1,6 @@
 // Integrated demo journey, driven through the real UI (sample mode).
-// Shell, Wayfinder and intake steps run now; steps that need the ReRoute and
-// TripWallet pages are test.fixme until those modules are merged (#6, #7).
+// Shell, Wayfinder, intake and TripWallet steps run now. ReRoute approval
+// remains test.fixme until its module is delivered (#6).
 
 import { expect, test, type Page } from '@playwright/test';
 
@@ -58,9 +58,10 @@ test.describe('demo journey: shell steps', () => {
 
   test('wallet load runs the claim-sync handoff and reports its state in words', async ({ page }) => {
     await page.goto(`${TRIP}/wallet`);
-    await expect(page.getByText(/TripWallet is not connected yet/)).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1, name: 'TripWallet', exact: true })).toBeVisible();
+    await expect(page.getByText(/Refund claims up to date/)).toBeVisible();
     await page.goto(TRIP);
-    await expect(page.getByText(/Claim sync is pending: the TripWallet module is not connected yet/)).toBeVisible();
+    await expect(page.getByText(/Refund claims up to date/)).toBeVisible();
   });
 
   test('keyboard: skip link and main navigation are reachable', async ({ page }) => {
@@ -179,6 +180,68 @@ test.describe('demo journey: Wayfinder and intake (Agent 2, #4)', () => {
 
 test.describe('demo journey: feature steps (pending modules)', () => {
   test.fixme('approve cancel-trip in ReRoute before the hotel deadline; $820 expected recovery (Agent 4, #6)', async () => {});
-  test.fixme('TripWallet shows the $400 hotel claim; $250 receipt leaves $150; $150 resolves it (Agent 5, #7)', async () => {});
   test.fixme('completed state survives reload; repeated approval/receipt import does not double records', async () => {});
+});
+
+test.describe('TripWallet integration', () => {
+  test.describe.configure({ retries: 0 });
+
+  test('canonical action fixtures sync; hotel receipts reconcile through the real controls', async ({ page }) => {
+    const errors: string[] = [];
+    page.on('pageerror', error => errors.push(error.message));
+    await page.goto(TRIP);
+    await expect(page.getByRole('heading', { level: 1, name: 'San Francisco to New York' })).toBeVisible();
+    // ReRoute's UI is not delivered. Seed only its canonical durable output;
+    // wallet-load sync, evidence review and every receipt operation use real UI.
+    await page.evaluate(async () => {
+      const path = '/src/core/index.ts';
+      const core = await import(/* @vite-ignore */ path) as typeof import('../src/core/index.ts');
+      const workspaceId = localStorage.getItem(core.ACTIVE_WORKSPACE_KEY)!;
+      const repo = core.createLocalRepository({ storage: localStorage, workspaceId });
+      core.unwrap(await repo.resetDemo('booked'));
+      const fx = { workspaceId, now: core.DEMO_TIMES.clockStart };
+      core.unwrap(await repo.putDocument(await core.demoDocument(fx, core.DEMO_IDS.documents.disruptionNotice)));
+      core.unwrap(await repo.recordDisruption(core.demoDisruption(fx)));
+      for (const action of core.demoCancelTripActions(fx)) core.unwrap(await repo.recordBookingAction({ action, expectedBookingRevision: 1 }));
+    });
+    await page.goto(`${TRIP}/wallet`);
+    const hotel = card(page, 'Harbor Line Hotel Midtown');
+    await expect(hotel).toContainText('$400.00');
+    await control(page, 'Load sample refund confirmation').click();
+    const claimSelect = page.getByRole('combobox', { name: /^Claim to confirm/ });
+    const hotelId = await claimSelect.locator('option').filter({ hasText: 'HLH-48213' }).getAttribute('value');
+    expect(hotelId).toBeTruthy();
+    await claimSelect.selectOption(hotelId!);
+    await control(page, 'Confirm reviewed evidence').click();
+    await expect(hotel).toContainText('provider confirmed');
+    for (const [amount, reference, state] of [['250', 'HLH-RF-0001', 'partially received'], ['150', 'HLH-RF-0002', 'received']]) {
+      await control(page, `Load sample $${amount} receipt`).click();
+      await control(page, 'Confirm reviewed evidence').click();
+      await page.getByRole('combobox', { name: new RegExp(`^Claim for receipt ${reference}\\b`) }).selectOption(hotelId!);
+      await control(page, `Match receipt ${reference}`).click();
+      await expect(hotel).toContainText(state!);
+      if (amount === '250') {
+        await expect(hotel).toContainText('Outstanding $150.00');
+        await control(page, 'Prepare follow-up draft for HLH-48213').click();
+        await expect(page.getByLabel('Editable follow-up draft')).toHaveValue(/Outstanding: \$150.00/);
+      }
+    }
+    await expect(hotel).toContainText('Outstanding $0.00');
+    await control(page, 'Load sample $250 receipt').click();
+    await control(page, 'Confirm reviewed evidence').click();
+    await page.reload();
+    await expect(hotel).toContainText('Received $400.00');
+    await expect(hotel).toContainText('Outstanding $0.00');
+    await expect(page.getByText('8,000 points (Harbor Line Rewards)')).toBeVisible();
+    // A populated wallet exercises long claim IDs, capability labels and evidence.
+    for (const width of [390, 360, 320]) {
+      await page.setViewportSize({ width, height: 844 });
+      await expect(page.getByRole('heading', { level: 1, name: 'TripWallet', exact: true })).toBeVisible();
+      expect(await horizontalOverflow(page), `reconciled wallet at ${width}px`).toBeLessThanOrEqual(0);
+    }
+    await hotel.getByText('Action, evidence and allocation history', { exact: true }).click();
+    await expect(hotel.locator('details').first()).toHaveAttribute('open', '');
+    expect(await horizontalOverflow(page), 'expanded evidence at 320px').toBeLessThanOrEqual(0);
+    expect(errors).toEqual([]);
+  });
 });

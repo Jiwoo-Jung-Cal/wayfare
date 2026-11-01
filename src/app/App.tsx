@@ -4,8 +4,8 @@
 
 import { Component, useEffect, type ReactNode } from 'react';
 import { createHashRouter, Navigate, NavLink, Outlet, RouterProvider, useParams } from 'react-router';
-import { appError, DEMO_TRIP_ID, forgetGuestSession, type AppError } from '../core/index.ts';
-import { Button, CapabilityLabel, EmptyState, ErrorState, LoadingState } from '../ui/index.tsx';
+import { appError, DEMO_TRIP_ID, forgetGuestSession, formatInstant, type AppError } from '../core/index.ts';
+import { Button, CapabilityLabel, EmptyState, ErrorState, LoadingState, StatusBadge } from '../ui/index.tsx';
 import { AppServicesProvider, CONNECTED_API_URL, useAppServices } from './AppServices.tsx';
 import { DemoControls } from './DemoControls.tsx';
 import { ClaimSyncNotice } from './ClaimSyncNotice.tsx';
@@ -25,9 +25,12 @@ class RouteErrorBoundary extends Component<{ children: ReactNode }, { error: App
   }
 }
 
+const MOBILE_LABEL: Record<string, string> = { plan: 'Plan', import: 'Import', reroute: 'ReRoute', wallet: 'Wallet' };
+
 function Layout() {
-  const { load, repo, extraction, refresh } = useAppServices();
+  const { load, repo, extraction, refresh, clock } = useAppServices();
   const tripId = load.status === 'ready' ? (load.snapshot.trips[0]?.id ?? null) : null;
+  const now = clock.now();
   return (
     <div className="wf-shell">
       <a href="#wf-content" className="wf-visually-hidden">
@@ -49,15 +52,28 @@ function Layout() {
                 </NavLink>
               ))}
           </nav>
-          <span className="wf-row" title={`${repo.capabilities.description} ${extraction.description}`}>
+          <span className="wf-capabilities" title={`${repo.capabilities.description} ${extraction.description}`}>
             <CapabilityLabel status={repo.capabilities.mode === 'sample' ? 'sample' : 'live'}>
               {repo.capabilities.mode === 'sample' ? 'saved in this browser' : 'server workspace'}
             </CapabilityLabel>
-            <CapabilityLabel status={extraction.capability === 'live' ? 'live' : 'simulated'}>AI extraction</CapabilityLabel>
-            <CapabilityLabel status="simulated">provider actions</CapabilityLabel>
+            <span className="wf-hide-narrow">
+              <CapabilityLabel status={extraction.capability === 'live' ? 'live' : 'simulated'}>AI extraction</CapabilityLabel>
+            </span>
+            <span className="wf-hide-narrow">
+              <CapabilityLabel status="simulated">provider actions</CapabilityLabel>
+            </span>
           </span>
         </div>
       </header>
+      <div className="wf-clockbar">
+        <div className="wf-clockbar-inner">
+          <StatusBadge tone="simulated">{clock.mode === 'sample' ? 'Demo clock' : 'Real-time clock'}</StatusBadge>
+          <span className="wf-clockbar-time" aria-label="Current app time">
+            {formatInstant(now, 'America/New_York')} · {now}
+          </span>
+          <span>{repo.capabilities.mode === 'sample' ? 'Sample mode · fictional providers · actions are simulated' : 'Connected mode · fictional providers · actions are simulated'}</span>
+        </div>
+      </div>
       <main id="wf-content" className="wf-main">
         {load.status === 'loading' && <LoadingState label="Loading your workspace…" />}
         {load.status === 'error' && (
@@ -83,6 +99,17 @@ function Layout() {
           </RouteErrorBoundary>
         )}
       </main>
+      <nav className="wf-tabbar" aria-label="Sections">
+        <NavLink to="/" end>
+          Trip
+        </NavLink>
+        {tripId &&
+          ROUTE_TABLE.map((r) => (
+            <NavLink key={r.path} to={`/trips/${tripId}/${r.path}`}>
+              {MOBILE_LABEL[r.path]}
+            </NavLink>
+          ))}
+      </nav>
       <DemoControls />
     </div>
   );

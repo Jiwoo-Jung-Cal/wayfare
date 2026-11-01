@@ -11,6 +11,7 @@ import type { Result } from './result.ts';
 import type { Clock } from './time.ts';
 import type { WorkspaceRepository } from './repository.ts';
 import type { ExtractionService } from './extraction.ts';
+import type { WalletEvidenceService } from './walletEvidence.ts';
 
 export const FEATURE_KEYS = ['wayfinder', 'intake', 'reroute', 'tripwallet'] as const;
 export type FeatureKey = (typeof FEATURE_KEYS)[number];
@@ -21,6 +22,8 @@ export type FeatureContext = {
   clock: Clock;
   /** Booking extraction for the intake UI (live AI in connected mode, simulated in sample mode). */
   extraction: ExtractionService;
+  /** Optional for backwards-compatible fixtures; the shell supplies this transport. */
+  walletEvidence?: WalletEvidenceService;
   /** Ask the shell to reload shared trip data after a write. */
   refresh(): Promise<void>;
   /** ReRoute calls this after a successful (non-replayed or replayed) ActionRecord write. */
