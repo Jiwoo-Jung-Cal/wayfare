@@ -1,6 +1,6 @@
 # Agent 1 handoff
 
-Status: foundation v1 and milestone 2 are merged on main (`bf4d2c7`, PRs #12 and #13). Integration (#8) has started on branch `agent-1/integration`, and the feature modules have not been delivered yet.
+Status: shared foundation and Wayfinder/intake are merged. TripWallet milestone PR #25 is being integrated under #8; ReRoute is not delivered. The dated sections below retain historical checks; the latest milestone supersedes their status.
 Task Issue: https://github.com/Jiwoo-Jung-Cal/wayfare/issues/3 (foundation). Integration follows on #8.
 Branch / commit / PR: main `bf4d2c7` (#12, #13 merged). Integration work is on `agent-1/integration` (PR linked from #8).
 
@@ -126,3 +126,22 @@ See docs/decisions/agent-1-foundation.md.
 Branch: agent-1/tripwallet-shared-contracts. Base: 6279d8c0e4bd5e8da215193f9eff39b88f23c6a9. Implements atomic workspace-wide receipt allocation bounds plus browser cross-tab lock/reload, and a server-only feature-owned wallet evidence handler seam with typed client transport. Existing `saveClaim` and `Receipt.matchState` usage remain compatible; `FeatureContext.walletEvidence` is optional for existing fixtures.
 
 Local checks: typecheck/build pass; full unit/integration suite 116 passed, 2 skipped, 3 todo (11 new focused checks). Disabling the shared lock/reload causes the independent-stale-repositories regression to fail; the correct implementation is restored. Browser race coverage is in e2e/allocation.spec.ts. Local browser installation returned an invalid archive; actual browser verification must be recorded from the PR's GitHub Actions runner before merge. Live wallet AI remains unverified and the feature handler remains Brian-owned.
+
+
+## TripWallet milestone integration and browser persistence follow-up (2026-11-01)
+
+Branch: `agent-1/integrate-tripwallet`. Base: `503e2c14bd8a94b9d298f6b34065c8d2c182ad23`. Integrates Brian's exact PR #25 head `3665b6262e42d94e5131f24e0dfa3c86751c3313`, preserving its history and feature ownership.
+
+PR #26 added workspace-wide allocation validation and the wallet evidence transport. Its overall CI job was green, but the browser log showed the cross-tab race failed once before passing on retry. Do not treat that as clean race verification. This follow-up replaces browser snapshot localStorage writes with IndexedDB commits under the same workspace Web Lock. Existing snapshots migrate without discarding data. The two-tab regression performs three independent races with retries disabled. Memory and single-process server storage retain their existing queues.
+
+The browser journey now drives Brian's actual reviewed-confirmation, receipt import/matching, follow-up draft, duplicate import and reload controls. Because ReRoute UI is missing, only its canonical durable action outputs are seeded as fixtures; this does not verify cancellation approval through ReRoute. Actual TripWallet module claim sync is also checked at the contract boundary.
+
+Design: `design/handoffs/tripwallet.md` includes native draft screen references, three usable exports, responsive/state guidance and the known receipt-state board defect. All approvals remain pending. The functional UI is a shared-component placeholder, not approved visual fidelity.
+
+Local validation: typecheck and production build pass; 128 unit/integration tests pass, one ReRoute check is skipped and two full-flow checks remain todo. Feature discovery uses explicit .ts/.tsx patterns and the delivered TripWallet registration is a required test, not a conditional skip. The actual Chrome CI run will be recorded in the integration PR and #8 before merge. No local Chrome is installed; the browser installer returned an invalid archive. Do not claim local browser success.
+
+Still pending: ReRoute #6 and the full approval-to-wallet browser flow; Brian's feature-owned wallet evidence handler/client wiring and live AI verification; remaining asset functionality; Jiwoo's visual approval and Figma running-app verification. The optional `ctx.walletEvidence` interface is available, but this milestone does not claim wallet AI.
+
+Chrome verification history for this milestone: run [41291835118](https://github.com/Jiwoo-Jung-Cal/wayfare/actions/runs/41291835118) passed all three no-retry cross-tab allocation races, typecheck, 128 tests and build. The new wallet UI test timed out locating its exact-text nested-label selector before confirmation; that run is not recorded as wallet-flow success. The selector now targets the labeled combobox by its stable prefix (nested option text must not become part of an exact label assumption). Wallet integration also runs with retries disabled. The corrected run must pass before merge.
+
+The wallet browser flow also checks the populated/reconciled wallet at 390/360/320 px and opens evidence at 320 px. Shared capability labels may wrap; long card identifiers and preformatted evidence wrap within the card. Short status badges retain their existing presentation. This is a functional readability fix using current tokens, not visual design approval.

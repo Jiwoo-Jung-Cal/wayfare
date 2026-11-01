@@ -130,6 +130,8 @@ a {
 
 /* Components */
 .wf-card {
+  min-width: 0;
+  overflow-wrap: anywhere;
   background: var(--wf-color-surface);
   border: 1px solid var(--wf-color-border);
   border-radius: var(--wf-radius-md);
@@ -170,6 +172,15 @@ a {
   font-weight: var(--wf-weight-strong);
   background: var(--wf-color-neutral-bg);
   white-space: nowrap;
+}
+.wf-badge[data-wrap='true'] {
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.wf-card pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 .wf-badge[data-tone='positive'] {
   background: var(--wf-color-positive-bg);

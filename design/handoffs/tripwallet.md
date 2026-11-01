@@ -1,111 +1,70 @@
-# TripWallet handoff
+# TripWallet engineering handoff — native draft
 
-Design owner: Jiwoo. Code owner: Brian / Agent 5. Figma access for Brian: not required.
+Design owner: Jiwoo. Code owner: Brian / Agent 5. Brian does not need Figma access.
 
-Visual approval: **pending**. Latest draft: **r1-draft (2026-11-01)**, awaiting Jiwoo's review.
+**Visual approval: pending. Approved revision: none.** Export bundle: `draft-tripwallet-2026-11-01-a`, inspected November 1, 2026. This is an engineering reference for existing native drafts, not approval to replace shared styles or claim final visual acceptance. `design/approvals.json` remains authoritative. Report `design_revision: null` until Jiwoo approves a revision.
 
-**Status of the code.** Brian's TripWallet milestone (#25) and its integration (#27) were merged to `main` on 2026-11-01, while this draft was being made. The draft was designed from the requirements below and the canonical fixture, **not** from Brian's implemented screens, and the two have not been reconciled yet. Before applying visuals, Brian should compare the implemented states and controls with the frames below, and raise any difference in behavior or naming on #7 or #2. The design yields to tested behavior unless Jiwoo decides otherwise.
+## Screens available in GitHub
 
-## Required behavior and states
-
-- Overview and claims: expected, provider-confirmed, received and outstanding cash as distinct stages.
-- Claim details: source action, evidence, due-date provenance and allocation history.
-- Receipt intake/review: extracted fields, candidate matches, ambiguous/currency mismatch/duplicate handling and confirmation.
-- Partial/full reconciliation: a $400 sample claim with $250 received leaves $150 outstanding; a further $150 resolves it.
-- Credits/points: issuer, balance/unit, restrictions, expiry; keep them separate from cash.
-- Follow-up draft: accurate outstanding amount and evidence; user reviews/copies it, no automatic sending.
-- Empty/loading/error, partial, overdue, review-needed and resolved states.
-
-Brian owns code, claim synchronization, matching/allocation, balances, state handling and tests. Jiwoo supplies visual layout, responsive behavior, component references and exports. Brian does not create Figma frames or choose the final visual design.
-
-## Draft r1 frames (Figma page `06 — TripWallet`, node `1:7`)
-
-| Frame | Node | Link | Export |
-| --- | --- | --- | --- |
-| TripWallet — Desktop — Overview | `13:2` | [open](https://www.figma.com/design/ZZS9jEmANeCrjGxWxxCofK?node-id=13-2) | `design/exports/tripwallet/tripwallet-desktop-overview.png` |
-| TripWallet — Desktop — Hotel claim and receipt match | `13:178` | [open](https://www.figma.com/design/ZZS9jEmANeCrjGxWxxCofK?node-id=13-178) | `…/tripwallet-desktop-hotel-claim-and-receipt-match.png` |
-| TripWallet — Desktop — Reconciled and receipt states | `13:287` | [open](https://www.figma.com/design/ZZS9jEmANeCrjGxWxxCofK?node-id=13-287) | `…/tripwallet-desktop-reconciled-and-receipt-states.png` |
-| TripWallet — Desktop — Follow-up draft | `13:420` | [open](https://www.figma.com/design/ZZS9jEmANeCrjGxWxxCofK?node-id=13-420) | `…/tripwallet-desktop-follow-up-draft.png` |
-| TripWallet — Mobile — Overview | `13:491` | [open](https://www.figma.com/design/ZZS9jEmANeCrjGxWxxCofK?node-id=13-491) | `…/tripwallet-mobile-overview.png` |
-
-Component sheets: `design/exports/foundation/component-claim-row.png`, `component-receipt-row.png`, `component-button.png`. Tokens and the component API: `design/handoffs/foundation.md`.
-
-### Scoping rule (most important)
-
-Every money figure says whether it is **trip-wide** or for **one claim**, and it is always **cash only**.
-
-| Moment | Trip-wide (all 4 claims) | Hotel claim only |
+| Native draft | Editable source for Jiwoo | Export usable without Figma |
 | --- | --- | --- |
-| After the first receipt (Nov 22) | Expected $820.00 · provider confirmed $400.00 (hotel only) · received $250.00 · **outstanding $570.00** | Expected $400 · confirmed $400 · received $250 · **outstanding $150** |
-| After the second receipt (Nov 24) | **Outstanding $420.00** (flight $320 + walk $60 + transfer $40) | Received $400 · **outstanding $0.00**, status `Received` |
+| Desktop overview (1440 × 1292) | [Frame 13:2](https://www.figma.com/design/ZZS9jEmANeCrjGxWxxCofK?node-id=13-2) | [Overview PNG](../exports/tripwallet/overview-desktop-draft.png) |
+| Desktop hotel claim / receipt match (1440 × 940) | [Frame 13:178](https://www.figma.com/design/ZZS9jEmANeCrjGxWxxCofK?node-id=13-178) | [Hotel claim PNG](../exports/tripwallet/hotel-claim-desktop-draft.png) |
+| Mobile overview (390 × 1285) | [Frame 13:491](https://www.figma.com/design/ZZS9jEmANeCrjGxWxxCofK?node-id=13-491) | [Mobile PNG](../exports/tripwallet/overview-mobile-draft.png) |
 
-- Resolving the hotel does **not** resolve the other claims.
-- The $75 voucher and 8,000 points (`AssetCard`, "Noncash" badge) are never added to any cash figure. Points have no cash value.
+| Desktop reconciled / receipt states (1440 × 1545) | [Frame 13:287](https://www.figma.com/design/ZZS9jEmANeCrjGxWxxCofK?node-id=13-287) | [States PNG](../exports/tripwallet/tripwallet-desktop-reconciled-and-receipt-states.png) |
+| Desktop follow-up draft (1440 × 841) | [Frame 13:420](https://www.figma.com/design/ZZS9jEmANeCrjGxWxxCofK?node-id=13-420) | [Follow-up PNG](../exports/tripwallet/tripwallet-desktop-follow-up-draft.png) |
 
-### Screens
+**Update, later on November 1 (Agent 1 design pass r1-draft).** The earlier inspection of `13:287` caught the board mid-build, with a collapsed overdue row and cramped receipt rows. It has since been repaired:
+- Each state panel (hotel claim resolved, duplicate, ambiguous match, currency mismatch, overdue) now spans the full width, so the `ReceiptRow` and `ClaimRow` components keep their designed columns.
+- The panels hug their content, so nothing is clipped.
 
-**Overview (`13:2`, demo clock Nov 22).**
-- A "Trip-wide cash" card with four Hero `MoneyStat`s: Expected, Provider confirmed, Received (Positive), Outstanding (Warning).
-- A claims card with one `ClaimRow` per claim. Hotel is `Partially received`; the others are `Expected`.
-- A receipts card: `ReceiptRow` `Matched` for HLH-RF-0001 $250.00, plus Primary "Import a receipt".
-- Side column: a Simulated alert and "Credits and points" (voucher and points `AssetCard`s with a "never added to cash" note).
+The board and the follow-up draft are now exported, in the two rows above. All five TripWallet frames form part of draft r1 (see `docs/DESIGN_MAP.md`) and remain unapproved.
 
-**Hotel claim (`13:178`, Nov 24).**
-- Title states "One claim — amounts on this page are for the hotel only".
-- Four Medium `MoneyStat`s for this claim.
-- "Source and due date": the source action (Simulated), the due date "Nov 25, 2026, 6:00 PM EST" from the provider confirmation, and `Evidence` quoting the refund confirmation.
-- "Allocation history": the matched `ReceiptRow`.
-- Side card "Review new receipt":
-  - `Evidence` quoting the statement credit;
-  - `KeyValue` rows for reference, amount and match candidate, then a `Total` "Hotel outstanding after match $0.00";
-  - a plain-language reason for the match;
-  - Primary "Confirm match" and Ghost "Choose another claim".
+Open review item for Jiwoo, from this handoff's money-scope note: the overview's "Provider confirmed $400.00" stat is captioned "1 of 4 claims (hotel)". Consider replacing it with a known-subtotal-plus-unknown-count presentation, so it can't read as "others confirmed $0". The code keeps its explicit unknown total until this is decided.
 
-**Reconciled and receipt states (`13:287`).**
+These exports document drafts. There is no automatic GitHub/Figma synchronization.
 
-| Panel | Content |
+## Layout and components
+
+Desktop overview: 1440 px canvas, 1200 px content with 120 px side margins. A full-width cash summary precedes a 784 px claims/receipts column and a 392 px assets column with 24 px gap. Claim detail uses approximately 736 px / 440 px columns and 24 px gap. Cards have visible boundaries, consistent padding and descriptive headings. Use existing shared code components and `--wf-*` tokens; do not independently replace the shared palette or typography.
+
+Native references include NavBar, DemoClockBar, MoneyStat, Badge, ClaimRow, ReceiptRow, Button, Alert, AssetCard, KeyValue, Evidence, Field, MobileHeader and MobileTabBar. Agent 1 owns shared component implementation; request missing technical props through #8. Brian owns feature composition and behavior.
+
+Mobile draft: 390 px canvas, 16 px gutters, one column. Summary values become stacked key/value rows; claim descriptions wrap above or beside their textual status; primary import action spans the available width. Keep money and currency readable at 320/360/390 px. Receipt/detail forms must stack when side-by-side content no longer fits; never collapse the description to zero width. Long references and evidence wrap within cards. Bottom navigation must not obscure actions or focused fields. Final breakpoints and unshown mobile detail states await Jiwoo's visual review.
+
+## Money, scope and evidence
+
+- Keep expected, provider-confirmed, received and outstanding stages separate. A recorded cancellation produces an expectation; it does not prove payment.
+- The overview screenshot is trip-wide: $820 expected across four claims, $250 received, $570 outstanding. The $400 shown as provider-confirmed is only the known hotel confirmation (one of four claims). **Do not imply that all other providers confirmed zero.** The draft needs a known-subtotal/unknown-count label if a numeric partial subtotal is displayed. Retain the code's explicit unknown total until that presentation is resolved.
+- Hotel detail is one claim: expected $400, confirmed $400, received $250, outstanding $150. After the second $150 receipt, hotel received is $400 and outstanding is $0; the other three claims still total $420 outstanding. Hotel resolution is not trip resolution.
+- Source action, provider confirmation, original document, due-date provenance and allocation history remain inspectable. Use the active demo clock. Hotel refund is due at `2026-11-25T23:00:00Z`; at the boundary it is overdue if unresolved. Unknown due dates stay unknown.
+- Changed promises, currency differences and over-receipts require review. Preserve the original expected amount and evidence. Do not hide discrepancies with clamping or invent a currency conversion.
+- $75 voucher and 8,000 points are separate noncash assets. Show issuer, unit, restrictions, expiry and evidence; never add them to cash refunds.
+
+## Required interactions and states
+
+| Area | Required behavior |
 | --- | --- |
-| Hotel claim resolved | Stats $400 / $400 / $0, plus an Info alert that trip-wide outstanding is $420 |
-| Duplicate receipt | `ReceiptRow Duplicate` (HLH-RF-0001 re-sent) plus an Info alert "Already recorded — nothing changed" |
-| Ambiguous match | `ReceiptRow Ambiguous` plus `Field` Select "Allocate to" — nothing is allocated until the user chooses |
-| Currency mismatch | `ReceiptRow Currency mismatch` (€40.00) plus a Danger alert — no conversion, and the amount is not added |
-| Overdue | `ClaimRow Overdue` (demo clock Nov 26, past the due date) plus Secondary "Draft a follow-up" |
+| Wallet entry | Run idempotent claim sync from durable successful actions. Distinguish pending/retry/failed sync from action success. Reopening/reloading cannot duplicate claims. |
+| Confirmation / receipt intake | Keep pasted evidence visible, show reviewed fields and explicit sample/live capability. Unknown or invalid fields stay reviewable. No save from an unreviewed AI proposal. |
+| Match review | Show candidate claim, original evidence, receipt currency/amount and resulting outstanding amount. A proposal is not an allocation. Confirm explicitly; allow another reviewed claim. Ambiguous/no-match inputs remain unallocated. |
+| Match commit | Allocate once. Reload current state on `conflict`; show that the receipt may have been allocated in another tab. Shared repository validates allocation totals atomically. Derive matched status from allocations. |
+| Duplicate import | Preserve original receipt and allocations; report already imported. Changed amount with the same reference is a conflict to review, never another payment. |
+| Partial / resolved | $250 leaves hotel $150 outstanding; subsequent $150 resolves only that claim. Repeat import/match or reload preserves both allocations without double counting. |
+| Overdue / review | Explain the due source and unresolved amount in words. Use textual badges as well as color. Use a readable stacked row until Jiwoo repairs the native state-board layout. |
+| Follow-up draft | Generate from current claim/evidence, including $150 outstanding in the partial state. Text stays editable; user copies it. Nothing sends automatically. |
+| Empty / loading / error | Explain no claims vs sync pending vs no receipts. Disable duplicate submissions while busy. Preserve input and expose retryable errors in an accessible status/alert. |
+| Assets | Display restrictions and expiry conservatively. Structured eligibility/reservation/redemption remains a separate unfinished Brian milestone, not implied by the draft. |
 
-**Follow-up draft (`13:420`).**
-- `Field` Input for the subject, and `Field` Textarea with the editable message. The amounts come from the claim: confirmed $400, received $250 (HLH-RF-0001), outstanding $150, due Nov 25.
-- Primary "Copy draft" and Ghost "Reset to generated text".
-- A Simulated alert: "Sending is not part of WayFare".
-- An "Evidence used" card with `KeyValue` rows.
+## Current implementation and boundaries
 
-**Empty, loading and error.** Use `StateBlock`:
-- **Empty:** "No refund claims yet — they're created after you approve a recovery action in ReRoute".
-- **Loading:** shown while claim sync runs. The shell also shows `ClaimSyncNotice`.
-- **Error:** includes the error code, request ID and Retry.
+Brian's [PR #25](https://github.com/Jiwoo-Jung-Cal/wayfare/pull/25), head `3665b6262e42d94e5131f24e0dfa3c86751c3313`, supplies the functional shared-component UI and ledger milestone. Agent 1 integrates it under [#8](https://github.com/Jiwoo-Jung-Cal/wayfare/issues/8). It is not visually matched to this draft yet.
 
-### Responsive behavior
+Shared contracts and wallet-evidence seam are documented in `docs/CONTRACTS.md`. Brian owns wallet schemas/prompts, `src/features/tripwallet/server.ts` and client integration. A route or health flag alone does not establish live AI. The present milestone uses user-reviewed fields and explicit fictional presets.
 
-- **Below 1024 px:** the side column stacks under the main column, and the four stats go 2×2.
-- **Below 768 px (mobile frame):**
-  - one Hero "Outstanding (all claims)" figure plus `KeyValue` rows for the other stages;
-  - claims as compact stacks: title, then "Outstanding $X of $Y", then a status badge;
-  - a full-width "Import a receipt" button, then the credits and points cards;
-  - `MobileTabBar` is active on Wallet.
+Brian updates #7 with branch/commit/PR/checks at start, milestones, blockers and handoff; keeps `docs/handoffs/agent-5.md` current; and links the actual approved revision when available. Jiwoo updates native designs and approval records. Native drafts, exports, code and approvals remain separate reviewable artifacts.
 
-### Implementation notes for Brian (no Figma needed)
+## Acceptance still pending
 
-- **Shared building blocks.** Data and fixtures come from `src/core`: `RefundClaim`, `Receipt`, `WalletAsset`, `demoReceipts`, `DEMO_HOTEL_REFUND_CONFIRMATION`, `DEMO_EXPECTED.hotelClaim` and `demoCancelTripActions`.
-- **Claim sync.** Your `syncClaimsFromActions` must be idempotent (`ensureClaims`). The shell calls it after every recorded action and on every wallet load.
-- **Receipts and claims.**
-  - Receipts: `putReceipt` is unique by normalized reference; a different amount returns `duplicate`.
-  - Allocations and status changes go through `saveClaim(claim, { expectedRevision })`.
-- **Contract notes.** No contract change is needed for these screens.
-  - Overdue is a status you derive from `claim.due.at` versus `ctx.clock.now()`.
-  - Currency mismatch is detected by comparing the receipt and claim currencies; the money helpers throw on mixing.
-
-## Approval record
-
-Approved revision: pending. Draft r1 (2026-11-01) is awaiting Jiwoo's review.
-Export paths: `design/exports/tripwallet/`
-Responsive/state specifications: the "Draft r1 frames" section above
-Approval Issue/commit: Issue #2 (pending)
-Implementation PR: functional milestone #25 / #27 merged. Applying the visuals waits for approval and reconciliation.
+Jiwoo's visual approval; repair/approval of receipt-state and responsive detail layouts; final visual fidelity comparison; remaining wallet AI/asset milestones; and the complete ReRoute approval → wallet browser journey. Core logic, tests and integration may proceed independently. Do not close #7 on the strength of these exports.

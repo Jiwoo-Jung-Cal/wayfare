@@ -13,7 +13,7 @@ Figma: https://www.figma.com/design/ZZS9jEmANeCrjGxWxxCofK
 | Booking intake | `03 — Booking intake` (`1:4`) | Paste `10:2`; Review `10:80`; Results and states `10:238`; Mobile `10:345` | Agent 2 | `design/handoffs/wayfinder-intake.md` | `design/exports/wayfinder-intake/` |
 | Wayfinder | `04 — Wayfinder` (`1:5`) | Compare `11:2`; Saved plan and states `11:188`; Mobile `11:303` | Agent 2 | `design/handoffs/wayfinder-intake.md` | `design/exports/wayfinder-intake/` |
 | ReRoute / CancelClock | `05 — ReRoute` (`1:6`) | Disruption and options `12:2`; Approve `12:184`; Results and states `12:202`; Mobile `12:316` | Kelvin / Agent 4 | `design/handoffs/reroute.md` | `design/exports/reroute/` |
-| TripWallet | `06 — TripWallet` (`1:7`) | Overview `13:2`; Hotel claim and receipt match `13:178`; Reconciled and receipt states `13:287`; Follow-up draft `13:420`; Mobile `13:491` | Brian / Agent 5 | `design/handoffs/tripwallet.md` | `design/exports/tripwallet/` |
+| TripWallet | `06 — TripWallet` (`1:7`) | Overview `13:2`; Hotel claim and receipt match `13:178`; Reconciled and receipt states `13:287`; Follow-up draft `13:420`; Mobile `13:491` | Brian / Agent 5 | [`design/handoffs/tripwallet.md`](../design/handoffs/tripwallet.md) (engineering draft handoff aligned with merged #25) | `design/exports/tripwallet/` |
 | Design prototype | `07 — Working demo` (`1:8`) | Banner `17:2`; flow "WayFare walkthrough (design prototype)" starting at `17:5`; 13 linked clones `17:5`–`17:493` | — | This file | — |
 
 **Frame links.** `https://www.figma.com/design/ZZS9jEmANeCrjGxWxxCofK?node-id=<node with - instead of :>`, for example `?node-id=12-2`.
