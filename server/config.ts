@@ -20,6 +20,14 @@ export type ServerConfig = {
   /** Directory for workspace JSON files; null = in-memory (tests). */
   dataDir: string | null;
   maxBodyBytes: number;
+  /** Guest session lifetime from creation. */
+  sessionTtlMs: number;
+  /** Guest sessions a single client may create per hour. */
+  sessionLimitPerHour: number;
+  /** Booking extractions (paid AI calls when configured) per workspace per hour. */
+  extractLimitPerHour: number;
+  /** Use the first X-Forwarded-For address as the client IP (only behind a trusted proxy). */
+  trustProxy: boolean;
   ai: AiConfig;
 };
 
@@ -53,6 +61,10 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
       .filter(Boolean),
     dataDir: env.WAYFARE_DATA_DIR === 'memory' ? null : (env.WAYFARE_DATA_DIR ?? '.data'),
     maxBodyBytes: Number(env.WAYFARE_MAX_BODY_BYTES ?? 512_000),
+    sessionTtlMs: Number(env.WAYFARE_SESSION_TTL_HOURS ?? 168) * 3_600_000,
+    sessionLimitPerHour: Number(env.WAYFARE_SESSION_LIMIT_PER_HOUR ?? 20),
+    extractLimitPerHour: Number(env.WAYFARE_EXTRACT_LIMIT_PER_HOUR ?? 30),
+    trustProxy: env.WAYFARE_TRUST_PROXY === '1',
     ai,
   };
 }
