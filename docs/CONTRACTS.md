@@ -211,6 +211,12 @@ The handler is web-standard: `(Request) => Promise<Response>`. `server/node.ts` 
 
 - HTTP status follows the error code: 400 validation, 401, 403, 404, 409 conflict or duplicate, 412, 429, 502 provider, 503 not_configured or unavailable, 504 timeout.
 - Every response carries `x-request-id`.
+- Guest sessions expire `WAYFARE_SESSION_TTL_HOURS` after creation (default 168). After that, requests get 401 `unauthorized` with `details.reason: 'session_expired'`, and the app offers "Start a new guest session". `POST /api/session` also returns `expiresAt`.
+- Rate limits (fixed hourly window, in memory, single instance):
+  - `POST /api/session`: `WAYFARE_SESSION_LIMIT_PER_HOUR` per client IP (default 20).
+  - `POST /api/extract/booking`: `WAYFARE_EXTRACT_LIMIT_PER_HOUR` per workspace (default 30). This protects paid AI calls.
+  - Exceeding a limit returns 429 `rate_limited` with a `Retry-After` header and `details.retryAfterSeconds`.
+  - The client IP is the socket address. Set `WAYFARE_TRUST_PROXY=1` only behind a trusted proxy, to use `X-Forwarded-For` instead.
 - CORS allows only the exact origins in `WAYFARE_ALLOWED_ORIGINS`. A browser request from any other origin gets 403. Add the Figma or hosting preview origin there explicitly; do not use a wildcard.
 - Model provider: a single adapter (`server/ai/modelAdapter.ts`) using the official Anthropic SDK.
   - It uses `beta.messages.parse` with a Zod structured-output format and sets effort explicitly (`medium` by default).
