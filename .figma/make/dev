@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+# Figma Code Layer preview runs the browser-only sample mode (no VITE_WAYFARE_API_URL,
+# no API server, no AI key): sample data and simulated extraction, labelled in the UI.
+set -euo pipefail
+exec npx --no-install vite --port "$PORT" --host "${FIGMA_DEV_SERVER_HOST:-0.0.0.0}" --strictPort
