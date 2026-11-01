@@ -1,5 +1,6 @@
-// Shared UI components (code API v1). Visual values come from src/styles/tokens.css,
-// which holds placeholders until Jiwoo approves the foundation design revision.
+// Shared UI components (code API v1), styled to design draft r1 (Figma file
+// ZZS9jEmANeCrjGxWxxCofK, page 01 — Foundations). Visual values come from
+// src/styles/tokens.css. Formal visual approval is still pending.
 // Statuses always render words, not color alone. Unknown money renders as text, never $0.00.
 
 import type { ButtonHTMLAttributes, ReactNode } from 'react';
@@ -14,12 +15,12 @@ import {
   type TimeZone,
 } from '../core/index.ts';
 
-export type Tone = 'neutral' | 'positive' | 'warning' | 'danger' | 'info';
+export type Tone = 'neutral' | 'positive' | 'warning' | 'danger' | 'info' | 'simulated' | 'accent';
 
 export function Button({
   variant = 'secondary',
   ...props
-}: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: 'primary' | 'secondary' | 'danger' }) {
+}: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: 'primary' | 'secondary' | 'danger' | 'ghost' }) {
   return <button type="button" className="wf-button" data-variant={variant} {...props} />;
 }
 
@@ -27,7 +28,7 @@ export function Card({ title, actions, children, as: Tag = 'section' }: { title?
   return (
     <Tag className="wf-card wf-stack">
       {(title || actions) && (
-        <div className="wf-row" style={{ justifyContent: 'space-between' }}>
+        <div className="wf-card-header">
           {title && <h2>{title}</h2>}
           {actions}
         </div>
@@ -67,7 +68,7 @@ export function InstantText({ value, timeZone = 'UTC' }: { value: Instant; timeZ
 /** Labels whether a value/action is live or simulated. */
 export function CapabilityLabel({ status, children }: { status: CapabilityStatus | 'sample'; children?: ReactNode }) {
   const text = status === 'live' ? 'Live' : status === 'sample' ? 'Sample data' : 'Simulated';
-  return <StatusBadge tone={status === 'live' ? 'positive' : 'info'} wrap>{children ? `${text}: ${children}` : text}</StatusBadge>;
+  return <StatusBadge tone={status === 'live' ? 'positive' : 'simulated'} wrap>{children ? `${text}: ${children}` : text}</StatusBadge>;
 }
 
 export function LoadingState({ label = 'Loading…' }: { label?: string }) {
@@ -111,17 +112,45 @@ export function ErrorState({ error, onRetry, title = 'Something went wrong' }: {
 
 export function EmptyState({ title, children }: { title: string; children?: ReactNode }) {
   return (
-    <div className="wf-alert wf-stack" data-tone="info">
+    <div className="wf-alert wf-stack" data-tone="neutral">
       <strong>{title}</strong>
       {children}
     </div>
   );
 }
 
-export function Notice({ tone = 'info', children }: { tone?: 'info' | 'warning' | 'danger'; children: ReactNode }) {
+export function Notice({ tone = 'info', children }: { tone?: 'info' | 'warning' | 'danger' | 'success' | 'simulated'; children: ReactNode }) {
   return (
     <div className="wf-alert" data-tone={tone} role={tone === 'danger' ? 'alert' : undefined}>
       {children}
+    </div>
+  );
+}
+
+/** One labelled money figure (Figma `MoneyStat`). The caption must state the scope:
+ *  trip-wide vs one claim, cash vs noncash. Unknown renders as words, never $0.00. */
+export function MoneyStat({ label, value, caption, size = 'medium', tone = 'default' }: {
+  label: string;
+  value: MaybeMoney | string;
+  caption?: ReactNode;
+  size?: 'medium' | 'hero';
+  tone?: 'default' | 'positive' | 'warning' | 'danger' | 'muted';
+}) {
+  return (
+    <div className="wf-moneystat" data-size={size} data-tone={tone}>
+      <span className="wf-moneystat-label">{label}</span>
+      <span className="wf-moneystat-amount">{typeof value === 'string' ? value : <MoneyText value={value} />}</span>
+      {caption && <span className="wf-muted">{caption}</span>}
+    </div>
+  );
+}
+
+/** Label + right-aligned value line (Figma `KeyValue`). `total` adds a divider and larger amount. */
+export function KeyValue({ label, value, emphasis = 'default' }: { label: ReactNode; value: ReactNode; emphasis?: 'default' | 'total' | 'muted' }) {
+  return (
+    <div className="wf-kv" data-emphasis={emphasis}>
+      <span>{label}</span>
+      <span>{value}</span>
     </div>
   );
 }
