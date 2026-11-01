@@ -12,7 +12,18 @@ Design owner: Jiwoo. Code owner: Brian / Agent 5. Brian does not need Figma acce
 | Desktop hotel claim / receipt match (1440 × 940) | [Frame 13:178](https://www.figma.com/design/ZZS9jEmANeCrjGxWxxCofK?node-id=13-178) | [Hotel claim PNG](../exports/tripwallet/hotel-claim-desktop-draft.png) |
 | Mobile overview (390 × 1285) | [Frame 13:491](https://www.figma.com/design/ZZS9jEmANeCrjGxWxxCofK?node-id=13-491) | [Mobile PNG](../exports/tripwallet/overview-mobile-draft.png) |
 
-Other existing native drafts: reconciled/receipt states `13:287`, follow-up draft `13:420`. The receipt-state board has a collapsed text column in its overdue claim row and cramped receipt rows. It is not a usable layout reference and is intentionally excluded from this export bundle. Its QA and visual approval remain Jiwoo-owned. These exports document observed drafts; there is no automatic GitHub/Figma synchronization.
+| Desktop reconciled / receipt states (1440 × 1545) | [Frame 13:287](https://www.figma.com/design/ZZS9jEmANeCrjGxWxxCofK?node-id=13-287) | [States PNG](../exports/tripwallet/tripwallet-desktop-reconciled-and-receipt-states.png) |
+| Desktop follow-up draft (1440 × 841) | [Frame 13:420](https://www.figma.com/design/ZZS9jEmANeCrjGxWxxCofK?node-id=13-420) | [Follow-up PNG](../exports/tripwallet/tripwallet-desktop-follow-up-draft.png) |
+
+**Update, later on November 1 (Agent 1 design pass r1-draft).** The earlier inspection of `13:287` caught the board mid-build, with a collapsed overdue row and cramped receipt rows. It has since been repaired:
+- Each state panel (hotel claim resolved, duplicate, ambiguous match, currency mismatch, overdue) now spans the full width, so the `ReceiptRow` and `ClaimRow` components keep their designed columns.
+- The panels hug their content, so nothing is clipped.
+
+The board and the follow-up draft are now exported, in the two rows above. All five TripWallet frames form part of draft r1 (see `docs/DESIGN_MAP.md`) and remain unapproved.
+
+Open review item for Jiwoo, from this handoff's money-scope note: the overview's "Provider confirmed $400.00" stat is captioned "1 of 4 claims (hotel)". Consider replacing it with a known-subtotal-plus-unknown-count presentation, so it can't read as "others confirmed $0". The code keeps its explicit unknown total until this is decided.
+
+These exports document drafts. There is no automatic GitHub/Figma synchronization.
 
 ## Layout and components
 

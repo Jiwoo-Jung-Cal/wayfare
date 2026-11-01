@@ -145,3 +145,34 @@ Still pending: ReRoute #6 and the full approval-to-wallet browser flow; Brian's 
 Chrome verification history for this milestone: run [41291835118](https://github.com/Jiwoo-Jung-Cal/wayfare/actions/runs/41291835118) passed all three no-retry cross-tab allocation races, typecheck, 128 tests and build. The new wallet UI test timed out locating its exact-text nested-label selector before confirmation; that run is not recorded as wallet-flow success. The selector now targets the labeled combobox by its stable prefix (nested option text must not become part of an exact label assumption). Wallet integration also runs with retries disabled. The corrected run must pass before merge.
 
 The wallet browser flow also checks the populated/reconciled wallet at 390/360/320 px and opens evidence at 320 px. Shared capability labels may wrap; long card identifiers and preformatted evidence wrap within the card. Short status badges retain their existing presentation. This is a functional readability fix using current tokens, not visual design approval.
+
+
+## Figma design pass r1-draft (2026-11-01, delegated by Jiwoo)
+
+- **Task:** `docs/prompts/agent-1-figma-design.md`. Jiwoo explicitly authorized native Figma design for this pass, and he keeps visual approval.
+- **Access:**
+  - The Figma connector was connected in this session as Jiwoo Jung (student plan, **View** seat, Code Layers enabled).
+  - Writes through the plugin API worked and persisted. Every write was read back in a later call, and all frames are on their pages.
+  - The file's eight pages were empty when the pass started, so there were no manual edits to preserve.
+  - Code Layer import of the running app was **not** attempted. The file holds native designs plus a design prototype, not the code-backed app.
+- **Built in the Figma file:**
+  - **Variables (all with `var(--wf-*)` code syntax):** 3 collections; 24 primitives, 23 semantic colors and 9 dimension variables.
+  - **Styles:** 10 text styles and 2 effect styles.
+  - **Components:** 21 sets or components with variants and text properties.
+  - **Screens:** 20 desktop (1440) and mobile (390) frames across Dashboard, Intake, Wayfinder, ReRoute and TripWallet, plus a token specimen and a start guide.
+  - **Prototype:** on page 07, 13 cloned screens and a flow "WayFare walkthrough (design prototype)", with click-throughs and nav tabs, labeled as a design prototype.
+  - **Editability audit:** all 20 frames are native layers and instances, with **0 image fills**.
+- **Where the details are:**
+  - Node IDs: `docs/DESIGN_MAP.md`.
+  - Specs: `design/handoffs/*.md`.
+  - Exports: `design/exports/{foundation,dashboard,wayfinder-intake,reroute,tripwallet,prototype}/`.
+  - `design/approvals.json` is unchanged; everything stays pending until Jiwoo approves.
+- **Visual QA fixes made during the pass:**
+  - Field and Alert variants were clipped because `resize()` had fixed their height.
+  - Status badges were in fixed-width slots so columns align across states.
+  - Checkbox labels now wrap.
+  - Narrow-panel row collapse on the Intake and TripWallet state boards (rows now span the full width).
+  - The ReRoute "Closing soon" copy (30 h).
+  - The Points AssetCard text.
+  - The spacing specimen overflow.
+- **Not reconciled:** TripWallet code (#25 / #27) merged while the draft was being made. The frames follow the published requirements, and reconciling them with Brian's implemented states is an open review item. ReRoute code does not exist yet; its frames follow `design/handoffs/reroute.md`.
