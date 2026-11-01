@@ -34,6 +34,14 @@ Corrected README's obsolete “implementation has not started” text, added est
 
 Kelvin's supplied handle is Wildtypers; the permission API currently returns none, so effective access is unverified. An earlier invitation was sent; no duplicate invitation is issued. Brian's handle remains unknown.
 
+## Independent release preparation
+
+Added docs/RELEASE_GUIDE.md and docs/templates/release-evidence.md to PR #20. The guide documents current sample/optional connected startup, exact configuration names and defaults, established checks, capability labels, and the evidence each owner must supply. The blank evidence record explicitly remains NOT VERIFIED.
+
+Verified documented npm script names against package.json and configuration names against server/config.ts, .env.example and playwright.config.ts. The server process does not automatically load .env.local; the optional connected instructions use process environment settings. No new application or browser execution is claimed, and no feature/sign-off checkbox is completed by this preparation.
+
+README links to the guide. Agent 1 retains technical review/merge; Jiwoo retains visual approval. Current implementation evidence remains the accepted main runs recorded above, not a completed integrated release.
+
 ## Blockers and next bounded step
 
 - Agent 1: integrate ReRoute #6 and TripWallet #7, supply the final integrated commit, demo script, capability/decision notes and successful complete-journey checks under #8.
