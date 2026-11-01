@@ -2,7 +2,7 @@
 
 Source checkpoint: main `1d42523f7250ea3f58f95115c29efd0d92384f1c` (November 1, 2026, America/Los_Angeles). This guide documents existing commands and outstanding evidence. It is not a completed release sign-off. Agent 1 approves technical accuracy; Jiwoo approves design.
 
-[Release task #9](https://github.com/Jiwoo-Jung-Cal/wayfare/issues/9) · [Integration #8](https://github.com/Jiwoo-Jung-Cal/wayfare/issues/8) · [Release checklist](RELEASE_CHECKLIST.md) · [Evidence template](templates/release-evidence.md)
+[Release task #9](https://github.com/Jiwoo-Jung-Cal/wayfare/issues/9) · [Integration #8](https://github.com/Jiwoo-Jung-Cal/wayfare/issues/8) · [Release checklist](RELEASE_CHECKLIST.md) · [Evidence template](templates/release-evidence.md) · [Architecture and tool decisions](ARCHITECTURE.md)
 
 ## Reproduce the current sample app
 
@@ -67,6 +67,8 @@ Names/defaults were checked against [server/config.ts](../server/config.ts), [se
 | `WAYFARE_MAX_BODY_BYTES` | Server | `512000` |
 | `PW_CHANNEL` | Browser checks | `chrome`; an empty value selects installed Playwright Chromium |
 
+Expired sessions return 401 and the app offers “Start a new guest session”. Session/extraction limits return 429 with `Retry-After`.
+
 Real credentials belong only in the server environment. A configured health response or model name does not prove a successful live extraction; record the actual result, model and request identifier before labeling it live.
 
 ## Established verification commands
@@ -85,9 +87,11 @@ python3 -m unittest discover -s coordination -p 'test_*.py'
 
 On Windows, use an available Python 3 interpreter if `python3` is not installed. Browser checks default to installed Google Chrome and manage three servers: sample Vite on 5174, connected Vite on 5175, and the test API on 8788. The API uses in-memory data, AI provider `none`, and a session limit of 1000 for the test. No separately started API or app secret is required. Avoid unrelated processes on those ports when validating a release, so server reuse cannot pick up the wrong configuration. If using Playwright Chromium instead, follow the repository's `PW_CHANNEL` override and install that browser first. Preserve failures and route feature defects to their feature owner; shared/server/integration defects go to Agent 1.
 
-Dated evidence, not final-release sign-off: the migration handoff records [application run 41301199384](https://github.com/Jiwoo-Jung-Cal/wayfare/actions/runs/41301199384) and [coordination run 41301199320](https://github.com/Jiwoo-Jung-Cal/wayfare/actions/runs/41301199320) at `c5784df071ba13b8b4d5be20572179e158eb89e6`: install/typecheck/build passed, 128 unit/integration tests passed (1 skipped, 2 todo), 13 browser tests passed (2 skipped), and 5 Node plus 4 Python coordination tests passed. Those remote logs were not reread in this documentation pass. The earlier cloud-onboarding pass in this chat independently passed the application build, 128 unit tests and 13 browser tests at that source checkpoint using Node 24.19.0 and system Chromium. Neither record establishes checks at the newer source checkpoint or an accepted release commit. Replace them with final-commit evidence; skipped ReRoute/full-flow steps do not establish a complete journey.
+Current source-checkpoint evidence, not final-release sign-off: at main `1d42523f7250ea3f58f95115c29efd0d92384f1c`, [Application run 41351300885](https://github.com/Jiwoo-Jung-Cal/wayfare/actions/runs/41351300885) and [Coordination run 41351300895](https://github.com/Jiwoo-Jung-Cal/wayfare/actions/runs/41351300895) completed successfully. This pass verified their exact source SHA and successful install/typecheck/unit/build/browser and coordination job steps through the GitHub API. [Agent 1's same-commit cloud report](https://github.com/Jiwoo-Jung-Cal/wayfare/issues/8#issuecomment-6564154027) records Node 24.21.0/npm 11.19.0, 128 unit/integration tests passed (1 skipped, 2 todo), and 13 Chrome tests passed (2 skipped). Counts come from that owner report; this pass did not reread raw application logs or rerun the application suites. Replace this checkpoint with checks at the accepted release commit; skipped ReRoute/full-flow steps do not establish a complete journey.
 
-Main also contains `.figma/make/{install,dev,deploy,deploy-preview}` lifecycle scripts (#31), intended for a static sample-mode Code Layer. They require the Figma platform/tooling and its runtime configuration. Their presence is source evidence only: no successful Code Layer import, deployment, judge access or source-to-runtime alignment was verified in this pass. Do not run a deploy merely to prepare this guide.
+Main includes `.figma/make/{install,dev,deploy,deploy-preview}` lifecycle scripts (#31) for a static sample-mode Code Layer. [Agent 1 reports a successful import](https://github.com/Jiwoo-Jung-Cal/wayfare/issues/8#issuecomment-6564005638) at source `5249cb7` into [Code Layer `24:1182`](https://www.figma.com/design/ZZS9jEmANeCrjGxWxxCofK?node-id=24-1182). The scripts are now merged; successful import is distinct from a running preview. The latest owner report still marks the preview NOT VERIFIED and asks a signed-in human to open it. Actual preview/runtime-to-source alignment and judge access remain unverified. The native design prototype is a separate surface. Do not run a deployment merely to prepare this guide.
+
+Fonts are bundled through the pinned `@fontsource/inter` and `@fontsource/roboto-mono` packages; the app needs no network font service at runtime. [Architecture](ARCHITECTURE.md) records the technical rationale and Agent 1's static-build check at an earlier checkpoint, served under `/wayfare/demo/` without rewrites.
 
 ## Capability labels at this checkpoint
 
@@ -96,14 +100,14 @@ Main also contains `.figma/make/{install,dev,deploy,deploy-preview}` lifecycle s
 | Shell, shared clock and reload persistence | Working sample behavior | Browser workspace uses IndexedDB and Web Locks; sample checks include duplicate imports and reload |
 | Wayfinder comparison and selection | Working with simulated travel data | #17/#18 merged; bounded fictional candidates, no live booking/search |
 | Intake review/save and duplicate protection | Working with sample extraction | Source-backed review; disputed terms remain unknown |
-| Connected API and persistence | Local verification | Owner-reported file persistence; browser tests cover two isolated in-memory workspaces, scoped reset and reload; not hosted |
+| Connected API and persistence | Browser and CI verified, local only | Owner-reported file persistence; browser tests cover two isolated in-memory workspaces, scoped reset and reload; not hosted |
 | Live AI extraction | Unverified | No recorded successful configured model call |
 | ReRoute / CancelClock | Pending feature delivery/integration | Kelvin / #6; shell disruption facts alone are not recovery calculations |
 | TripWallet cash reconciliation | Working milestone (#25/#27); further #7 acceptance pending | Actual wallet controls cover $400 confirmed, $250 received, $150 outstanding, final receipt, duplicate import, follow-up draft and reload; upstream actions are seeded fixtures |
 | Wallet AI and noncash assets | Partial / unverified | Reviewed sample evidence and separate voucher/points displays exist; live wallet AI, executable asset eligibility and remaining asset workflows are not established |
 | Real provider booking/cancellation/refund | Simulated boundary | No live provider execution claimed |
 | Native editable designs and interim styling | Draft r1 exists and is applied | Native frame map/exports exist; all formal approvals remain pending |
-| Running Figma Code Layer | Unverified | Lifecycle scripts exist; the design prototype is not the running app; no deployed runtime/source alignment established |
+| Figma Code Layer | Imported per Agent 1; running preview unverified | Code Layer `24:1182`, import source `5249cb7`; signed-in preview confirmation and actual runtime/source alignment remain outstanding |
 | Judge access and hosted demo | Unverified | Private source access is not judge access |
 
 Sources: [Agent 1 handoff](handoffs/agent-1.md), [Agent 2 handoff](handoffs/agent-2.md), later [integration reports](https://github.com/Jiwoo-Jung-Cal/wayfare/issues/8), and [design approvals](../design/approvals.json). Later merged work and evidence supersede this checkpoint.
