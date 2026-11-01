@@ -1,6 +1,6 @@
 # Release preparation runbook
 
-Preparation checkpoint: main `96be8039cfc242619e7cd0661eb036fab7b3aea3` (October 31, 2026, Pacific). This guide documents existing commands and outstanding evidence. It is not a completed release sign-off. Agent 1 approves technical accuracy; Jiwoo approves design.
+Source checkpoint: main `1d42523f7250ea3f58f95115c29efd0d92384f1c` (November 1, 2026, America/Los_Angeles). This guide documents existing commands and outstanding evidence. It is not a completed release sign-off. Agent 1 approves technical accuracy; Jiwoo approves design.
 
 [Release task #9](https://github.com/Jiwoo-Jung-Cal/wayfare/issues/9) · [Integration #8](https://github.com/Jiwoo-Jung-Cal/wayfare/issues/8) · [Release checklist](RELEASE_CHECKLIST.md) · [Evidence template](templates/release-evidence.md)
 
@@ -15,13 +15,13 @@ npm ci
 npm run dev
 ```
 
-Open the URL Vite prints. For sample mode, leave `VITE_WAYFARE_API_URL` unset in both the shell and Vite environment files. No API server or AI credential is required. Start from a separate browser profile if testing workspace isolation; browser storage persists across reloads.
+Open the URL Vite prints. For sample mode, leave `VITE_WAYFARE_API_URL` unset in both the shell and Vite environment files. No API server or AI credential is required. Start from a separate browser profile if testing workspace isolation. Sample snapshots persist in IndexedDB, with writes protected by a workspace Web Lock; older localStorage snapshots migrate on mutation. This is separate from connected-mode server storage.
 
-The currently available smoke sequence is load the sample trip, compare/select a Wayfinder plan, reload and confirm selection, then review/save a canonical confirmation through intake. Replaying an import should not duplicate it; unknown policy should remain unknown. Agent 1's merged browser tests cover these flows. The ReRoute-to-TripWallet journey still awaits integration.
+The currently available smoke sequence is load the sample trip, compare/select a Wayfinder plan, reload and confirm selection, then review/save a canonical confirmation through intake. Replaying an import should not duplicate it; unknown policy should remain unknown. Agent 1's merged browser tests cover these flows. TripWallet claim sync, reviewed confirmation, partial/final receipts, duplicate protection and reload are covered by the merged wallet browser test. That test seeds canonical action records because ReRoute is absent; the real recovery/approval-to-wallet journey still awaits integration.
 
 ## Optional local connected mode
 
-This path is reported locally verified by Agent 1; no hosted backend or live AI result is established by these instructions.
+Agent 1 reports local verification, and the merged browser suite exercises two isolated connected visitors against an in-memory local API with AI disabled. No hosted backend or live AI result is established by these instructions.
 
 In one PowerShell terminal at the repository root:
 
@@ -37,7 +37,7 @@ $env:VITE_WAYFARE_API_URL = "http://localhost:8787"
 npm run dev
 ```
 
-The equivalent shell environment settings can be used on other operating systems. Restart the Vite process after changing its configuration. The default API port is 8787 and default allowed browser origins use port 5173. If Vite selects another port, Agent 1 must align the exact origin in `WAYFARE_ALLOWED_ORIGINS`.
+The equivalent shell environment settings can be used on other operating systems. Restart the Vite process after changing its configuration. The default API port is 8787 and default allowed browser origins use port 5173. Vite uses a strict port and fails if 5173 is occupied. If you explicitly change the frontend port, align the exact origin in `WAYFARE_ALLOWED_ORIGINS`.
 
 `npm run server` reads the server process environment; it does not automatically load `.env.local`. Vite does load its own environment files. Setting AI provider to `none` deliberately exercises the connected storage/API path without a paid model call. Sample document fallback remains distinct from live extraction.
 
@@ -53,6 +53,10 @@ Names/defaults were checked against [server/config.ts](../server/config.ts), [se
 | `PORT` | Server | `8787` |
 | `WAYFARE_ALLOWED_ORIGINS` | Server | Exact origins `http://localhost:5173,http://127.0.0.1:5173` |
 | `WAYFARE_DATA_DIR` | Server | `.data`; `memory` disables file persistence |
+| `WAYFARE_SESSION_TTL_HOURS` | Server | `168`; guest-session lifetime |
+| `WAYFARE_SESSION_LIMIT_PER_HOUR` | Server | `20`; session creations per client IP per hour |
+| `WAYFARE_EXTRACT_LIMIT_PER_HOUR` | Server | `30`; booking extractions per workspace per hour |
+| `WAYFARE_TRUST_PROXY` | Server | Disabled by default; only `1` trusts the first forwarded IP, behind a trusted proxy |
 | `WAYFARE_AI_PROVIDER` | Server | `anthropic`; `none` disables the model adapter |
 | `ANTHROPIC_API_KEY` / `WAYFARE_ANTHROPIC_API_KEY` | Server only | No default credential; the WayFare-prefixed value takes precedence |
 | `WAYFARE_AI_MODEL` | Server | Configured default `claude-opus-5-5`; this name is not evidence of a successful call |
@@ -79,23 +83,27 @@ node --test coordination/update-dashboard.test.cjs
 python3 -m unittest discover -s coordination -p 'test_*.py'
 ```
 
-On Windows, use an available Python 3 interpreter if `python3` is not installed. Browser checks default to installed Google Chrome and start their own Vite server on port 5174 in sample mode. They do not need the optional API server. If using Playwright Chromium instead, follow the repository's `PW_CHANNEL` override and install that browser first. Preserve failures and route feature defects to their feature owner; shared/server/integration defects go to Agent 1.
+On Windows, use an available Python 3 interpreter if `python3` is not installed. Browser checks default to installed Google Chrome and manage three servers: sample Vite on 5174, connected Vite on 5175, and the test API on 8788. The API uses in-memory data, AI provider `none`, and a session limit of 1000 for the test. No separately started API or app secret is required. Avoid unrelated processes on those ports when validating a release, so server reuse cannot pick up the wrong configuration. If using Playwright Chromium instead, follow the repository's `PW_CHANNEL` override and install that browser first. Preserve failures and route feature defects to their feature owner; shared/server/integration defects go to Agent 1.
 
-Checkpoint evidence at `96be803`: [main application run](https://github.com/Jiwoo-Jung-Cal/wayfare/actions/runs/41260960403) passed install/typecheck/build, 101 unit/integration tests passed (2 skipped, 3 todo), and 9 browser tests passed (3 skipped). [Main coordination run](https://github.com/Jiwoo-Jung-Cal/wayfare/actions/runs/41260960371) passed. These counts must be replaced with final-commit evidence, and skipped feature steps do not establish a complete journey.
+Dated evidence, not final-release sign-off: the migration handoff records [application run 41301199384](https://github.com/Jiwoo-Jung-Cal/wayfare/actions/runs/41301199384) and [coordination run 41301199320](https://github.com/Jiwoo-Jung-Cal/wayfare/actions/runs/41301199320) at `c5784df071ba13b8b4d5be20572179e158eb89e6`: install/typecheck/build passed, 128 unit/integration tests passed (1 skipped, 2 todo), 13 browser tests passed (2 skipped), and 5 Node plus 4 Python coordination tests passed. Those remote logs were not reread in this documentation pass. The earlier cloud-onboarding pass in this chat independently passed the application build, 128 unit tests and 13 browser tests at that source checkpoint using Node 24.19.0 and system Chromium. Neither record establishes checks at the newer source checkpoint or an accepted release commit. Replace them with final-commit evidence; skipped ReRoute/full-flow steps do not establish a complete journey.
+
+Main also contains `.figma/make/{install,dev,deploy,deploy-preview}` lifecycle scripts (#31), intended for a static sample-mode Code Layer. They require the Figma platform/tooling and its runtime configuration. Their presence is source evidence only: no successful Code Layer import, deployment, judge access or source-to-runtime alignment was verified in this pass. Do not run a deploy merely to prepare this guide.
 
 ## Capability labels at this checkpoint
 
 | Capability | Label | Evidence / limit |
 | --- | --- | --- |
-| Shell, shared clock and reload persistence | Working sample behavior | Agent 1 and merged browser checks; separate browser workspace |
+| Shell, shared clock and reload persistence | Working sample behavior | Browser workspace uses IndexedDB and Web Locks; sample checks include duplicate imports and reload |
 | Wayfinder comparison and selection | Working with simulated travel data | #17/#18 merged; bounded fictional candidates, no live booking/search |
 | Intake review/save and duplicate protection | Working with sample extraction | Source-backed review; disputed terms remain unknown |
-| Connected API and file persistence | Owner-reported local verification | Agent 1's handoff; not a hosted service |
+| Connected API and persistence | Local verification | Owner-reported file persistence; browser tests cover two isolated in-memory workspaces, scoped reset and reload; not hosted |
 | Live AI extraction | Unverified | No recorded successful configured model call |
 | ReRoute / CancelClock | Pending feature delivery/integration | Kelvin / #6; shell disruption facts alone are not recovery calculations |
-| TripWallet / reconciliation | Pending feature delivery/integration | Brian / #7; claim notices alone are not a completed ledger |
+| TripWallet cash reconciliation | Working milestone (#25/#27); further #7 acceptance pending | Actual wallet controls cover $400 confirmed, $250 received, $150 outstanding, final receipt, duplicate import, follow-up draft and reload; upstream actions are seeded fixtures |
+| Wallet AI and noncash assets | Partial / unverified | Reviewed sample evidence and separate voucher/points displays exist; live wallet AI, executable asset eligibility and remaining asset workflows are not established |
 | Real provider booking/cancellation/refund | Simulated boundary | No live provider execution claimed |
-| Native designs and Figma working layer | Pending / unverified | Design approvals pending; runtime and source commit not aligned by this guide |
+| Native editable designs and interim styling | Draft r1 exists and is applied | Native frame map/exports exist; all formal approvals remain pending |
+| Running Figma Code Layer | Unverified | Lifecycle scripts exist; the design prototype is not the running app; no deployed runtime/source alignment established |
 | Judge access and hosted demo | Unverified | Private source access is not judge access |
 
 Sources: [Agent 1 handoff](handoffs/agent-1.md), [Agent 2 handoff](handoffs/agent-2.md), later [integration reports](https://github.com/Jiwoo-Jung-Cal/wayfare/issues/8), and [design approvals](../design/approvals.json). Later merged work and evidence supersede this checkpoint.
@@ -104,9 +112,9 @@ Sources: [Agent 1 handoff](handoffs/agent-1.md), [Agent 2 handoff](handoffs/agen
 
 | Owner | Required final handoff |
 | --- | --- |
-| Agent 1 | Accepted integrated commit; executable demo sequence; complete journey and retry/reload evidence; actual capability labels; technical acceptance and tool-decision notes |
+| Agent 1 | Integrate delivered ReRoute with the existing wallet milestone; accepted integrated commit; executable demo sequence; complete journey and retry/reload evidence; actual capability labels; technical acceptance and tool-decision notes |
 | Kelvin / Agent 4 | ReRoute/CancelClock PR/commit and checks; before/at/after deadline results; approved-action behavior; failure/unknown-policy handling |
-| Brian / Agent 5 | TripWallet PR/commit and checks; idempotent action-to-claim sync; partial/final receipt reconciliation; separate cash/credit/points results |
+| Brian / Agent 5 | Remaining #7 acceptance/asset behavior, feature-owned wallet evidence handler/client wiring and any live AI evidence; current limitations and r1 feature composition. The shared wallet evidence transport and atomic cross-claim allocation seam are already on main (#26/#27) |
 | Agent 2 | Any remaining design-revision implementation and feature limitations; current #4 acceptance evidence |
 | Jiwoo | Approved design revisions; actual Figma/runtime version and code mapping; judge repository/demo access; confirmed official submission timezone |
 | Agent 3 | Assemble the evidence template, run/inspect accepted-commit checks once, route failures and record the release outcome after #8 |

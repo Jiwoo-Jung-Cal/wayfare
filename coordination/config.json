@@ -2,7 +2,7 @@
   "repository": "Jiwoo-Jung-Cal/wayfare",
   "intendedOwner": "Jiwoo-Jung-Cal",
   "repositoryName": "wayfare",
-  "setupStatus": "Coordination and application CI installed; Brian write access verified; Kelvin handle not recorded",
+  "setupStatus": "Coordination and application CI installed; Brian write access previously verified; Kelvin handle recorded, access unverified",
   "dashboardIssue": 1,
   "figmaQueueIssue": 2,
   "taskIssues": {
@@ -15,7 +15,7 @@
     "release": 9
   },
   "collaborators": {
-    "Kelvin": null,
+    "Kelvin": "Wildtypers",
     "Brian": "brianren-cmd"
   },
   "primaryFigmaUrl": "https://www.figma.com/design/ZZS9jEmANeCrjGxWxxCofK",

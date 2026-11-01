@@ -1,38 +1,38 @@
-# Coordination setup — current checkpoint
+# Coordination setup — source checkpoint
 
-Checked October 31, 2026 (Pacific). Issue reports and later PRs supersede this checkpoint.
+Source checked November 1, 2026 (America/Los_Angeles), against main `1d42523f7250ea3f58f95115c29efd0d92384f1c`. Later Issue reports and merged PRs supersede this checkpoint. This is preparation evidence, not release acceptance.
 
 - Private repository: https://github.com/Jiwoo-Jung-Cal/wayfare
 - Team dashboard: https://github.com/Jiwoo-Jung-Cal/wayfare/issues/1
 - Jiwoo design handoffs: https://github.com/Jiwoo-Jung-Cal/wayfare/issues/2
-- Seven task Issues (#3–#9), dependencies, five agent branches and reporting instructions are installed.
-- Structured reports refresh the shared dashboard through trusted default-branch coordination code.
-- Bootstrap verification: a real report appeared on the dashboard; nine coordination tests passed. Historical evidence: https://github.com/Jiwoo-Jung-Cal/wayfare/issues/5#issuecomment-6549389794
+- Seven task Issues (#3–#9), dependencies and reporting instructions already exist; reuse them.
+- Structured reports refresh the shared dashboard through trusted default-branch coordination code. They do not wake inactive assistants.
+- Historical bootstrap verification: a real report appeared on the dashboard; nine coordination tests passed. https://github.com/Jiwoo-Jung-Cal/wayfare/issues/5#issuecomment-6549389794
 
 ## Application CI and integration
 
-CI PR #11 is merged at `0eb41c4b5c147443d8e61749e392f06b25f94754`; task #5 is closed. The workflow uses Agent 1's published Node 24.21.0/npm 11.19.0 and actual install, typecheck, test, build and browser commands.
+CI PR #11 merged at `0eb41c4b5c147443d8e61749e392f06b25f94754`; task #5 was completed. The workflow uses Node 24.21.0/npm 11.19.0 and the established install, typecheck, test, build and browser commands. The initial Linux mobile failure was fixed by Agent 1 in merged PR #19; it is historical, not an outstanding CI-installation task.
 
-The first main run at that commit failed on Linux mobile overflow: https://github.com/Jiwoo-Jung-Cal/wayfare/actions/runs/41260034431 . Agent 1's fix PR #19 is now merged at `96be8039cfc242619e7cd0661eb036fab7b3aea3`; no workflow defect was identified. Its PR evidence:
-- Application run passed: https://github.com/Jiwoo-Jung-Cal/wayfare/actions/runs/41260746349
-- Coordination run passed: https://github.com/Jiwoo-Jung-Cal/wayfare/actions/runs/41260746363
-- PR head `9cb2de6`, tested merge `16b82b7` onto main `0eb41c4`.
-- Unit/integration: 101 passed, 2 skipped, 3 todo. Browser: 9 passed, 3 skipped.
+Wayfinder/intake are merged (#17/#18). Brian's TripWallet cash-wallet milestone (#25) was integrated through #27, including browser allocation fixes. Sample snapshots now commit to IndexedDB under a workspace Web Lock, with migration of older localStorage snapshots. Wallet browser tests exercise actual confirmation, receipt matching, duplicate import, follow-up draft and reload controls. They seed canonical action records because ReRoute is not delivered at this source checkpoint; they do not verify recovery approval through ReRoute.
 
-Post-merge main application run passed: https://github.com/Jiwoo-Jung-Cal/wayfare/actions/runs/41260960403 . Coordination run passed: https://github.com/Jiwoo-Jung-Cal/wayfare/actions/runs/41260960371 . Agent 3 inspected the main application job and logs; the same test counts and remaining skips apply. Agent 1 retains technical acceptance and merge decisions.
+Browser checks now start sample Vite on 5174, connected Vite on 5175 and an in-memory API on 8788 with AI disabled. Connected checks cover isolated visitors, scoped reset and reload. No separate hosted API or paid model call is required.
 
-Wayfinder/intake are merged. ReRoute #6 and TripWallet #7 remain open and undelivered per Agent 1's latest #8 report. Complete journey verification and release #9 depend on integration #8.
+The migration handoff records passing main application/coordination runs at `c5784df`: [application](https://github.com/Jiwoo-Jung-Cal/wayfare/actions/runs/41301199384), [coordination](https://github.com/Jiwoo-Jung-Cal/wayfare/actions/runs/41301199320). Those logs were not reread in this pass. [RELEASE_GUIDE.md](RELEASE_GUIDE.md) distinguishes those historical counts from final-commit checks. Full release evidence still depends on Agent 1's accepted integration commit, executable demo and complete journey under #8.
 
 ## Collaborator access
 
-Kelvin's supplied GitHub handle is `Wildtypers`. The permission API returned `none` during this pass, so effective repository access is not verified. An earlier invitation was sent; do not assume acceptance or send a duplicate invitation without checking the current invitation state.
+Brian's supplied handle is `brianren-cmd`; main's coordination metadata and the November 1 migration handoff record verified write access. Do not repeat the older claim that his handle is unknown or that his invitation is the blocker. This pass did not perform a fresh permission check.
 
-Brian's GitHub username remains unprovided. Neither teammate needs Figma access. Judge access to the private repository and eventual demo must be verified before submission.
+Kelvin's supplied handle is `Wildtypers`, now recorded in coordination metadata. The migration handoff's last permission result was `none`; an earlier invitation was sent, but current acceptance/access is unverified. Recording his known handle does not grant access. Check current permissions/invitation state before any access-dependent work; do not send a duplicate invitation based on this status file. Neither teammate needs Figma access.
 
-## Review and product limits
+Judge access to the private repository and eventual demo remains separate evidence.
 
-The current private-repository plan is documented as not enforcing branch protection. Use the PR/review workflow and actual passing checks; no visibility, billing or plan changes are authorized by this status update.
+## Design, runtime and review limits
 
-Jiwoo owns every visual design and Figma edit. Native screens, approved revisions and the actual Figma/runtime version remain separate release evidence. Current foundation/Wayfinder/intake previews use pending design approvals.
+Native editable r1-draft frames, components, handoffs and exports exist in [DESIGN_MAP.md](DESIGN_MAP.md). PR #29 applied draft r1 to the app as its interim look. Every feature in `design/approvals.json` still has pending approval and a null revision. Jiwoo owns visual approval; feature-specific r1 composition remains with the feature owners.
 
-Sample mode is runnable and persists in browser storage. Provider actions are simulated. Agent 1 reports the connected API path verified locally, while live AI extraction and hosted backend/demo remain unverified. The team-provided deadline is November 10, 2026 at 11:59 PM; official timezone remains unconfirmed.
+Main includes Figma Code Layer lifecycle scripts (#31), but scripts and the native design prototype do not establish a deployed, code-backed demo. Successful import/deployment, runtime/source alignment and judge access need actual evidence. Live AI and hosted backend/demo remain unverified. Provider booking/cancellation/refund actions are simulated.
+
+The private-repository plan is documented as not enforcing branch protection. Agent 1/eligible reviewers retain technical acceptance and merge decisions. No invitations, visibility, billing, branch protection, environment configuration or publication were changed by this documentation pass.
+
+The team-provided deadline is November 10, 2026 at 11:59 PM; the official timezone remains unconfirmed. Keep #9 open until the release checklist and accepted-commit evidence are complete.
