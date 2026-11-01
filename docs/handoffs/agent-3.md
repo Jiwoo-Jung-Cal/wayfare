@@ -23,7 +23,7 @@ Merged current main into the existing local documentation branch without conflic
 - Added current session/rate-limit/proxy configuration names/defaults to the runbook.
 - Recorded Kelvin's supplied exact handle `Wildtypers` without granting or claiming access. Brian's handle/write-access evidence already exists; it was not freshly rechecked here.
 
-Product code, packages, lockfiles, contracts, design artifacts, other owners' handoffs and privileged progress automation have no new edits relative to fetched main. No extra agents, trackers, deployment, environment-config changes or publication were used.
+Product code, packages, lockfiles, contracts, design artifacts, other owners' handoffs and privileged progress automation have no new edits relative to fetched main. No extra agents, trackers, deployment or publication were used. The only environment draft change adds `api.github.com`; existing installation/startup settings were preserved and no runtime network update is claimed.
 
 ## Verification and evidence limits
 
@@ -35,7 +35,7 @@ This documentation/metadata pass passed 5 dashboard behavior tests (`node coordi
 
 Git fetch works through the platform's existing HTTPS Git proxy. Both `gh pr view 20` (GraphQL) and `gh api repos/Jiwoo-Jung-Cal/wayfare/pulls/20` (REST) fail with Forbidden. A direct diagnostic through the inherited proxy confirms HTTP 403 at CONNECT to `api.github.com`; the current restricted policy does not include that hostname. The normal private GitHub PR web page returns HTTP 404. This is not evidence of an invalid Git token, a missing repository or a closed PR. No secret value was read or requested.
 
-The proxy denial prevents current Issue #8/#9/owner-comment inspection, PR #20 status/review verification and authenticated report posting. The branch and report are prepared locally, not pushed or posted, pending those required checks. Enable `api.github.com` in environment network settings, then retry the read operations with existing authentication before asking for any additional credential. Git read access alone does not establish API write authorization.
+The proxy denial prevents current Issue #8/#9/owner-comment inspection, PR #20 status/review verification and authenticated report posting. The branch and report are prepared locally, not pushed or posted, pending those required checks. A domain-only draft update adding `api.github.com` is saved; the tool returned `requires_publish: true`. Jiwoo must review/save it in environment settings and publish the environment to activate it; Agent 3 has not published anything. After activation, retry the read operations with existing authentication before asking for any additional credential. Git read access alone does not establish API write authorization.
 
 On resume, read #9/#8 and relevant owner comments, verify PR #20's state/head, and reconcile any new evidence before pushing. If #20 is still the correct open change, update it rather than creating a duplicate PR. If the remote branch advanced, preserve that work; do not force-push. Post the prepared structured release report with the existing reporting system and verify the actual comment. Agent 1/eligible reviewers retain technical acceptance and merging.
 

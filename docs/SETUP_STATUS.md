@@ -33,6 +33,6 @@ Native editable r1-draft frames, components, handoffs and exports exist in [DESI
 
 Main includes Figma Code Layer lifecycle scripts (#31), but scripts and the native design prototype do not establish a deployed, code-backed demo. Successful import/deployment, runtime/source alignment and judge access need actual evidence. Live AI and hosted backend/demo remain unverified. Provider booking/cancellation/refund actions are simulated.
 
-The private-repository plan is documented as not enforcing branch protection. Agent 1/eligible reviewers retain technical acceptance and merge decisions. No invitations, visibility, billing, branch protection, environment configuration or publication were changed by this documentation pass.
+The private-repository plan is documented as not enforcing branch protection. Agent 1/eligible reviewers retain technical acceptance and merge decisions. No invitations, visibility, billing, branch protection or publication were changed by this documentation pass. A separate environment draft adds only `api.github.com` to unblock GitHub API reads/reporting; the saved draft has not activated network access.
 
 The team-provided deadline is November 10, 2026 at 11:59 PM; the official timezone remains unconfirmed. Keep #9 open until the release checklist and accepted-commit evidence are complete.
