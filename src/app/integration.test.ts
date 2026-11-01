@@ -290,7 +290,6 @@ describe('journey checks against registered feature modules', () => {
 
   // These steps have no data-level public operation in the v1 FeatureModule
   // contract; they will be covered by the browser E2E once the pages exist.
-  it.todo('selects a plan in Wayfinder and the dashboard shows it (Agent 2, #4; browser E2E)');
   it.todo('approves the cancel-trip option in ReRoute before the hotel deadline (Agent 4, #6; browser E2E)');
   it.todo('matches the $250 receipt -> $150 outstanding, then $150 -> resolved (Agent 5, #7; browser E2E)');
   it.todo('completed state survives reload; repeated approval/receipt import does not double records (browser E2E)');

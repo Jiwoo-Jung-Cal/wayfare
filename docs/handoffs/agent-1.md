@@ -85,7 +85,15 @@ e2e: npm run e2e           (Playwright; needs Google Chrome, which GitHub ubuntu
   - no horizontal scroll at mobile width.
   The feature steps are `test.fixme` until the modules exist.
 - **Mutation check:** a deliberately broken deadline rule made the E2E fail.
-- **Waiting on:** #4, #6 and #7. None had pushed commits or opened PRs when checked.
+- **Agent 2 (#4, PR #17):** reviewed and integrated on `agent-1/integrate-wayfinder-intake`. It uses the shared contracts only, with no schema, backend or root changes. Converted E2E steps:
+  - plan comparison, with the unknown-price plan not selectable;
+  - nonstop selection, shown on the dashboard after a reload, with reselect as a no-op;
+  - hotel intake that keeps its evidence and the exclusive deadline window, saves once (a repeat save reports "Already imported");
+  - the unknown policy, malformed document and unconfigured AI cases;
+  - no horizontal scroll at mobile width on the plan and import pages.
+- **Policy-correction request (#3):** v1 keeps Agent 2's conservative "disputed terms are saved as unknown" behavior. There is no positive policy-edit contract in v1.
+- **Bundle size:** 512 kB (153 kB gzipped) is only a warning, and it's accepted for the demo.
+- **Waiting on:** #6 and #7, which had no commits when checked.
 
 ## Blockers and owners
 
