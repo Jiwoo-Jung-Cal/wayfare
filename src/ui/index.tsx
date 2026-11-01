@@ -37,9 +37,9 @@ export function Card({ title, actions, children, as: Tag = 'section' }: { title?
   );
 }
 
-export function StatusBadge({ tone = 'neutral', children }: { tone?: Tone; children: ReactNode }) {
+export function StatusBadge({ tone = 'neutral', wrap = false, children }: { tone?: Tone; wrap?: boolean; children: ReactNode }) {
   return (
-    <span className="wf-badge" data-tone={tone}>
+    <span className="wf-badge" data-tone={tone} data-wrap={wrap || undefined}>
       {children}
     </span>
   );
@@ -67,7 +67,7 @@ export function InstantText({ value, timeZone = 'UTC' }: { value: Instant; timeZ
 /** Labels whether a value/action is live or simulated. */
 export function CapabilityLabel({ status, children }: { status: CapabilityStatus | 'sample'; children?: ReactNode }) {
   const text = status === 'live' ? 'Live' : status === 'sample' ? 'Sample data' : 'Simulated';
-  return <StatusBadge tone={status === 'live' ? 'positive' : 'info'}>{children ? `${text}: ${children}` : text}</StatusBadge>;
+  return <StatusBadge tone={status === 'live' ? 'positive' : 'info'} wrap>{children ? `${text}: ${children}` : text}</StatusBadge>;
 }
 
 export function LoadingState({ label = 'Loading…' }: { label?: string }) {

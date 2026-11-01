@@ -233,6 +233,15 @@ test.describe('TripWallet integration', () => {
     await expect(hotel).toContainText('Received $400.00');
     await expect(hotel).toContainText('Outstanding $0.00');
     await expect(page.getByText('8,000 points (Harbor Line Rewards)')).toBeVisible();
+    // A populated wallet exercises long claim IDs, capability labels and evidence.
+    for (const width of [390, 360, 320]) {
+      await page.setViewportSize({ width, height: 844 });
+      await expect(page.getByRole('heading', { level: 1, name: 'TripWallet', exact: true })).toBeVisible();
+      expect(await horizontalOverflow(page), `reconciled wallet at ${width}px`).toBeLessThanOrEqual(0);
+    }
+    await hotel.getByText('Action, evidence and allocation history', { exact: true }).click();
+    await expect(hotel.locator('details').first()).toHaveAttribute('open', '');
+    expect(await horizontalOverflow(page), 'expanded evidence at 320px').toBeLessThanOrEqual(0);
     expect(errors).toEqual([]);
   });
 });
