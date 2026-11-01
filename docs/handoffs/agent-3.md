@@ -1,42 +1,42 @@
 # Agent 3 handoff
 
-Task: https://github.com/Jiwoo-Jung-Cal/wayfare/issues/5
-Branch: agent-3/coordination
-PR: https://github.com/Jiwoo-Jung-Cal/wayfare/pull/11
-Status: application CI proposed; Agent 1 owns technical acceptance and merge.
-Foundation inspected: main b723c5b73d24c2bb8e211604f104d45ed29a9e4e.
+CI task: https://github.com/Jiwoo-Jung-Cal/wayfare/issues/5 — completed by merged PR #11.
+Release task: https://github.com/Jiwoo-Jung-Cal/wayfare/issues/9 — blocked on integration #8.
+Current bounded pass: coordination documentation refresh on `agent-3/status-docs`, based on main `0eb41c4b5c147443d8e61749e392f06b25f94754`.
+The linked PR and structured report on #9 record the resulting commit.
 
-## Implementation
+## Completed CI
 
-Agent 1 published the actual commands in #5 and docs/handoffs/agent-1.md. PRs #12/#13 and browser E2E PR #16 are on main.
+PR #11 merged at `0eb41c4b5c147443d8e61749e392f06b25f94754`. The read-only application workflow uses Node 24.21.0/npm 11.19.0:
+- `npm ci`
+- `npm run typecheck`
+- `npm test`
+- `npm run build`
+- `npm run e2e`
 
-.github/workflows/app-checks.yml uses Node 24.21.0 and npm 11.19.0 at the repository root:
-- npm ci
-- npm run typecheck
-- npm test (non-watch)
-- npm run build
-- npm run e2e (sample mode, installed Google Chrome)
+Trusted default-branch progress automation is unchanged. Root packages, product logic and design files are outside this pass.
 
-These checks require no app server, app secret or live AI service. Package/browser dependencies still need runner network access.
+## October 31 evidence check
 
-Application checks run on pull_request and pushes to main with contents: read, no persisted checkout credentials, a timeout, and cancellation of superseded runs. Failed browser reports/traces are retained for seven days when generated.
+Main's first application run failed on mobile overflow: https://github.com/Jiwoo-Jung-Cal/wayfare/actions/runs/41260034431 .
+Agent 1 already owns the fix in PR #19. Agent 3 inspected the actual Linux runner logs:
+- PR head `9cb2de6f86c93b19c9b00cf01ef6aa5854cb45a5`, tested merge `16b82b7` onto `0eb41c4`.
+- Application run https://github.com/Jiwoo-Jung-Cal/wayfare/actions/runs/41260746349 : install, typecheck and build passed; 101 unit/integration tests passed, 2 skipped, 3 todo; 9 browser tests passed, 3 skipped.
+- Coordination run https://github.com/Jiwoo-Jung-Cal/wayfare/actions/runs/41260746363 : 5 Node and 4 Python tests passed.
+- Evidence was posted to PR #19. Technical acceptance/merge remains with Agent 1; PR results do not establish that main is green.
 
-The privileged team-progress workflow is unchanged and continues to execute trusted default-branch coordination code. Existing coordination checks are reused. Root package/lockfiles and product code are unchanged.
+No new local application execution is claimed. Documentation edits do not warrant repeating the suites. The installed reporting script's dry-run generates this pass's reports; actual remote comment/PR links are retained on #9.
 
-## Verification evidence
+## Documentation changes
 
-The authoritative current head SHA, actual command outcomes, skipped/pending counts, and workflow URLs are recorded in the structured reports on #5 and in PR #11. A green coordination workflow alone is not evidence that application CI passed.
+Corrected README's obsolete “implementation has not started” text, added established sample-mode startup commands, and refreshed docs/SETUP_STATUS.md. Recorded completed CI and exact pending release/access evidence. No new tracker or workflow was installed.
 
-Local Git authentication is unavailable in this session. Application verification uses the connected repository's real GitHub Actions runner; no local app execution is claimed. The proposed workflow is also parsed and checked locally for its static command/event/permission configuration.
+Kelvin's supplied handle is Wildtypers; the permission API currently returns none, so effective access is unverified. An earlier invitation was sent; no duplicate invitation is issued. Brian's handle remains unknown.
 
-Historical bootstrap evidence remains in #5. Do not reuse old test counts as current results.
+## Blockers and next bounded step
 
-## Known limits and next steps
+- Agent 1: integrate ReRoute #6 and TripWallet #7, supply the final integrated commit, demo script, capability/decision notes and successful complete-journey checks under #8.
+- Agent 1/Jiwoo: publish actual Figma/runtime version and approved design revisions; verify configured AI/hosted capabilities before claiming them.
+- Jiwoo: verify judge repository/demo access and official submission timezone.
 
-Agent 1's browser suite has intentionally skipped feature steps while #4/#6/#7 are unfinished, and integration tests include pending feature cases. Report those counts explicitly; passing the available checks does not verify the complete feature journey.
-
-Live AI extraction, hosted API access, approved visual designs and Figma runtime version remain separate verification items owned by Agent 1/Jiwoo. This pass makes no new capability or access claims.
-
-After real application and coordination checks pass, Agent 1 reviews/merges PR #11; close #5 only through the completion PR with its evidence. Route feature failures to their owners and shared/backend/integration failures to Agent 1.
-
-Release #9 remains deferred until #8 supplies integrated release evidence. Jiwoo owns every visual design and Figma edit. Branch-protection enforcement and teammate access were not changed.
+Release #9 remains open and blocked. Resume the release pass after #8 supplies integrated evidence. Jiwoo owns all visual design/Figma work. This pass changes no access, branch-protection, visibility or billing settings.
