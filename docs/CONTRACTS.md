@@ -1,6 +1,6 @@
 # Shared contracts index (v1)
 
-Owner: Agent 1. Source of truth is the code below; this page explains it and gives examples. Do not copy schemas into feature code. Request changes in #3 (foundation) or #8 (integration).
+Owner: Agent 1. Source of truth is the code below; this page explains it and gives examples. For the system overview and decision rationale, see [ARCHITECTURE.md](ARCHITECTURE.md). Do not copy schemas into feature code. Request changes in #3 (foundation) or #8 (integration).
 
 ## Runtime and commands (verified on Windows 11, Node 24.21.0, npm 11.19.0)
 
