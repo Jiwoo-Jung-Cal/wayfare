@@ -74,11 +74,24 @@ test.describe('demo journey: shell steps', () => {
     await page.goto(TRIP);
     await control(page, 'Import sample bookings').click();
     await expect(bookingRows(page)).toHaveCount(4);
-    expect(await horizontalOverflow(page)).toBeLessThanOrEqual(0);
+    await expectNoOverflow(page, ['', 'reroute', 'wallet']);
   });
 });
 
 const horizontalOverflow = (page: Page) => page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+/** Checks each route at the device width and at 360/320 px, so the result does not depend on platform fonts. */
+async function expectNoOverflow(page: Page, routes: string[]) {
+  const deviceWidth = page.viewportSize()?.width ?? 412;
+  for (const width of [deviceWidth, 360, 320]) {
+    await page.setViewportSize({ width, height: page.viewportSize()?.height ?? 900 });
+    for (const route of routes) {
+      await page.goto(route ? `${TRIP}/${route}` : TRIP);
+      // Feature pages render an h1; unregistered feature routes render a titled placeholder.
+      await expect(page.locator('#wf-content').locator('h1, .wf-alert strong').first()).toBeVisible();
+      expect(await horizontalOverflow(page), `/${route} at ${width}px`).toBeLessThanOrEqual(0);
+    }
+  }
+}
 const card = (page: Page, heading: string) => page.locator('.wf-card').filter({ has: page.getByRole('heading', { name: heading, exact: true }) });
 const planCard = (page: Page, label: string) =>
   page.getByRole('region', { name: 'Plan comparison' }).getByRole('article').filter({ has: page.getByRole('heading', { name: new RegExp(`\\d\\. ${label.replace(/[+]/g, '\\+')}$`) }) });
@@ -160,11 +173,7 @@ test.describe('demo journey: Wayfinder and intake (Agent 2, #4)', () => {
   });
 
   test('@mobile plan and import pages have no horizontal scroll', async ({ page }) => {
-    for (const route of ['plan', 'import']) {
-      await page.goto(`${TRIP}/${route}`);
-      await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
-      expect(await horizontalOverflow(page), `/${route}`).toBeLessThanOrEqual(0);
-    }
+    await expectNoOverflow(page, ['plan', 'import']);
   });
 });
 

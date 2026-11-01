@@ -231,7 +231,13 @@ a {
 .wf-table-wrap {
   overflow-x: auto;
 }
+/* Let form controls shrink on narrow screens. Fieldsets default to
+   min-width: min-content, and selects size to their longest option. */
+fieldset {
+  min-width: 0;
+}
 .wf-input {
+  max-width: 100%;
   font: inherit;
   font-size: var(--wf-text-sm);
   padding: var(--wf-space-2);
