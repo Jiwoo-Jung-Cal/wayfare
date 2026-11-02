@@ -1,8 +1,8 @@
 # Agent 1 handoff
 
-Status (2026-11-02, cloud session): foundation, Wayfinder/intake (#21), TripWallet, design r1 (interim, approval pending), Figma Code Layer scripts and vendor chunk splitting are merged. ReRoute (#37, Kelvin) is integrated **on a branch**: atomic action preconditions (#38) and the real approval-to-wallet journey (#39) are open for Jiwoo's merge decision, in the order #38 → #37 → #39. The dated sections below keep their historical checks; the latest section supersedes their status.
+Status (2026-11-02, cloud session, later): main `87ad471` has foundation, Wayfinder/intake (#21, #40), TripWallet, interim design r1 (approval pending), the r1 root-font fix (#41), Figma Code Layer scripts, vendor chunk splitting, atomic action preconditions (#38) and the Wayfinder/intake e2e coverage (#36). ReRoute (#37, Kelvin) is integrated **on branch** in draft PR #39, which is green on current main and waits on Kelvin's link fix and precondition adoption in #37. The dated sections below keep their historical checks; the latest section supersedes their status.
 Task Issue: https://github.com/Jiwoo-Jung-Cal/wayfare/issues/3 (foundation, closed). Integration is tracked on #8.
-Branch / commit / PR: main `d7b0fd1` (after #35). Open: #36 (Wayfinder/intake e2e), #38 (preconditions), #39 (ReRoute integration, draft). Work goes on short-lived `agent-1/<slug>` branches cut from main.
+Branch / commit / PR: main `87ad471` (after #36). Open: #37 (Kelvin, draft), #39 (Agent 1 ReRoute integration, draft, head `812f5a6`). Work goes on short-lived `agent-1/<slug>` branches cut from main.
 
 ## For Agent 3 (CI)
 
@@ -226,3 +226,25 @@ The wallet browser flow also checks the populated/reconciled wallet at 390/360/3
     - formal r1 approval;
     - live AI and hosting.
   - Agent 3 (#9): the release pass after #39 merges.
+
+
+## Cloud session: merges and ReRoute status (2026-11-02, later)
+
+- **Merged with Jiwoo's approval**, each pinned to its tested head SHA, after one combined check of all four on main `d7b0fd1`: typecheck; 145 passed / 1 skipped / 2 todo; build; e2e 18 passed / 2 skipped. main's tree after the four merges is byte-identical to the tested combination.
+  - #38 preconditions: head `42950fc`, merge `6924b84`.
+  - #41 root font fix: head `9d8122c`, merge `0a3332b`.
+  - #40 Agent 2 notice order: head `4508cd4`, merge `d036cf5`.
+  - #36 Wayfinder/intake e2e: head `dbfa3bc`, merge `87ad471`.
+- **#41:** `html` stays at 100% (16px); only `body` gets `--wf-text-md`. A new e2e check asserts root 16px, body 15px, H1 26px and 1200px content at 1440px. It fails without the fix. This was Agent 2's finding (#4 comment 6587211156).
+- **#37 (Kelvin):** unchanged at `b69d02e`. Coordination posted on #6 (comment 6589626202): merge main with a merge commit; add `relative="path"` to the three ReRoute links and click "Open TripWallet" in `browser.test.ts`; pass `preconditions` in `approveRecovery` and map `details.precondition` to `stale`; add a race test that moves the clock between the last read and the write. #37 merges cleanly with main `87ad471`.
+- **#39:** main merged in (`812f5a6`). Results: typecheck; **172 passed, 0 skipped, 0 todo**; build; **e2e 20 passed, 0 skipped**. That covers the full journey (approval → claim sync → TripWallet/dashboard, the cutoff case, reload/idempotency), the type scale and the Wayfinder/intake states. **Not merged:** it carries #37's broken links and no precondition use yet. After Kelvin pushes: merge his head into #39, re-run everything, and add a shared e2e click on ReRoute's "Open TripWallet" link.
+- **Figma preview, actual error not obtainable from the cloud.** No Figma MCP tool reports Code Layer runtime status or logs. `get_screenshot` is a static render (empty frame). `send_code_to_figma` itself states that importing does not verify preview. The sandbox proxy blocks figma.com. Known locally: `install`/`dev` work; Vite returns 403 "Blocked request. This host (…) is not allowed" for non-localhost Host headers. **External input needed from a signed-in human** (Jiwoo): open https://www.figma.com/design/ZZS9jEmANeCrjGxWxxCofK?node-id=24-1182&autoplay-code-preview=24-1182, wait for install and start, and copy exactly what the preview shows:
+  - (a) a "Blocked request. This host ("X") is not allowed" page: send X. Fix: add `export __VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS="X"` to `.figma/make/dev` only.
+  - (b) an install/setup error or log text: send it verbatim.
+  - (c) the WayFare dashboard: preview verified.
+  
+  Also note that layer `24:1182` was imported from source `5249cb7`, which predates #32 through #41. Previewing current main needs a fresh `send_code_to_figma` import, which adds a new layer, so it needs Jiwoo's go-ahead.
+- **Open, owner:**
+  - Kelvin: the #37 fixes above.
+  - Jiwoo: open the Code Layer preview and report its exact output; approve a fresh import if current code should be previewed; r1 approval; live AI; hosting; merge of #37 and #39 once refreshed.
+  - Agent 3 (#9): the release pass after #39.
