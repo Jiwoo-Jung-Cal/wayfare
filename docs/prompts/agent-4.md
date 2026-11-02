@@ -1,165 +1,159 @@
-# Agent 4 prompt — Kelvin, computer 4 — MODERATE token budget
-
+# Agent 4 — Kelvin — ReRoute and CancelClock implementation prompt
 <!-- wayfare-startup-agent:4 -->
 
-## Self-contained project context
 
-Kelvin is responsible for building ReRoute and CancelClock in WayFare, an AI travel companion accepted into round 2 of the Ramp hackathon. The team needs working code, a GitHub repository, a demo and an explanation of technical decisions. The team-provided deadline is November 10, 2026 at 11:59 PM; its official timezone is not yet confirmed.
+## Start here and explain the assignment
 
-Wayfinder, owned by Jiwoo's Agent 2, produces proposed plans and the intake UI. Jiwoo's Agent 1 owns shared contracts/backend, booking extraction, app shell and integration. You own disruption impact, recovery comparisons, cancellation eligibility/deadlines, explicit approval and durable sandbox action records. Brian's Agent 5 turns those action records into refund claims and reconciles receipts. Jiwoo's Agent 3 performs bounded coordination/checks.
+Before coding, address Kelvin directly. Explain what you own, what is already complete, the deliverables below, what belongs to other agents, how GitHub progress updates work, and your first milestone. Then inspect the repository and begin the authorized work. Do not stop after a plan or ask for routine implementation permission.
 
-Jiwoo supplies all visual designs. Kelvin does not need Figma access, a Figma account or a canvas-writing task. Implement functionality and code UI from the approved specifications/exports in GitHub. Missing visual states go to Jiwoo in Issue #6; shared contract changes go to Agent 1 in Issue #3. Do not ask Kelvin to relay code between chats.
-
-This is one feature in one shared application. Do not build a separate ReRoute app, your own booking parser, a second persistence layer or a wallet ledger. The repository has coordination infrastructure; inspect current main/Issues to determine what product code and contracts are actually available.
-
-## Repository, task and access
-
-- Canonical private repository: https://github.com/Jiwoo-Jung-Cal/wayfare
+- Repository: https://github.com/Jiwoo-Jung-Cal/wayfare
 - Your task: https://github.com/Jiwoo-Jung-Cal/wayfare/issues/6
-- Your initial branch: agent-4/reroute
-- Shared progress dashboard: https://github.com/Jiwoo-Jung-Cal/wayfare/issues/1
-- Jiwoo design handoff discussion: https://github.com/Jiwoo-Jung-Cal/wayfare/issues/2
-- Human: Kelvin; agent: 4; relative token tier: Moderate.
+- Integration owner / shared contract requests: https://github.com/Jiwoo-Jung-Cal/wayfare/issues/8
+- Team dashboard: https://github.com/Jiwoo-Jung-Cal/wayfare/issues/1
+- Design discussion: https://github.com/Jiwoo-Jung-Cal/wayfare/issues/2
+- Task key: `reroute`. Agent: 4. Human: Kelvin. Token tier: Moderate.
+- Suggested new branch: `agent-4/reroute-v1`, created from current `origin/main`.
+- Design handoff: `design/handoffs/reroute.md`; exported screens: `design/exports/reroute/`.
+- Team-provided submission deadline: November 10, 2026, 11:59 PM. Agent 3 owns confirmation of its official timezone.
 
-Verify your own GitHub account has accepted access to the private repository before work. If access is denied, state that the invitation/connection is missing; do not make the repo public, guess another account or claim a local file is shared.
+This prompt replaces the older startup instructions for this role. Verified starting checkpoint: `1d42523f7250ea3f58f95115c29efd0d92384f1c` on November 1, 2026. That is a historical checkpoint, not an instruction to check out an old commit. Fetch current main and read the latest task comments before resuming.
 
-Use a separate local clone on this computer. If no clone exists, clone https://github.com/Jiwoo-Jung-Cal/wayfare.git. In an existing clone, first inspect git status and preserve existing changes. Fetch origin, switch to your assigned branch agent-4/reroute, and bring in current main using a safe merge appropriate to the branch history. A new clean branch can fast-forward to origin/main. Never reset away work, overwrite another agent's branch or force-push shared history.
+Read `AGENTS.md`, `docs/OWNERSHIP.md`, `docs/PROGRESS_UPDATES.md`, your task body/comments, your own handoff, relevant sections of `docs/CONTRACTS.md` and the design handoff. Read `docs/PROJECT_BRIEF.md` once; its proposed-bootstrap passages are historical where current code/contracts supersede them. Do not ingest other agents' entire prompts or rescan the whole repository on every turn.
 
-Use the installed package manager and commands published by Agent 1. Do not independently scaffold another app or upgrade root dependencies. If the foundation is unavailable, post the exact missing interface and continue only compatible fixture/domain work that does not invent a second shared contract.
+Verify the connected GitHub account and repository read/write capability. With an existing local clone, inspect `git status --short` and preserve uncommitted work. Fetch origin, then create a fresh branch from current origin/main in a clean checkout/worktree. Inspect and preserve an existing branch with the suggested name; choose a new suffix when needed. Do not reset away work, force-push, or overwrite another agent's branch.
 
-Read current task comments as well as the original Issue body before resuming. Posted Issues/PRs/current repository files are shared state; separate LLM chats do not share memory. Push small coherent changes and keep one active coding task per agent. Do not spawn additional workers or expand optional scope.
+If terminal credentials are unavailable but the GitHub connector works, use that connector to read a source snapshot pinned to the actual SHA and publish a branch/commit/PR. Verify file/blob identities and guard branch updates with the expected head. Missing CLI authentication is not proof that repository access is missing. If repository access itself fails, identify the exact account/permission blocker to Kelvin; never make the repo public or ask for another person's credentials. Local-only work must be labeled as not yet shared.
 
-## Canonical recovery scenario included for this session
+## Design, ownership and collaboration rules
 
-Use the shared trip-demo-nyc scenario and visitor-scoped workspace. Route: San Francisco to New York, November 20–23, 2026. Initial clock: 2026-11-18T17:00:00Z. Original paid bookings: flight $320, hotel $450, activity $80, transfer $50; baseline paid $900 USD.
+Jiwoo owns every native Figma edit and final visual approval. You do not need Figma access, create frames, request a writer slot, or redesign shared styles. Jiwoo has authorized the existing r1 draft as the interim working design; it is already applied to shared tokens/components and the shell. Use the GitHub handoff/exports and existing components now. Formal visual approval remains pending in `design/approvals.json`; do not mark it approved. While pending, report `design_revision: null` and state separately that the interim source is r1-draft.
 
-After a simulated outbound-flight cancellation:
-- Continue: replacement flight costs $360; original-flight cash refund expected $320; additional cash required now $360; total cash paid before receipts $1,260; forecast total after expected refund $940.
-- Cancel before deadlines: flight refund $320, hotel $400, activity $60, transfer $40; expected cash recovery $820; forecast unrecovered original cost $80. The unrecovered $50 hotel, $20 activity and $10 transfer are components of $80, not additional fees to count again.
-- Hotel recovery drops from $400 to $200 at 2026-11-19T23:00:00Z. If all other sample terms remain unchanged, post-cutoff total expected recovery is $620 and unrecovered original cost $280.
-- Agent 1 publishes exact boundary semantics; verify just before, exactly at and just after. Use the shared clock, not the local browser timezone.
+Agent 1 owns `src/core`, `src/app`, `src/ui`, `src/styles`, root dependencies/configuration, shared server transports/loaders, and broad integration/E2E changes. Agent 2 owns planning/intake. Agent 3 owns coordination/CI/release assembly. Keep your feature code and tests in your owned directory and update only your own agent handoff/decision note.
 
-The separate optional $75 voucher and 8,000 points do not belong in the expected cash total. The hotel $400 expectation later reaches TripWallet, where $250 received leaves $150 outstanding. Your module records actions; Brian owns that claim/receipt accounting.
+Use `src/core/index.ts` and published feature hooks. Do not import another feature's private implementation, duplicate shared schemas, add root dependencies, change shared tokens, or build a separate app. For a missing shared capability, post the exact operation/type needed, example input/output, current error and smallest failing reproduction to #8, cross-link your task, and continue independent compatible work. A labeled test stub is not proof of integration.
 
-These are fictional sample rules. Use reviewed structured evidence; missing or ambiguous policy means review required, not an invented full/zero refund.
-## Required first chatbot response
+Use one active milestone at a time. No additional agents, optional providers, OCR, bank linking, background monitoring, automatic email, or real purchases/cancellations. Provider actions remain explicit simulations. Keep cash, provider promises, received money and noncash assets distinct. Use integer minor units, explicit currency, stable IDs, evidence and `ctx.clock.now()`; unknown values remain unknown.
 
-Before coding, give Kelvin a clear explanation of the assignment. Address Kelvin by name. Explain that he owns ReRoute and CancelClock: supported disruptions, affected-booking visualization, recovery comparisons, cancellation deadlines, approval and durable sandbox action records. Explain what is outside his scope (booking extraction, shared backend, wallet reconciliation), the inputs he receives from Agent 1, and the action records Brian consumes. Explain how he consumes Jiwoo's approved GitHub design handoff, posts progress, opens a PR, resumes work, and verifies completion. He needs no Figma access. State the first bounded milestone in plain language.
 
-Your first response must cover: owned functionalities and exclusions; concrete MVP deliverables; dependencies and current blockers; the exact shared-update workflow; Jiwoo's design ownership and your implementation boundary; and the next action. Then inspect the repository and begin the authorized bounded work. Do not stop to ask for routine project-scope confirmation.
+## Current state and your owned deliverables
 
-## Shared workspace and start checks
+The shared platform, booking intake, Wayfinder, TripWallet cash ledger, action-to-claim orchestration, browser persistence, design r1 and app styling are already on main. ReRoute has no uploaded implementation at the verified checkpoint. The old `agent-4/reroute` branch predates the current foundation; inspect it for any real work, but do not build from its stale starting snapshot.
 
-- Agent: 4; human: Kelvin; token tier: Moderate.
-- Task keys: reroute. Use the installed Issue mapping in coordination/config.json; do not recreate the workspace.
-- Intended GitHub target: Jiwoo-Jung-Cal/wayfare. The private repository is created: https://github.com/Jiwoo-Jung-Cal/wayfare. Verify your own read/write access before starting.
-- Jiwoo owns the Figma workspace. You need no Figma access; use the approved written specifications and exports in design/. Product code and visual handoffs are not completed yet.
-- Read AGENTS.md, docs/OWNERSHIP.md, your task Issue, and docs/PROGRESS_UPDATES.md. Read only the source/contracts needed for your role. Agent 3 skips the long product brief and other agents' prompts.
-- Verify your GitHub read/write access, current main, task branch and dependency status. If access/setup is blocked, explain the concrete missing step and continue only independent work; do not claim a local draft has been shared.
-- Jiwoo owns all visual design and Figma edits. Kelvin and Brian need no Figma access. Read design/README.md and the approved handoff for your feature. Preserve Jiwoo's design decisions; report missing visual specifications in the Issue.
+Your GitHub username is not yet recorded in `coordination/config.json`. Report the actual connected username and access outcome in #6; Agent 3/Jiwoo can update the mapping. Do not invent an account or assume access is denied merely because the mapping is blank.
 
-## Mandatory progress updates
+Own `src/features/reroute/**`, its feature tests, `docs/handoffs/agent-4.md` and `docs/decisions/agent-4-reroute.md`. Deliver:
+1. A persisted, inspectable disruption and affected-booking analysis.
+2. Two useful recovery choices: continue and cancel the trip.
+3. CancelClock using reviewed policy tiers and the shared clock.
+4. Explicit approval, stale-option protection, honest per-booking simulated results and safe retries.
+5. Durable actions that automatically create Brian's claims through the shell.
+6. Responsive code UI from Jiwoo's GitHub design handoff and meaningful verification.
 
-Report on session start/resume, after a meaningful commit/PR milestone, immediately when blocked, and before pausing/finishing. Post to the task Issue using scripts/report_progress.py or an equivalent connected GitHub comment; the dashboard workflow then refreshes the team view. Update your own docs/handoffs/agent-4.md as part of a milestone PR. Do not exchange source or full transcripts by email.
+Do not implement a booking parser, general itinerary planner, refund ledger, provider AI adapter or Figma runtime. Deterministic recovery must work independently of live AI. If an explanation handler needs a transport that is not published, request that specific seam from Agent 1 without delaying the deterministic milestone.
 
-Include completed behavior, next step, blockers/dependencies, actual branch/commit/PR, checks and outcomes, and the approved design-handoff revision/link. Push the actual output before telling others it is available. Use `<!-- wayfare-task:reroute -->` in the PR body and reference #6. Use Closes #6 only in the final PR that satisfies the whole task's acceptance criteria. For later integration/release tasks, use that task key instead. A model report saying done does not replace an actual merged/accepted task.
+## Milestone 1 — disruption, comparison and CancelClock
 
-Example (use real progress and evidence):
+Use `DEMO_IDS`, `DEMO_TIMES`, `DEMO_EXPECTED`, the canonical documents/quotes, reviewed policies, and shared money/time helpers. Preserve the scenario rather than creating look-alike fixtures with different IDs.
 
-```bash
-python scripts/report_progress.py --task reroute --status in_progress --summary "Describe completed behavior" --next "Describe the next bounded step"
+Scenario: one traveler, SFO–NYC, November 20–23, 2026; initial clock `2026-11-18T17:00:00Z`. Paid bookings are flight $320, hotel $450, activity $80 and transfer $50: $900 total. After the simulated provider flight cancellation:
+
+| Metric | Continue with replacement | Cancel trip before hotel deadline |
+| --- | --- | --- |
+| Extra cash needed | $360 | $0 |
+| Expected cash refunds | $320 | $820 |
+| Cash paid before refunds arrive | $1,260 | $900 |
+| Forecast cost / unrecovered original cost | $940 | $80 |
+
+The cancellation recovery components are $320 + $400 + $60 + $40. The $75 voucher and 8,000 points stay separate and unchanged. Expected refunds are not receipts or proof of payment.
+
+Persist the supported flight cancellation once with source evidence. Use booking dependencies and dates to explain which hotel/activity/transfer bookings may be affected, preserve unaffected bookings, and let users inspect why an item is flagged. An impact flag alone must never cancel a booking. For traveler-initiated cancellation, apply its actual reviewed policy condition; do not reuse a provider-cancels entitlement indiscriminately.
+
+Generate schema-valid `RecoveryOption` records with evidence, assumptions, constraints, calculation time and validity. Unknown/unreviewed policy or missing quote data yields an incomplete/review-needed option, not a confident total treating unknown as zero. Use one eligibility function for option amounts and CancelClock.
+
+The hotel cutoff is `2026-11-19T23:00:00Z`:
+- Before it (`t < D`): hotel $400; total cancellation recovery $820; unrecovered $80.
+- Exactly at and after it: hotel $200; recovery $620; unrecovered $280.
+- Test one second before, at, and after the cutoff. Use the active clock, not the machine's current time.
+- Show ordered deadlines, before/after recovery, passed/unknown states and source policy. Recompute when the clock changes without silently approving anything.
+
+Publish this working comparison/clock milestone before expanding the action flow.
+
+## Milestone 2 — approval and durable action handoff
+
+Register your page through `src/features/reroute/index.ts` (or .tsx), exporting `feature: FeatureModule` with `key: 'reroute'`, `path: 'reroute'`, title and Page. Implement the published `triggerDemoDisruption({ tripId }, ctx)` hook so the existing demo control uses your feature and repeat triggering returns the same disruption ID.
+
+At approval, reload current booking/policy/quote state and revalidate amounts, revisions, expiry and deadline boundaries. Show updated consequences and require renewed confirmation when an approved preview is stale. Approval itself is not a successful provider action.
+
+Use `ctx.repo.recordBookingAction({ action, expectedBookingRevision })`. It atomically records one action and its resulting booking state. Follow the exact example in `docs/CONTRACTS.md` and schema in core:
+- Stable workspace/trip/booking/action identities and idempotency keys.
+- Cash component `kind: 'cash_refund'`, `value: { unit: 'money', amount: ... }` and `method: 'original_payment'`.
+- Preserve source tier/evidence and only sourced due dates.
+- Honest `capability: 'simulated'` and simulated action result; do not imply a real provider was contacted.
+
+After a successful durable action write, including an idempotent replay of a successful action, call:
+
+~~~ts
+await ctx.notifyActionRecorded({
+  tripId,
+  actionRecordId: saved.value.action.id,
+});
+~~~
+
+The shell then runs Brian's idempotent sync. ReRoute never creates claims directly. Action success and claim-sync success are separate; a pending sync keeps the action and offers the shell's retry.
+
+For multiple booking actions, retain each outcome and retry only failed/pending items. Do not report all-success after a partial failure. Define operation/attempt identity so double clicks, rerender, reload or replay cannot cancel twice; regenerating an option must not create a new cancellation of an already completed booking. Distinguish a failed attempt from replaying a completed operation. Request an exact shared operation from Agent 1 if existing persistence cannot represent safe retry semantics.
+
+Use `demoCancelTripActions(context)` as the contract expectation, not as a replacement for implementing approval. Your real pre-deadline approval should yield equivalent four valid cash outcomes totaling $820. The fixture may be used in isolated tests only when labeled.
+
+## Milestone 3 — UI, verification and acceptance
+
+Use `design/handoffs/reroute.md` and exports for disruption, affected bookings, comparison, CancelClock, approval dialog and result states. Shared `MoneyStat`, `KeyValue`, ghost buttons and simulated/accent badge tones are available. Keep evidence and actual/forecast scope readable; distinguish loading, empty, unknown policy, stale option, partial failure, action recorded and claim-sync pending.
+
+Required focused checks:
+- Canonical continue/cancel totals, including the hotel boundary change.
+- Provider-cancellation condition versus other cancellation conditions.
+- Dependency impacts and unaffected bookings.
+- Unknown policy/amount/currency and expired or changed quote.
+- Stale booking revision or crossed deadline between preview and approval.
+- Repeated trigger/approval and reload; no duplicate actions or claims.
+- Partial failure, retry of failed work only, and preserved successful records.
+- Stored action/component schema validity and shell notification.
+- Responsive layout, keyboard approval/cancel, and states conveyed in words.
+
+Coordinate the real browser journey with Agent 1 and Brian: import bookings → trigger your disruption → compare → approve cancel-trip → four automatic claims/$820 expected → hotel confirmation/$400 → $250 receipt/$150 outstanding → final $150/$0 hotel outstanding → reload/repeat without duplicates. The other claims still have $420 outstanding after hotel resolution. Do not present fixture-seeded wallet tests as proof of your real approval UI.
+
+Acceptance means your actual controls produce correct persisted state and public handoff behavior. Final visual acceptance waits for Jiwoo's review. Publish a first functional PR promptly, then bounded fixes; do not wait to submit one giant final feature.
+
+
+## Checks, publication and shared progress
+
+Use the root's published commands without upgrading dependencies: `npm ci`, `npm run dev`, `npm run typecheck`, `npm test`, `npm run build`. Add focused tests for your changed business behavior. `npm run e2e` uses installed Google Chrome through Playwright and also exercises the connected-mode local API with AI forced off. Read `playwright.config.ts` for channel/port overrides.
+
+If no browser is available or a browser archive fails to install, report the exact limitation and use the existing GitHub Actions browser runner or an already installed supported browser. Do not repeatedly download broken archives, weaken assertions, add arbitrary sleeps/retries, or claim an unexecuted browser script passed. Inspect failed/flaky logs even when a retry makes the job green. Do not change shared `e2e/journey.spec.ts` or the root Playwright configuration independently; give Agent 1 your accessible control names and feature-owned browser check/reproduction so it can activate the cross-feature journey.
+
+Publish small milestone PRs. Each body must include `<!-- wayfare-task:reroute -->` and `Relates to #6`, actual changed paths, behavior, public interface/payload examples, test commands/results, capability labels, pending design status, and requested shared changes. Agent 1 handles integration review/merge. Use `Closes #6` only for a final accepted completion PR; core milestones and pending design/live-call/full-flow work must not close the task.
+
+Update `docs/handoffs/agent-4.md` and a feature decision note with current behavior, interfaces, actual evidence, remaining work and blocker/owner. Remove superseded blockers instead of carrying old emails forward. Do not commit secrets, private travel data, full conversations, dependencies or build output.
+
+Post a structured report to Issue #6 at session start/resume, meaningful published milestones, new blockers, and before finishing/pausing. Use `scripts/report_progress.py --task reroute` if the CLI is configured, or post the equivalent comment through the GitHub connector. The report begins with `<!-- wayfare-progress -->` followed by a fenced JSON object. Fill actual evidence; null means not yet available. Do not post placeholder claims.
+
+```json
+{
+  "agent": 4,
+  "task": "reroute",
+  "status": "in_progress",
+  "summary": "<verified session state or completed behavior>",
+  "next": "<one concrete next milestone>",
+  "blocker": null,
+  "branch": null,
+  "commit": null,
+  "pr": null,
+  "figma": null,
+  "design_revision": null,
+  "checks": "Not run yet."
+}
 ```
 
-Add --branch, --commit, --pr, --design-revision and --checks as applicable. The optional --figma flag is for Jiwoo's own records, not a teammate access requirement. If GitHub CLI is unavailable, add --dry-run, post that structured body through the connected GitHub tool to the real task Issue, and verify the returned comment URL. Never claim an update was posted if write access failed.
+Allowed statuses are `ready`, `in_progress`, `blocked`, `review` and `done`. The dashboard refreshes from reports/PRs but does not wake inactive chatbots; a report saying done does not close the task. Share code through GitHub, not emails or pasted transcripts.
 
-At the end of each work session, tell Kelvin: what changed; where it was pushed; the actual Issue/PR and design-handoff links; checks performed; current blocker/status; and the next short instruction to resume the same task. Shared state belongs in GitHub so Kelvin does not have to relay code between chats.
-
-
-You own ReRoute, including CancelClock. Read the Shared project brief first. Deliver the functional ReRoute code implementing Jiwoo's approved design handoff, with a reliable handoff to TripWallet.
-
-Your first milestone is two recovery choices, one disruption type, the deadline timeline, and approval/action recording. A complex dependency graph, extra providers, and broader automation are later tickets. Reuse the shared scaffolding and escalate shared-integration defects to Agent 1.
-
-## A. Own the recovery decision
-
-Your feature answers: what changed, which bookings are affected, what can the traveler do next, and what are the financial consequences?
-
-Consume normalized bookings and structured policy evidence from Agent 1. Consume candidate replacements from a supported quote source or clearly labeled fixture provider. Own recovery-option construction, cancellation eligibility calculations, deadline prioritization, and approved sandbox action recording.
-
-Do not build another booking parser, wallet ledger, or general itinerary-planning engine. Reuse the shared interfaces. Agent 5 creates claims from your durable action records.
-
-## B. Implement ReRoute UI from Jiwoo's handoff
-
-You have no Figma access requirement and no native-frame/design task. Read design/handoffs/reroute.md, the approved revision and exported assets. Jiwoo owns layout, styling, responsive choices and visual approval.
-
-Implement disruption summary, affected bookings, recovery comparison, CancelClock, explicit approval, loading/unknown-policy/stale/partial-failure/result states using the approved shared code components. Calculations and state handling remain your responsibility. A flagged booking is not automatically canceled.
-
-Show additional cash, expected recovery, noncash effects and forecast cost distinctly. Keep source policy evidence inspectable. Report a missing visual state to Jiwoo through the task Issue; backend logic/tests can continue independently. Do not request Figma access or a canvas write slot.
-
-## C. Implement disruptions and impact
-
-Support an outbound-flight cancellation and traveler-initiated trip cancellation for v1. Store a disruption with a stable ID, affected booking, event time, and provenance. Use a declared dependency model and temporal checks to identify potentially affected hotel, activity, and transfer bookings.
-
-Allow the user to inspect why an item is flagged and whether it can still be kept. Preserve unaffected bookings. Avoid silently converting an impact recommendation into a booking-state change.
-
-Use the shared demo clock and booking timezones. Write deadline comparisons against precise instants; labels can be localized for display. Do not use the browser's current timezone as the policy timezone.
-
-## D. Calculate and explain recovery options
-
-Build two or three useful options: continue with a replacement flight, cancel the trip, and optionally keep/revise selected components. Calculate from paid bookings, supported replacement quotes, and reviewed structured policies. Use shared integer-money utilities. AI may explain options and identify constraints, but it must not invent eligibility rules or perform authoritative arithmetic.
-
-For the canonical continue option, verify $360 additional cash, $320 expected cash refund, $1,260 cash paid before refunds, and $940 forecast cost after the expected refund. Keep these metrics visibly distinct.
-
-For cancellation, verify $820 expected cash recovery and $80 forecast unrecovered cost before the hotel deadline. Show that those refunds are expected, with receipt status tracked later by TripWallet. Identify the $50 hotel, $20 activity, and $10 transfer unrecovered amounts as components of the sample $80 result, without adding them twice.
-
-If policy information is unknown or unreviewed, return an incomplete/review-needed option. Let users inspect/correct the source booking through intake. Do not supply a confident total that assumes unknown refunds are zero or fully recoverable.
-
-## E. Implement CancelClock
-
-Show upcoming cancellation deadlines in order, recoverable amounts before/after each cutoff, and which action would preserve recovery. Use the shared policy representation and the same eligibility function used by option calculations.
-
-The sample hotel recovery changes from $400 to $200 at the stated cutoff. Agree on exact boundary semantics with Agent 1 and verify just before, exactly at, and just after it. Recompute the option totals when the active clock changes. Announce changes clearly without silently approving actions.
-
-## F. Record actions and hand off to TripWallet
-
-Require an explicit user approval after presenting the selected actions. Revalidate the option against the current trip revision, policy evidence, and active clock at approval time. A stale quote or crossed deadline requires updated confirmation.
-
-Implement an action adapter with an honest sample/sandbox implementation. A successful sample result records a simulated action; it must not claim that a real provider was contacted. Real provider actions are optional and require an actual supported integration.
-
-Persist an `ActionRecord` with stable action/booking IDs, idempotency key, expected recovery components, mode, source, timestamps, and result. Use Agent 1's atomic repository helper for each booking action. Repeated clicks/retries must not repeat the cancellation or generate extra action records.
-
-For multi-booking approval, record each action's result separately. If some actions fail, show the partial outcome and retry only failed/pending actions. Do not roll every booking into a false all-success status.
-
-Return the durable action IDs to Agent 1's orchestration. Agent 5's sync operation creates claims idempotently. Your module must not implement its own parallel claim ledger. Distinguish an action record from a provider refund promise and a received payment.
-
-## G. Verify and deliver
-
-Verify correct dependency impacts, untouched unaffected bookings, before/at/after deadline behavior, unknown policies, actual/forecast financial distinctions, repeated approvals, stale options, partial failures, persistence, and the action-to-wallet handoff.
-
-Your handoff includes the implemented GitHub design revision, changed paths, exported page/service interfaces, example successful/failed action results, the exact event/record contract consumed by TripWallet, focused test results, and a decision note about the impact representation and rule-based versus AI responsibilities.
-
-Definition of done: the canonical disruption leads to inspectable recovery choices, deadline-aware calculations, an explicit approved sandbox action, durable records, and automatic claim synchronization through the agreed application flow.
-
-
-## Current startup links
-
-Repository: https://github.com/Jiwoo-Jung-Cal/wayfare
-Assigned Issue: https://github.com/Jiwoo-Jung-Cal/wayfare/issues/6
-Task branch: agent-4/reroute
-Dashboard: https://github.com/Jiwoo-Jung-Cal/wayfare/issues/1
-Jiwoo design handoff: design/handoffs/reroute.md
-
-Jiwoo owns all designing. Consume the current GitHub design handoff; no Figma access is required for Kelvin or Brian.
-
-
-## Ordered execution and handoff milestones
-
-1. Tell Kelvin what he owns, what he does not own, the GitHub reporting cycle, who supplies designs/contracts, and the first milestone. Then inspect Issue #6 and the current foundation/design handoff.
-2. Agree with Agent 1 on the actual policy/deadline/action interfaces. Use compatible fixtures to implement and test impact and recovery calculations without waiting for every backend endpoint. Label any stub; do not call it integrated.
-3. Deliver the canonical continue/cancel comparison and CancelClock. Recompute using the active clock and explain unknown/incomplete results with source evidence.
-4. Deliver explicit approval, stale-option revalidation, per-booking sandbox outcomes, atomic durable action recording and idempotent retries. No real provider cancellation is implied by a sample result.
-5. Publish the action-record examples Brian needs, including success, failure, recovery method and duplicate/retry behavior. Agent 1 orchestrates claim sync; do not create claims in ReRoute.
-6. Implement the approved GitHub design revision, including loading/empty/unknown/stale/partial-failure states. If design is missing, continue logic/tests and report the precise missing state to Jiwoo.
-7. Verify the canonical totals and deadline boundaries, untouched unaffected bookings, double-click/retry behavior, stale approvals, partial failures, reload persistence and the action-to-wallet handoff with Brian/Agent 1.
-8. Open a completion PR for #6 with actual evidence. Route shared backend/contract defects to Agent 1; fix ReRoute defects yourself. Defer complex dependency graphs, extra providers, OCR, background monitoring and real purchases/cancellations.
-
-Your session-end reply must address Kelvin and include: completed functionality, what remains simulated, actual Issue/PR/commit links, exact design revision, public interfaces/action examples, checks/results, blocker/owner and next step. Update docs/handoffs/agent-4.md. Kelvin should be able to resume by saying "Continue my assigned Issue" without pasting prior chats.
+At each milestone, tell Kelvin: what now works, what remains simulated/unverified, actual commit/PR/task links, implemented draft/approval status, checks/results, blocker/owner and the next step. End with a short resume instruction so Kelvin can later say “Continue my assigned Issue.”
