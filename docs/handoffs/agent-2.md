@@ -1,13 +1,15 @@
 # Agent 2 handoff
 
-Status: functional Wayfinder/intake is merged (#17); exact-amount/stale-hash fixes and interim r1-draft feature layouts are ready for review in #21. Issue #4 remains open for formal visual acceptance.
+Status: Wayfinder/intake (#17) and the hardening/interim r1-draft layouts (#21) are merged. Jiwoo approved #21 at head `15eb46d`; merge commit `617ac337d1f67f435a314ebd4c4460113652d3a9`. Issue #4 remains open only for formal r1 visual acceptance, which is still pending.
 
 - Task: https://github.com/Jiwoo-Jung-Cal/wayfare/issues/4
-- Active branch: `agent-2/wayfinder-intake`
-- Active milestone PR: https://github.com/Jiwoo-Jung-Cal/wayfare/pull/21
-- Main incorporated: `bda78da` via merge commit (#32 vendor chunk split and #33 prompt refresh included; no conflicts).
+- Reconciliation branch: `agent-2/wayfinder-intake-followup`, created from current main. This follow-up changes the handoff only.
+- Merged milestone PR: https://github.com/Jiwoo-Jung-Cal/wayfare/pull/21
+- Main reconciled: `58349bb05434fe40e09e7bc7da696062964106ee`, including #20, #21, #32, #33 and #34.
 - Merged feature milestone: #17, head `8642fcca3484b40a8afacd1b0d5e4e0931d88511`; #18/#19 added integrated browser coverage/narrow fixes.
 - Agent 1 technically accepted expanded #21 at `6c496af` with no blocking findings (https://github.com/Jiwoo-Jung-Cal/wayfare/pull/21#issuecomment-6567307593). Its optional nit was applied: the comparison heading now uses `budgetForDisplay`, so an unreadable budget renders as Unknown instead of a non-null assertion (regression test added). Latest SHA/CI links are in the structured #4 report.
+
+Attribution: Agent 1 confirmed that `6052d47` (budget guard/test), `eaf961f` (main merge), `15eb46d` (handoff), and the approximately 02:25 UTC structured report came from a separate cloud Agent 2 session started by mistake. They are external contributions/evidence, not this agent's own session history. See https://github.com/Jiwoo-Jung-Cal/wayfare/issues/4#issuecomment-6567977223. The resumed Agent 2 reviewed the implementation and regression test against current main and kept them unchanged: an unreadable budget uses shared Unknown money, valid amounts retain integer minor units, and selection validation is unchanged.
 
 ## Completed behavior
 
@@ -49,7 +51,7 @@ V1 policy decision: https://github.com/Jiwoo-Jung-Cal/wayfare/issues/3#issuecomm
 
 ## Verification
 
-Actual checks on the branch after merging main `bda78da` (Node 24.21.0 checksum-verified, npm 11.19.0):
+Historical results recorded by the separate cloud session after merging `bda78da` (its reported runtime: Node 24.21.0, npm 11.19.0; independently corroborated by CI on `15eb46d`):
 
 - `npm ci`: passed; root manifest/lockfile unchanged by Agent 2.
 - `npm run typecheck`: passed.
@@ -58,10 +60,12 @@ Actual checks on the branch after merging main `bda78da` (Node 24.21.0 checksum-
 - `CI=1 npm run e2e` (Chrome): **13 passed, 2 skipped**; skips are pending ReRoute steps.
 - `PW_CHANNEL=chrome node src/features/wayfinder/verify-browser.mjs`: passed (states, validation, replay/reload, 1440–320px layouts, no page errors).
 
+Current reconciliation checks, run by this resumed agent on main `58349bb` plus this documentation-only change, used Node 24.22.1 and npm 11.19.0: `npm ci`, `npm run typecheck`, `npm test` (134 passed, 1 skipped, 2 todo), `npm run build` (no chunk-size warning), and `CI=1 npm run e2e` (13 passed, 2 pending ReRoute cases skipped) all passed. Local E2E used an external temporary configuration that changes only the browser executable and working paths to portable Chromium 153; the repository's full test suite and configuration are unchanged. `git diff --check` also passed. Actual follow-up PR/commit and CI links are in the structured Issue #4 report. The historical results above are not presented as this resumed agent's session history.
+
 Local browser verification is now working. Playwright's CDN download still yielded an invalid archive; temporary Chromium 153 from npm ran successfully. Browser/server must share the same execution network environment. No browser package or temporary configuration was added to root dependencies. The owned script accepts `PW_EXECUTABLE_PATH`, `PW_CHANNEL`, optional `WAYFARE_VERIFY_OUTPUT`. Integrated E2E used a temporary executable-path configuration. The focused script is not automatically wired into shared CI; Agent 1 can add it under integration.
 
 ## Workflow and next step
 
-Connected account `Jiwoo-Jung-Cal` has pull/push permission. Direct HTTPS lacks CLI credentials, so current main commits/tree/blobs were hydrated through connected GitHub with every object hash verified. Main was safely merged into the existing branch without reset/force-push. Publication uses a merge-parent commit and expected-head ref check. #21 remains Agent 2's single active PR; #4 remains open.
+Connected account `Jiwoo-Jung-Cal` has pull/push permission. Direct Git fetch was attempted but HTTPS CLI credentials are still unavailable. Current main was therefore fetched through the connected GitHub interface with commit/tree/blob identities verified; a clean checkout of local main was fast-forwarded to `58349bb`. Pre-existing local edits were preserved in their original worktree. The follow-up branch starts from that current main; publication uses a new PR and expected-head branch checks. No commits may be added to the merged `agent-2/wayfinder-intake` branch, and no rebase, force-push or PR merge is authorized.
 
-Next: no remaining Agent 2 code work on #21. Jiwoo decides the merge and formal r1 visual approval (still pending in `design/approvals.json`). Apply requested corrections within Agent 2's paths, then finish visual acceptance when the handoff is approved. Broad integration and ReRoute/TripWallet calculations remain with their owners. Resume: **Resume Agent 2 on #4 / PR #21; read current main, latest task/PR comments and design approval first.**
+Next: wait for Jiwoo's formal r1 visual approval or specific design feedback; there is no remaining application-code correction from this reconciliation. #21 is finished and merged. Any further correction must use a new branch from then-current main and a new PR linked to #4; Jiwoo approves each merge in chat. Shared contract/config requests go to Agent 1 on #4. Broad integration and ReRoute/TripWallet calculations remain with their owners. Resume: **Resume Agent 2 on Issue #4; re-read current main, Agent 1's reconciliation note, latest task comments and design approval first. Do not resume coding on merged PR #21.**
