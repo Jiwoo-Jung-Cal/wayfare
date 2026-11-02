@@ -34,6 +34,7 @@ import {
 } from '../core/index.ts';
 import { createClaimSyncOrchestrator, type ClaimSyncState } from './claimSync.ts';
 import { FEATURES } from './featureRegistry.ts';
+import { approveRecovery, prepareApproval } from '../features/reroute/actions.ts';
 import type { FeatureModule, Money } from '../core/index.ts';
 
 const WS = 'ws-journey';
@@ -265,7 +266,9 @@ describe('journey checks against registered feature modules', () => {
     expect(sum(cash as Money[], 'USD')).toEqual(DEMO_EXPECTED.cancelTripOption.expectedCashRecovery);
   });
 
-  it.skipIf(!reroute?.triggerDemoDisruption)('ReRoute (#6): triggerDemoDisruption records the flight cancellation once', async () => {
+  it('ReRoute (#6): triggerDemoDisruption records the flight cancellation once', async () => {
+    // ReRoute is delivered: discovery failure must fail this gate, never skip it.
+    expect(reroute?.triggerDemoDisruption).toBeTypeOf('function');
     await checkDisruptionTrigger(reroute!.triggerDemoDisruption!);
   });
 
@@ -290,9 +293,37 @@ describe('journey checks against registered feature modules', () => {
     await checkClaimSyncFromCancelTrip(walletStub);
   });
 
-  // These steps have no data-level public operation in the v1 FeatureModule
-  // contract; they will be covered by the browser E2E once the pages exist.
-  it.todo('approves the cancel-trip option in ReRoute before the hotel deadline (Agent 4, #6; browser E2E)');
-  // Receipt review/matching is exercised through real controls in e2e/journey.spec.ts.
-  it.todo('completed state survives reload; repeated approval/receipt import does not double records (browser E2E)');
+  // Real modules end to end at the data level: ReRoute's published approval API
+  // (prepareApproval/approveRecovery, PR #37) -> shell notifyActionRecorded ->
+  // claim-sync orchestrator -> TripWallet's real syncClaimsFromActions. The same
+  // journey through real UI controls, reload and receipts is in e2e/journey.spec.ts.
+  it('ReRoute approval -> shell -> TripWallet: $820 of claims before the cutoff; re-approval and reload change nothing', async () => {
+    expect(wallet?.syncClaimsFromActions).toBeTypeOf('function');
+    const storage = memoryStorage();
+    const { repo } = await bookedRepo(storage);
+    const states: ClaimSyncState[] = [];
+    let ctx: FeatureContext = context(repo);
+    const orch = createClaimSyncOrchestrator({ provider: () => wallet!.syncClaimsFromActions, context: () => ctx, onState: (s) => states.push(s) });
+    ctx = { ...ctx, notifyActionRecorded: async ({ tripId }) => { await orch.run(tripId, 'action_recorded'); } };
+
+    unwrap(await reroute!.triggerDemoDisruption!({ tripId: DEMO_IDS.trip }, ctx));
+    const preview = unwrap(await prepareApproval(DEMO_IDS.trip, 'cancel_trip', ctx));
+    const approved = unwrap(await approveRecovery(preview, ctx));
+    expect(approved.outcomes.map((o) => o.status)).toEqual(['recorded', 'recorded', 'recorded', 'recorded']);
+    expect(states.at(-1)).toMatchObject({ status: 'synced' });
+
+    const claims = unwrap(await repo.listClaims(DEMO_IDS.trip));
+    expect(claims).toHaveLength(4);
+    expect(sum(claims.map((c) => c.expected as Money), 'USD')).toEqual(DEMO_EXPECTED.cancelTripOption.expectedCashRecovery);
+    expect(claims.find((c) => c.bookingId === DEMO_IDS.bookings.hotel)!.expected).toEqual(DEMO_EXPECTED.hotelClaim.expected);
+    expect(unwrap(await repo.listBookings(DEMO_IDS.trip)).map((b) => b.state)).toEqual(['cancelled', 'cancelled', 'cancelled', 'cancelled']);
+
+    // Repeat approval with the same preview, and a fresh repository on the same storage (reload).
+    const again = unwrap(await approveRecovery(preview, ctx));
+    expect(again.outcomes.every((o) => o.status === 'already_recorded')).toBe(true);
+    const reloaded = createLocalRepository({ storage, workspaceId: WS });
+    expect(await orch.run(DEMO_IDS.trip, 'wallet_load')).toMatchObject({ status: 'synced', result: { created: 0, existing: 4 } });
+    expect(unwrap(await reloaded.listActions(DEMO_IDS.trip))).toHaveLength(4);
+    expect(unwrap(await reloaded.listClaims(DEMO_IDS.trip))).toHaveLength(4);
+  });
 });

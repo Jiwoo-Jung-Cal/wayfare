@@ -178,9 +178,108 @@ test.describe('demo journey: Wayfinder and intake (Agent 2, #4)', () => {
   });
 });
 
-test.describe('demo journey: feature steps (pending modules)', () => {
-  test.fixme('approve cancel-trip in ReRoute before the hotel deadline; $820 expected recovery (Agent 4, #6)', async () => {});
-  test.fixme('completed state survives reload; repeated approval/receipt import does not double records', async () => {});
+/** Reads this visitor's stored workspace through the shared repository (assertions only; never writes). */
+async function storedWorkspace(page: Page) {
+  return page.evaluate(async () => {
+    const path = '/src/core/index.ts';
+    const core = await import(/* @vite-ignore */ path) as typeof import('../src/core/index.ts');
+    const repo = core.createLocalRepository({ storage: localStorage, workspaceId: localStorage.getItem(core.ACTIVE_WORKSPACE_KEY)! });
+    const s = core.unwrap(await repo.snapshot());
+    const cash = (xs: { amountMinor?: number }[]) => xs.reduce((n, m) => n + (m.amountMinor ?? Number.NaN), 0);
+    return {
+      actions: s.actions.length,
+      claims: s.claims.length,
+      receipts: s.receipts.length,
+      expectedMinor: cash(s.claims.map((c) => c.expected as { amountMinor?: number })),
+      hotelExpectedMinor: (s.claims.find((c) => c.bookingId === core.DEMO_IDS.bookings.hotel)?.expected as { amountMinor?: number } | undefined)?.amountMinor,
+      bookingStates: s.bookings.map((b) => b.state).sort(),
+    };
+  });
+}
+
+/** Dashboard → demo controls → ReRoute: real imports and the ReRoute-owned disruption trigger. */
+async function startReRoute(page: Page) {
+  await page.goto(TRIP);
+  await control(page, 'Import sample bookings').click();
+  await expect(statusMessage(page)).toHaveText('Saved 4 reviewed sample bookings.');
+  await control(page, 'Trigger flight cancellation').click();
+  await expect(page.getByText(/Disruption:.*Bayline Air cancelled BL 214/)).toBeVisible();
+  await page.getByRole('link', { name: 'Open ReRoute' }).click();
+  await expect(page.getByRole('heading', { level: 1, name: 'ReRoute' })).toBeVisible();
+}
+
+async function approveCancelTrip(page: Page) {
+  await control(page, 'Review cancel-trip actions').click();
+  const dialog = page.getByRole('dialog');
+  await expect(control(page, 'Approve actions')).toBeDisabled();
+  await dialog.getByLabel('I understand these are simulated actions').check();
+  await control(page, 'Approve actions').click();
+  await expect(card(page, 'Simulated actions recorded')).toContainText('4 recorded; 0 unfinished.');
+}
+
+test.describe('demo journey: ReRoute approval to TripWallet (Agents 4 and 5, #6/#7)', () => {
+  test.describe.configure({ retries: 0 });
+
+  test('approve cancel-trip in ReRoute before the hotel deadline; the shell syncs $820 of claims into TripWallet and the dashboard', async ({ page }) => {
+    const errors: string[] = [];
+    page.on('pageerror', (e) => errors.push(e.message));
+    await startReRoute(page);
+    await expect(card(page, 'Cancel the trip')).toContainText('$820.00');
+    await approveCancelTrip(page);
+    // The shell, not ReRoute, created the claims; the claim-sync status reports it in words.
+    // Sync runs after each recorded action, so the last run's split varies; the total is fixed.
+    await expect(page.getByRole('status').filter({ hasText: /Refund claims up to date \(\d created, \d already tracked\)/ })).toBeVisible();
+    await expect.poll(async () => (await storedWorkspace(page)).claims).toBe(4);
+    expect(await storedWorkspace(page)).toMatchObject({
+      actions: 4, claims: 4, receipts: 0, expectedMinor: 82000, hotelExpectedMinor: 40000,
+      bookingStates: ['cancelled', 'cancelled', 'cancelled', 'cancelled'],
+    });
+
+    // Shell navigation to the wallet. (ReRoute's own "Open TripWallet" link is reported on #37.)
+    await page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: 'TripWallet' }).click();
+    await expect(card(page, 'Harbor Line Hotel Midtown')).toContainText('$400.00');
+
+    await page.goto(TRIP);
+    const claimsCard = card(page, 'Refund claims');
+    await expect(claimsCard.getByRole('listitem')).toHaveCount(4);
+    await expect(claimsCard).toContainText('$400.00');
+    for (const row of await bookingRows(page).all()) await expect(row).toContainText(/cancelled/i);
+    expect(errors).toEqual([]);
+  });
+
+  test('at the hotel cutoff the shared clock gives $620; completed state survives reload; repeat approval, trigger and receipt import do not double records', async ({ page }) => {
+    const errors: string[] = [];
+    page.on('pageerror', (e) => errors.push(e.message));
+    await startReRoute(page);
+    // Shared demo clock exactly at the exclusive cutoff: hotel falls to the $200 tier.
+    await control(page, 'At hotel deadline').click();
+    await expect(page.getByLabel('Active clock')).toContainText('2026-11-19T23:00:00Z');
+    await expect(card(page, 'Cancel the trip')).toContainText('$620.00');
+    await approveCancelTrip(page);
+    await expect.poll(async () => (await storedWorkspace(page)).claims).toBe(4);
+    expect(await storedWorkspace(page)).toMatchObject({ actions: 4, expectedMinor: 62000, hotelExpectedMinor: 20000 });
+
+    // Reload: recorded state persists and approval cannot run again.
+    await page.reload();
+    await expect(card(page, 'Recorded actions')).toContainText('Harbor Line Hotel');
+    await expect(control(page, 'Review cancel-trip actions')).toBeDisabled();
+    // Re-triggering the disruption from the dashboard is a no-op.
+    await page.goto(TRIP);
+    await control(page, 'Trigger flight cancellation').click();
+    await expect(page.getByText(/Disruption:.*Bayline Air cancelled BL 214/)).toHaveCount(1);
+
+    // Wallet load re-runs claim sync (idempotent); importing the same receipt twice stores it once.
+    await page.goto(`${TRIP}/wallet`);
+    await expect(page.getByRole('status').filter({ hasText: '0 created, 4 already tracked' })).toBeVisible();
+    for (let i = 0; i < 2; i++) {
+      await control(page, 'Load sample $150 receipt').click();
+      await control(page, 'Confirm reviewed evidence').click();
+      await expect(page.getByRole('status').filter({ hasText: 'Saved.' })).toBeVisible();
+    }
+    await page.reload();
+    expect(await storedWorkspace(page)).toMatchObject({ actions: 4, claims: 4, receipts: 1, expectedMinor: 62000 });
+    expect(errors).toEqual([]);
+  });
 });
 
 test.describe('TripWallet integration', () => {
