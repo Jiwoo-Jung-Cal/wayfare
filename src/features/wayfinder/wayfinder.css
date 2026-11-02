@@ -1,0 +1,42 @@
+/* Feature composition from wayfinder-intake r1-draft; shared tokens stay owned by Agent 1. */
+.wf-plan-route-fields,
+.wf-plan-choice-fields,
+.wf-plan-options,
+.wf-plan-breakdowns {
+  display: grid;
+  gap: var(--wf-space-4);
+  align-items: start;
+}
+.wf-plan-route-fields { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.wf-plan-choice-fields,
+.wf-plan-options { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.wf-plan-options,
+.wf-plan-breakdowns { gap: var(--wf-space-5); }
+.wf-plan-breakdowns { grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: var(--wf-space-3); }
+.wf-plan-card { min-width: 0; }
+.wf-plan-card[data-selected='true'] { border: 2px solid var(--wf-color-accent); }
+.wf-plan-card-title { display: flex; align-items: start; gap: var(--wf-space-3); justify-content: space-between; }
+.wf-plan-card-title h3 { margin: 0; }
+.wf-plan-card-title > .wf-badge { flex-shrink: 0; }
+.wf-plan-card > p { margin: 0; }
+.wf-plan-card > .wf-button { width: 100%; }
+.wf-plan-field-error { color: var(--wf-color-danger); font-size: var(--wf-text-sm); }
+.wf-wayfinder .wf-input { width: 100%; min-width: 0; }
+.wf-wayfinder label { min-width: 0; }
+.wf-wayfinder .wf-kv > :last-child { flex-shrink: 0; }
+.wf-wayfinder summary { cursor: pointer; color: var(--wf-color-accent); }
+.wf-wayfinder details[open] > summary { margin-bottom: var(--wf-space-3); }
+@media (max-width: 63.99rem) {
+  .wf-plan-route-fields,
+  .wf-plan-choice-fields { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .wf-plan-card-title { flex-direction: column; }
+}
+@media (max-width: 47.99rem) {
+  .wf-plan-options,
+  .wf-plan-breakdowns { grid-template-columns: minmax(0, 1fr); }
+  .wf-plan-card-title { flex-direction: row; }
+}
+@media (max-width: 29.99rem) {
+  .wf-plan-route-fields,
+  .wf-plan-choice-fields { grid-template-columns: minmax(0, 1fr); }
+}

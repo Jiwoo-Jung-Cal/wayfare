@@ -4,7 +4,7 @@ import {
   isUnknown, memoryStorage, money, ok, subtract, unwrap, usd,
   type PlanOption, type Result,
 } from '../../core/index.ts';
-import { costBreakdown, createPlanGenerator, defaultPreferences, generatePlans, type CandidateProvider } from './handler.ts';
+import { budgetForDisplay, costBreakdown, createPlanGenerator, defaultPreferences, generatePlans, type CandidateProvider } from './handler.ts';
 import { selectPlanningOption } from './selection.ts';
 
 const context = { workspaceId: 'ws-wayfinder-test', tripId: DEMO_TRIP_ID, now: DEMO_TIMES.clockStart };
@@ -120,5 +120,13 @@ describe('selected plan persistence', () => {
     expect((await selectPlanningOption(repo, plans[2]!, context.now)).ok).toBe(false);
     expect((await selectPlanningOption(repo, { ...plans[0]!, expiresAt: context.now }, context.now)).ok).toBe(false);
     expect((await selectPlanningOption(repo, { ...plans[0]!, total: usd(1) }, context.now)).ok).toBe(false);
+  });
+});
+
+describe('budget display fallback', () => {
+  it('shows a validated budget exactly and an unreadable budget as unknown, never zero', () => {
+    expect(budgetForDisplay('800.50')).toEqual(money(80050, 'USD'));
+    const bad = budgetForDisplay('not-a-number');
+    expect(isUnknown(bad)).toBe(true);
   });
 });

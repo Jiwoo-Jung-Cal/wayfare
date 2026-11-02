@@ -1,47 +1,67 @@
 # Agent 2 handoff
 
-Status: functional Wayfinder + intake milestone published for review; #4 remains open. Final visual acceptance and real browser verification are blocked.
-Task: https://github.com/Jiwoo-Jung-Cal/wayfare/issues/4
-Branch: agent-2/wayfinder-intake
-Draft milestone PR: https://github.com/Jiwoo-Jung-Cal/wayfare/pull/17
-Base: main b723c5b73d24c2bb8e211604f104d45ed29a9e4e. First Wayfinder commit: https://github.com/Jiwoo-Jung-Cal/wayfare/commit/9e18f40d0338c3eefe37f66b8925c056d2555a09. The latest intake commit/checks are linked in the structured #4 report and PR head.
+Status: functional Wayfinder/intake is merged (#17); exact-amount/stale-hash fixes and interim r1-draft feature layouts are ready for review in #21. Issue #4 remains open for formal visual acceptance.
 
-## Working behavior
+- Task: https://github.com/Jiwoo-Jung-Cal/wayfare/issues/4
+- Active branch: `agent-2/wayfinder-intake`
+- Active milestone PR: https://github.com/Jiwoo-Jung-Cal/wayfare/pull/21
+- Main incorporated: `bda78da` via merge commit (#32 vendor chunk split and #33 prompt refresh included; no conflicts).
+- Merged feature milestone: #17, head `8642fcca3484b40a8afacd1b0d5e4e0931d88511`; #18/#19 added integrated browser coverage/narrow fixes.
+- Agent 1 technically accepted expanded #21 at `6c496af` with no blocking findings (https://github.com/Jiwoo-Jung-Cal/wayfare/pull/21#issuecomment-6567307593). Its optional nit was applied: the comparison heading now uses `budgetForDisplay`, so an unreadable budget renders as Unknown instead of a non-null assertion (regression test added). Latest SHA/CI links are in the structured #4 report.
 
-Wayfinder validates the bounded sample preferences, compares three source-labeled component-cost options, changes ranking for price/convenience/flexibility, and changes itinerary/totals when the paid activity is omitted. Invalid or unsupported input is rejected. Unknown and mixed prices, over-budget plans, provider errors, stale responses, expired options, selection replay and reload persistence are handled. A plan is never a purchased or confirmed booking.
+## Completed behavior
 
-Intake accepts pasted text or an explicitly selected canonical sample, uses the shared extraction service, renders facts and source-backed policy evidence, permits booking-field correction, requires confirmed-booking attestation, and saves reviewed facts through the shared repository. Unknown price is never zero; missing/disputed policy remains unknown/needs_review. Failed extraction preserves text; failed saves preserve review edits. Source hashes and request generations guard stale/mismatched extraction. Duplicates return existing facts without overwriting prior imports. Saved bookings survive reload and refresh the shared shell.
+Wayfinder validates sample preferences, compares three source-labeled options, ranks by price/convenience/flexibility, and recalculates integer totals when the paid activity is omitted. Invalid/unsupported inputs preserve previous results and prevent selection until regeneration succeeds. Unknown/over-budget prices are explicit and cannot be selected. Selection persists/replays through the shared repository without creating confirmed bookings.
 
-All four canonical confirmation imports were verified through this intake service: stable booking IDs, $900 USD paid total, duplicate replay, and independence from plan selection.
+Intake accepts pasted text or a deliberately chosen sample, extracts through Agent 1's service, renders editable facts beside verbatim evidence, and requires confirmed-booking attestation before saving. The original document is retained; missing prices stay unknown. Disputed policy saves as unknown/needs_review. Duplicate imports replay prior reviewed facts. Failed extraction preserves text; failed saves preserve corrections. Shared hashes and request generations reject mismatched/stale extraction.
 
-## Changed owned paths and interfaces
+Earlier #21 hardening preserves exact source minor units in review using shared currency precision, avoiding floating-point cent rounding. Saving remains USD-only. The post-hash invalidation check discards obsolete source-mismatch errors. Five regressions covered JPY/KWD precision, safe-integer USD rounding and the async error race. All four canonical imports retain shared booking IDs and total $900 in confirmed paid bookings, independent of plan selection.
 
-- src/features/wayfinder/: public feature: FeatureModule in index.tsx, key wayfinder, path plan; server-safe generatePlans/createPlanGenerator handler and selectPlanningOption service; tests and decision/verification README.
-- src/features/intake/: public feature: FeatureModule in index.tsx, key intake, path import; extraction/review/save functions, tests and decision/verification README.
-- This handoff only under docs/.
+## Interim design implementation
 
-The existing registry auto-discovers both exports. Explicit services: FeatureContext.repo, clock, extraction, refresh. Repository operations: getTrip/listPlans/savePlan/selectPlan and listBookings/saveReviewedBooking. Intake delegates extraction to ctx.extraction.extractBooking and save construction to shared reviewedBookingInput. Shared contracts v1. No shared schema, root dependency/configuration, extraction backend, ReRoute, TripWallet, or Figma changes.
+Implemented revision: **r1-draft (2026-11-01), interim demo only**. Formal approval remains **pending** in `design/approvals.json`; no Figma/approval records were changed.
 
-## Design, sources and live status
+- Handoff: https://github.com/Jiwoo-Jung-Cal/wayfare/blob/main/design/handoffs/wayfinder-intake.md
+- Exports: `design/exports/wayfinder-intake/` (desktop/mobile compare and review references inspected).
+- Authorization/shared elements: https://github.com/Jiwoo-Jung-Cal/wayfare/issues/4#issuecomment-6556949447 and merged #29. Agent 1 relayed Jiwoo's instruction to continue with the draft and published `MoneyStat`, `KeyValue`, Ghost buttons and Simulated/Accent tones.
+- Figma: https://www.figma.com/design/ZZS9jEmANeCrjGxWxxCofK
+- Frames: Wayfinder `11:2`, `11:188`, `11:303`; intake `10:2`, `10:80`, `10:238`, `10:345`.
 
-Design handoff: https://github.com/Jiwoo-Jung-Cal/wayfare/blob/main/design/handoffs/wayfinder-intake.md — approval pending; no revision assigned. Jiwoo must supply approved preferences/loading/error/comparison/details/selected-plan and intake/review states, component/layout references, desktop/narrow rules and exports. Screens are explicitly marked functional previews using the existing shared components/tokens. Figma owner workspace: https://www.figma.com/design/ZZS9jEmANeCrjGxWxxCofK. No canvas edits were made.
+Wayfinder implements the 4-up route/3-up choice rows, three plan cards, hero amounts, selected accent border/secondary button, itemized costs, field errors, stale-preference warning, and success/replay notices. Cards stack below 768px; preferences become 2-up below 1024px and 1-up below 480px.
 
-Planning data: shared demoPlans/demoTrip/DEMO_IDS, fictional SFO–NYC sample, November 20–23, 2026, one traveler, USD. Baseline booked state is separate. Listed-component totals exclude unquoted return travel/meals/separately itemized fees. No live planning model, travel provider, OCR or email integration was added.
+Intake implements a two-column review/original-document composition, two-up field/evidence pairs, confidence labels and Check this badges, muted policy card, inline validation using existing `validateReview`, disabled Save for invalid facts/missing attestation, success/duplicate notices and Ghost Start over. Fields and document stack below 1024px; mobile Save fills its row. The source form stays accessible above review so sample/input replacement remains possible. Source edits invalidate review; Start over retains pasted text. This is supplied draft implementation, not pixel-exact final acceptance.
 
-Intake data: shared DEMO_DOCUMENT_SOURCES and DEMO_IDS (canonical flight/hotel/activity/transfer, unknown policy, late deadline, malformed examples). The screen labels actual extraction capability and model/request ID. Connected extraction is supported through Agent 1's adapter but a real AI call is unverified without server credentials.
+## Owned paths, exports and dependencies
 
-Policy correction request: https://github.com/Jiwoo-Jung-Cal/wayfare/issues/3#issuecomment-6551411606. Shared BookingReviewEdits has no policy corrections. Until a source-validated interface is supplied, reviewers may conservatively discard disputed policy rules into an unknown/needs_review state while retaining the original document. They cannot invent positive refund rules. Arbitrary policy correction remains unimplemented.
+- `src/features/wayfinder/`: `feature: FeatureModule`, key `wayfinder`, path `plan`; server-safe `generatePlans`/`createPlanGenerator`, `selectPlanningOption`, feature-local CSS, tests, browser verification and README.
+- `src/features/intake/`: `feature: FeatureModule`, key `intake`, path `import`; `createIntakeExtractor`, `reviewDraft`, `validateReview`, `saveReviewedIntake`, feature-local CSS, tests and README.
+- Only this handoff under `docs/` was changed for Agent 2's status.
 
-## Checks and limitations
+The registry still auto-discovers both exports. Explicit services remain `ctx.repo`, `ctx.clock`, `ctx.extraction`, `ctx.refresh`. Repository operations: `getTrip`, `listPlans`, `savePlan`, `selectPlan`, `listBookings`, `saveReviewedBooking`. Extraction uses `ctx.extraction.extractBooking`; save construction uses shared `reviewedBookingInput` and schemas. Shared contract v1 is unchanged. No root dependency/configuration, shared token/schema, extraction backend, ReRoute or TripWallet code was authored in this milestone.
 
-npm ci succeeded with installed Node 24.22.1/npm 11.9.0. Current production build and TypeScript pass. Focused suites cover invalid/unsupported input, actual preference changes, exact/over/unknown costs, candidate integrity, simulated/provider errors, stale responses, selection replay/reload, all four canonical imports, evidence, edits, unknown policy/price, source binding, failed writes, duplicates and reload. Final full suite: 101 passed, 2 skipped, 4 todo (49 feature tests: Wayfinder 26, intake 23). TypeScript and production build passed. Exact publication commit is recorded in #4/PR #17.
+## Sources, capabilities and financial boundaries
 
-Browser interaction, narrow layout and visual fidelity are UNVERIFIED on this computer. No Chrome is installed; npx playwright install chromium failed on an invalid ZIP. Cloud Browser cannot reach the local Vite server (ERR_CONNECTION_REFUSED). Vite works at 127.0.0.1; --host 0.0.0.0 fails in this environment's network-interface enumeration. Reproducible UI steps are in both feature READMEs. Agent 1 owns the integrated Playwright steps and can run these pages on its working browser environment. Build warns that the eager app bundle exceeds 500 kB (511.93 kB); route splitting is a shared integration concern for Agent 1.
+Planning uses shared `demoPlans`, `demoTrip`, `DEMO_IDS`: fictional SFO–NYC, November 20–23, 2026, one traveler, USD. Listed-component defaults are $815, $900 and Unknown (known subtotal $1,010). Free time removes the $80 activity; budget $800 permits the $735 saver while the $820 nonstop remains over budget. Unknown cost is never free. Unquoted return travel, meals and separately itemized taxes/fees are excluded explicitly.
 
-## Workflow and next bounded step
+Intake samples use `DEMO_DOCUMENT_SOURCES`/`DEMO_IDS`: flight/hotel/activity/transfer, unknown policy, late hotel deadline and malformed text. Actual extraction capability and request/model are labeled. Connected sample extraction is browser-verified; live AI and live travel quotes remain unverified. No provider purchases/cancellations, OCR, email integration or wallet eligibility calculations were added.
 
-Connected GitHub account Jiwoo-Jung-Cal verified with pull/push access. Direct Git HTTPS lacks CLI credentials, so the separate local checkout was hydrated from the actual main commit/tree/blobs (all object hashes verified); the assigned remote branch was safely fast-forwarded to main. Publication uses GitHub tree/commit/ref tools with expected-head checks. No forced updates or alternate repository.
+V1 policy decision: https://github.com/Jiwoo-Jung-Cal/wayfare/issues/3#issuecomment-6551589743. Disputed terms become unknown/needs_review and retain the original source. Positive corrections require a separately scoped, source-validated contract; that does not block this MVP.
 
-Decisions: deterministic permitted sample candidates and integer code arithmetic rather than broad live search; shared extraction/save services rather than another backend; document-hash/idempotency reuse rather than private storage. Feature READMEs document the alternatives and limits.
+## Verification
 
-Next: Agent 1 reviews/integrates PR #17 and verifies plan-to-dashboard and pasted-intake journeys in its browser environment; Jiwoo publishes the approved visual revision and responsive states; Agent 2 applies that revision and completes the remaining policy-correction interface if required. Do not close #4 until approved design and real UI evidence are linked. Resume instruction: Resume Agent 2 on Issue #4 / PR #17; re-read current main, task comments and the approved design handoff before changing code.
+Actual checks on the branch after merging main `bda78da` (Node 24.21.0 checksum-verified, npm 11.19.0):
+
+- `npm ci`: passed; root manifest/lockfile unchanged by Agent 2.
+- `npm run typecheck`: passed.
+- `npm test`: **134 passed, 1 skipped, 2 todo** (adds the budget-display fallback case).
+- `npm run build`: passed with no chunk-size warning (after #32).
+- `CI=1 npm run e2e` (Chrome): **13 passed, 2 skipped**; skips are pending ReRoute steps.
+- `PW_CHANNEL=chrome node src/features/wayfinder/verify-browser.mjs`: passed (states, validation, replay/reload, 1440–320px layouts, no page errors).
+
+Local browser verification is now working. Playwright's CDN download still yielded an invalid archive; temporary Chromium 153 from npm ran successfully. Browser/server must share the same execution network environment. No browser package or temporary configuration was added to root dependencies. The owned script accepts `PW_EXECUTABLE_PATH`, `PW_CHANNEL`, optional `WAYFARE_VERIFY_OUTPUT`. Integrated E2E used a temporary executable-path configuration. The focused script is not automatically wired into shared CI; Agent 1 can add it under integration.
+
+## Workflow and next step
+
+Connected account `Jiwoo-Jung-Cal` has pull/push permission. Direct HTTPS lacks CLI credentials, so current main commits/tree/blobs were hydrated through connected GitHub with every object hash verified. Main was safely merged into the existing branch without reset/force-push. Publication uses a merge-parent commit and expected-head ref check. #21 remains Agent 2's single active PR; #4 remains open.
+
+Next: no remaining Agent 2 code work on #21. Jiwoo decides the merge and formal r1 visual approval (still pending in `design/approvals.json`). Apply requested corrections within Agent 2's paths, then finish visual acceptance when the handoff is approved. Broad integration and ReRoute/TripWallet calculations remain with their owners. Resume: **Resume Agent 2 on #4 / PR #21; read current main, latest task/PR comments and design approval first.**

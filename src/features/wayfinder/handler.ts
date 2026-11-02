@@ -2,8 +2,8 @@
 import { z } from 'zod';
 import {
   DEMO_TRIP_ID, PlanOptionSchema, demoPlans, demoTrip, err, fromZodError,
-  isUnknown, ok, parseMajorUnits, sum, sumMaybe,
-  type DemoContext, type Money, type PlanOption, type Result,
+  isUnknown, ok, parseMajorUnits, sum, sumMaybe, unknownValue,
+  type DemoContext, type MaybeMoney, type Money, type PlanOption, type Result,
 } from '../../core/index.ts';
 
 const date = z.string().regex(/^\d{4}-\d{2}-\d{2}$/).refine((s) => {
@@ -25,6 +25,10 @@ export const PreferencesSchema = z.strictObject({
   if (!budget || budget.amountMinor <= 0) ctx.addIssue({ code: 'custom', path: ['budget'], message: 'Budget must be positive and within the supported amount range' });
 });
 export type Preferences = z.infer<typeof PreferencesSchema>;
+/** Display-safe budget: an unparseable budget renders as unknown, never zero or a crash. */
+export function budgetForDisplay(text: string): MaybeMoney {
+  return parseMajorUnits(text, 'USD') ?? unknownValue('Budget could not be read as a USD amount');
+}
 export const SAMPLE_SCOPE = 'Sample only: San Francisco (SFO) to New York (JFK), November 20–23, 2026, one traveler, USD.';
 
 export function defaultPreferences(ctx: DemoContext): Preferences {

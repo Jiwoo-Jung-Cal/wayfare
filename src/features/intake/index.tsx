@@ -1,20 +1,36 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Link } from 'react-router';
 import {
   BOOKING_KINDS, DEMO_DOCUMENT_SOURCES, DEMO_IDS, MAX_EXTRACTION_INPUT_CHARS, appError,
   type AppError, type Booking, type BookingExtraction, type ExtractedField, type FeatureModule, type FeaturePageProps,
 } from '../../core/index.ts';
-import { Button, CapabilityLabel, Card, ErrorState, InstantText, LoadingState, MoneyText, Notice, StatusBadge } from '../../ui/index.tsx';
-import { createIntakeExtractor, reviewDraft, saveReviewedIntake, type ReviewDraft } from './review.ts';
+import { Button, CapabilityLabel, Card, EmptyState, ErrorState, InstantText, KeyValue, LoadingState, MoneyText, Notice, StatusBadge } from '../../ui/index.tsx';
+import { createIntakeExtractor, reviewDraft, saveReviewedIntake, validateReview, type ReviewDraft } from './review.ts';
+import './intake.css';
 
 const SAMPLE_IDS = [DEMO_IDS.documents.flightConfirmation, DEMO_IDS.documents.hotelConfirmation,
   DEMO_IDS.documents.activityConfirmation, DEMO_IDS.documents.transferConfirmation,
   DEMO_IDS.documents.unknownPolicy, DEMO_IDS.documents.lateDeadlineHotel, DEMO_IDS.documents.malformed];
 
 function Evidence({ field }: { field: ExtractedField<unknown> }) {
-  return field.status === 'found' ? <div className="wf-muted">Source ({field.confidence} confidence): <q>{field.excerpt}</q></div>
-    : <div className="wf-muted">Unknown: {field.reason}</div>;
+  return field.status === 'found' ? <div className="wf-stack wf-intake-evidence">
+    <div className="wf-row"><span className="wf-muted">{field.confidence.charAt(0).toUpperCase() + field.confidence.slice(1)} confidence</span>
+      {field.confidence !== 'high' && <StatusBadge tone="warning">Check this</StatusBadge>}</div>
+    <blockquote><span className="wf-muted">Source excerpt</span><br /><q>{field.excerpt}</q></blockquote>
+  </div> : <p className="wf-muted">Not found in the document. {field.reason}</p>;
 }
+
+function ReviewField({ name, label, issue, field, children }: {
+  name: string; label: string; issue?: string; field?: ExtractedField<unknown>; children: ReactNode;
+}) {
+  return <div className="wf-stack wf-intake-field"><label className="wf-stack" htmlFor={`wf-review-${name}`}>{label}</label>
+    {children}{issue && <span id={`wf-review-${name}-error`} className="wf-intake-field-error">{issue}</span>}
+    {field && <div id={`wf-review-${name}-evidence`}><Evidence field={field} /></div>}
+  </div>;
+}
+
+const factLabels = { provider: 'Provider', reference: 'Booking reference', title: 'Booking title',
+  startsAt: 'Start (UTC ISO instant)', endsAt: 'End (UTC ISO instant, optional)', localTimezone: 'Display timezone (IANA)' };
 
 export function IntakePage({ tripId, ctx }: FeaturePageProps) {
   const [text, setText] = useState('');
@@ -25,6 +41,7 @@ export function IntakePage({ tripId, ctx }: FeaturePageProps) {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
+  const [replayed, setReplayed] = useState(false);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [loadAttempt, setLoadAttempt] = useState(0);
@@ -63,6 +80,7 @@ export function IntakePage({ tripId, ctx }: FeaturePageProps) {
       const response = await saveReviewedIntake({ extraction, sourceText: text, draft, tripId }, ctx);
       if (!response.ok) { setError(response.error); return; }
       const b = response.value.booking;
+      setReplayed(response.value.replayed);
       setBookings((current) => [...current.filter((x) => x.id !== b.id), b]);
       setMessage(response.value.replayed ? `Already imported: ${b.provider} ${b.reference}. No duplicate was created; existing reviewed facts were kept.`
         : `Saved reviewed booking: ${b.provider} ${b.reference}. ${response.value.policy?.reviewState === 'needs_review' ? 'Policy still needs review.' : ''}`);
@@ -70,63 +88,95 @@ export function IntakePage({ tripId, ctx }: FeaturePageProps) {
     } catch { setError(appError('unavailable', 'Save failed. Your pasted text and review edits are preserved.')); }
     finally { busy.current = false; setSaving(false); }
   }
-  return <div className="wf-stack">
-    <h1>Import bookings</h1><Notice>Functional preview · Jiwoo’s visual design approval is pending.</Notice>
-    <p>Paste a confirmation, inspect its facts and evidence, then explicitly save it to this trip. A selected plan is not a confirmation.</p>
-    <p>{ctx.extraction.description}</p>
-    {ctx.extraction.capability !== 'unavailable' && <CapabilityLabel status={ctx.extraction.capability}>extraction service</CapabilityLabel>}
-    <Card title="Confirmation text"><form className="wf-stack" onSubmit={(e) => { e.preventDefault(); void extract(); }}>
+  const validation = draft ? validateReview(draft) : null;
+  function fieldIssue(key: string) {
+    const path = key === 'amount' ? 'paid' : key;
+    const local = validation && !validation.ok ? validation.error.issues?.find((entry) => entry.path === path)?.message : undefined;
+    return local ?? error?.issues?.find((entry) => entry.path === path || entry.path === `booking.${path}`)?.message;
+  }
+  function fieldProps(key: string, evidence = true) {
+    const descriptions = [fieldIssue(key) && `wf-review-${key}-error`, evidence && `wf-review-${key}-evidence`].filter(Boolean).join(' ');
+    return { id: `wf-review-${key}`, 'aria-invalid': !!fieldIssue(key), 'aria-describedby': descriptions || undefined };
+  }
+  const pasteError = !extraction && error && ['not_configured', 'validation_failed', 'provider_error', 'timeout', 'rate_limited'].includes(error.code);
+  const confirmationInput = <Card title="Confirmation text"><form className="wf-stack" onSubmit={(e) => { e.preventDefault(); void extract(); }}>
       <fieldset disabled={saving} className="wf-stack"><legend>Pasted text or an explicitly selected sample</legend>
         <label className="wf-stack">Sample document<select className="wf-input" value={sample} onChange={(e) => setSample(e.target.value)}>
           {SAMPLE_IDS.map((id) => <option key={id} value={id}>{DEMO_DOCUMENT_SOURCES[id]!.title}</option>)}
         </select></label>
         <div><Button onClick={() => changeText(DEMO_DOCUMENT_SOURCES[sample]!.text)}>Use sample document</Button></div>
-        <label className="wf-stack">Paste booking confirmation<textarea className="wf-input" rows={12} maxLength={MAX_EXTRACTION_INPUT_CHARS} value={text} onChange={(e) => changeText(e.target.value)} /></label>
-        <p className="wf-muted">{text.length}/{MAX_EXTRACTION_INPUT_CHARS} characters. In sample mode only the listed documents can be extracted; other text requires configured server AI.</p>
-        <div><Button type="submit" variant="primary" disabled={loading || text.trim().length < 20}>Extract booking</Button></div>
+        <label className="wf-stack" htmlFor="wf-intake-text">Paste booking confirmation</label>
+        <textarea id="wf-intake-text" className="wf-input wf-mono" rows={12} maxLength={MAX_EXTRACTION_INPUT_CHARS} value={text} aria-invalid={!!pasteError} aria-describedby="wf-intake-text-help" onChange={(e) => changeText(e.target.value)} />
+        <p id="wf-intake-text-help" className="wf-muted">{text.length}/{MAX_EXTRACTION_INPUT_CHARS} characters. In sample mode only the listed documents can be extracted; other text requires configured server AI.</p>
+        <div><Button type="submit" variant="primary" aria-busy={loading} disabled={loading || text.trim().length < 20}>{loading ? 'Extracting booking…' : 'Extract booking'}</Button></div>
       </fieldset>
-    </form></Card>
+    </form></Card>;
+  return <div className="wf-stack-lg wf-intake">
+    <header className="wf-page-header"><h1>Import bookings</h1>
+      <p>Paste a confirmation, inspect its facts and evidence, then explicitly save it to this trip. A selected plan is not a confirmation.</p>
+    </header>
+    {extraction && confirmationInput}
+    <div className="wf-intake-layout"><div className="wf-stack-lg">
+    {!extraction && confirmationInput}
     {loading && <LoadingState label="Extracting booking facts; nothing has been saved…" />}
     {error && <ErrorState error={error} onRetry={() => retry.current()} />}
-    {message && <p role="status">{message}</p>}
-    {extraction && draft && <Card title="Review before saving">
-      <CapabilityLabel status={extraction.capability}>this extraction</CapabilityLabel>
-      <p className="wf-muted">Request {extraction.requestId}{extraction.model && ` · ${extraction.model}`}</p>
+    {message && <div role="status"><Notice tone={replayed ? 'info' : 'success'}>{message}</Notice></div>}
+    {extraction && draft && <Card title="Review before saving" actions={<CapabilityLabel status={extraction.capability}>this extraction</CapabilityLabel>}>
+      <p className="wf-mono">Request {extraction.requestId}{extraction.model && ` · ${extraction.model}`}</p>
       {extraction.warnings.map((warning) => <Notice key={warning} tone="warning">{warning}</Notice>)}
-      <form className="wf-stack" onSubmit={(e) => { e.preventDefault(); void save(); }}>
+      <form className="wf-stack" noValidate onSubmit={(e) => { e.preventDefault(); if (validation?.ok) void save(); }}>
         <fieldset disabled={saving} className="wf-stack"><legend>Booking facts · editable</legend>
-          <div className="wf-grid">
-            <label className="wf-stack">Booking type<select className="wf-input" value={draft.kind} onChange={(e) => edit('kind', e.target.value as ReviewDraft['kind'])}><option value="">Unknown · choose a type</option>{BOOKING_KINDS.map((k) => <option key={k}>{k}</option>)}</select><Evidence field={extraction.booking.kind} /></label>
-            {(['provider', 'reference', 'title', 'startsAt', 'endsAt', 'localTimezone'] as const).map((key) => <label className="wf-stack" key={key}>
-              {{ provider: 'Provider', reference: 'Booking reference', title: 'Booking title', startsAt: 'Start (UTC ISO instant)', endsAt: 'End (UTC ISO instant, optional)', localTimezone: 'Display timezone (IANA)' }[key]}
-              <input className="wf-input" value={draft[key]} onChange={(e) => edit(key, e.target.value)} /><Evidence field={extraction.booking[key]} />
-            </label>)}
-            <label className="wf-stack">Paid amount (blank means unknown)<input className="wf-input" inputMode="decimal" value={draft.amount} onChange={(e) => edit('amount', e.target.value)} /><Evidence field={extraction.booking.paid} /></label>
-            <label className="wf-stack">Currency (USD trip)<input className="wf-input" value={draft.currency} onChange={(e) => edit('currency', e.target.value)} /></label>
+          <div className="wf-intake-review-fields">
+            <ReviewField name="kind" label="Booking type" issue={fieldIssue('kind')} field={extraction.booking.kind}>
+              <select {...fieldProps('kind')} className="wf-input" value={draft.kind} onChange={(e) => edit('kind', e.target.value as ReviewDraft['kind'])}><option value="">Unknown · choose a type</option>{BOOKING_KINDS.map((k) => <option key={k}>{k}</option>)}</select>
+            </ReviewField>
+            {(['provider', 'reference', 'title', 'startsAt', 'endsAt', 'localTimezone'] as const).map((key) => <ReviewField name={key} label={factLabels[key]} key={key} issue={fieldIssue(key)} field={extraction.booking[key]}>
+              <input {...fieldProps(key)} className="wf-input" value={draft[key]} onChange={(e) => edit(key, e.target.value)} />
+            </ReviewField>)}
+            <ReviewField name="amount" label="Paid amount (blank means unknown)" issue={fieldIssue('amount')} field={extraction.booking.paid}>
+              <input {...fieldProps('amount')} className="wf-input" inputMode="decimal" value={draft.amount} onChange={(e) => edit('amount', e.target.value)} />
+            </ReviewField>
+            <ReviewField name="currency" label="Currency (USD trip)" issue={fieldIssue('currency')}>
+              <input {...fieldProps('currency', false)} className="wf-input" value={draft.currency} onChange={(e) => edit('currency', e.target.value)} />
+            </ReviewField>
           </div>
           <p className="wf-muted">Source excerpts show the original extraction. Edited values are your corrections; the original document is retained.</p>
-          <section className="wf-stack" aria-label="Policy evidence"><h3>Policy facts and source evidence</h3>
+          <section className="wf-card wf-stack wf-intake-policy" aria-label="Policy evidence"><h3>Policy facts and source evidence</h3>
             <p>Refundability: {draft.policyUncertain ? 'unknown · reviewer disputed extraction' : extraction.policy.refundability}. These are policy terms, not an expected refund or received money.</p>
-            {extraction.policy.refundTiers.map((tier, i) => <div key={i}><strong>{tier.label}</strong><p>Policy amount: <MoneyText value={tier.refund} /> · method: {tier.method} · condition: {tier.condition}</p>
-              <p>Window: {tier.window.startsAtOrAfter ?? 'no stated start'} (inclusive) to {tier.window.endsBefore ?? 'no stated end'} (exclusive).</p><blockquote>{tier.excerpt}</blockquote></div>)}
+            {extraction.policy.refundTiers.map((tier, i) => <div className="wf-stack" key={i}>
+              <KeyValue label={tier.label} value={<MoneyText value={tier.refund} />} />
+              <p className="wf-muted">Method: {tier.method} · condition: {tier.condition}</p>
+              <p>Window: {tier.window.startsAtOrAfter ?? 'no stated start'} (inclusive) to {tier.window.endsBefore ?? 'no stated end'} (exclusive).</p><blockquote><span className="wf-muted">Source excerpt</span><br /><q>{tier.excerpt}</q></blockquote></div>)}
             {extraction.policy.deadlines.map((deadline, i) => <div key={i}><strong>{deadline.label}</strong><p><InstantText value={deadline.at} timeZone={deadline.displayTimezone} /> · {deadline.displayTimezone}</p><blockquote>{deadline.excerpt}</blockquote></div>)}
             {extraction.policy.unknownFields.map((field, i) => <Notice tone="warning" key={i}>{field.field}: {field.reason}</Notice>)}
             {!extraction.policy.refundTiers.length && <Notice tone="warning">No usable refund rules were extracted. Missing terms do not mean a full refund or a nonrefundable booking.</Notice>}
-            <label><input type="checkbox" checked={draft.policyUncertain} onChange={(e) => edit('policyUncertain', e.target.checked)} /> Policy terms are uncertain or incorrect · save them as unknown and preserve the source for review</label>
+            <label className="wf-intake-checkbox"><input type="checkbox" checked={draft.policyUncertain} onChange={(e) => edit('policyUncertain', e.target.checked)} /> <span>Policy terms are uncertain or incorrect · save them as unknown and preserve the source for review</span></label>
           </section>
-          <label><input type="checkbox" checked={draft.confirmed} onChange={(e) => edit('confirmed', e.target.checked)} /> I reviewed the facts and confirm this document records a confirmed booking (sample documents remain simulated).</label>
-          <div><Button type="submit" variant="primary">{saving ? 'Saving reviewed booking…' : 'Save reviewed booking'}</Button></div>
+          {validation && !validation.ok && validation.error.issues?.some((entry) => entry.path !== 'confirmed') && <Notice tone="warning">Some booking facts need correction. Enter the required facts and resolve the highlighted fields before saving. Unknown prices and policy terms stay unknown.</Notice>}
+          <label className="wf-intake-checkbox"><input type="checkbox" checked={draft.confirmed} onChange={(e) => edit('confirmed', e.target.checked)} /> <span>I reviewed the facts and confirm this document records a confirmed booking (sample documents remain simulated).</span></label>
+          <p className="wf-muted" id="wf-review-save-help">{validation?.ok ? 'Ready to save your reviewed facts.' : draft.confirmed ? 'Resolve the highlighted fields before saving.' : 'Review the facts and check the confirmation above to enable saving.'}</p>
+          <div className="wf-row wf-intake-actions"><Button type="submit" variant="primary" aria-describedby="wf-review-save-help" aria-busy={saving} disabled={saving || !validation?.ok}>{saving ? 'Saving reviewed booking…' : 'Save reviewed booking'}</Button>
+            <Button variant="ghost" onClick={() => changeText(text)}>Start over</Button></div>
         </fieldset>
       </form>
     </Card>}
+    </div><aside className="wf-stack-lg" aria-label="Import context">
+    <Notice tone={ctx.extraction.capability === 'unavailable' ? 'warning' : ctx.extraction.capability === 'live' ? 'info' : 'simulated'}>
+      <strong>{ctx.extraction.capability === 'unavailable' ? 'Extraction unavailable' : ctx.extraction.capability === 'live' ? 'Booking extraction' : 'Sample mode: extraction is simulated'}</strong>
+      <p>{ctx.extraction.description}</p>
+      {ctx.extraction.capability !== 'unavailable' && <CapabilityLabel status={ctx.extraction.capability}>extraction service</CapabilityLabel>}
+      <p>Nothing is saved until you review it. Instructions inside pasted documents are ignored.</p>
+    </Notice>
+    {extraction && <Card title="Original document" actions={<StatusBadge>Kept verbatim</StatusBadge>}><pre className="wf-mono">{text}</pre></Card>}
     <Card title="Saved bookings in this trip">
       {!loaded && <LoadingState label="Loading saved bookings…" />}
-      {loaded && !bookings.length && <p>No confirmed bookings have been imported.</p>}
-      {bookings.map((booking) => <div key={booking.id}><strong>{booking.provider} · {booking.reference}</strong> — <MoneyText value={booking.paid} />
+      {loaded && !bookings.length && <EmptyState title="No confirmed bookings have been imported." />}
+      {bookings.map((booking) => <div key={booking.id}><KeyValue label={<strong>{booking.provider} · {booking.reference}</strong>} value={<MoneyText value={booking.paid} />} />
         <p><StatusBadge>{booking.state}</StatusBadge> {booking.provenance.source}</p>
       </div>)}
       <Link to={`/trips/${tripId}`}>Return to trip dashboard</Link>
     </Card>
+    </aside></div>
   </div>;
 }
 
