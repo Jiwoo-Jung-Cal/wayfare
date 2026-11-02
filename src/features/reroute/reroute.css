@@ -1,0 +1,7 @@
+.wf-reroute { min-width: 0; overflow-wrap: anywhere; }
+.wf-reroute-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--wf-space-5); }
+.wf-reroute-deadline { padding-block: var(--wf-space-4); border-top: 1px solid var(--wf-color-border); }
+.wf-reroute blockquote { margin-inline: 0; padding-left: var(--wf-space-4); border-left: 3px solid var(--wf-color-border); white-space: pre-wrap; }
+.wf-reroute summary { cursor: pointer; font-weight: 600; }
+@media (max-width: 1023px) { .wf-reroute-options { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 767px) { .wf-reroute-options { order: 0; } .wf-reroute-bookings { order: 1; } }
