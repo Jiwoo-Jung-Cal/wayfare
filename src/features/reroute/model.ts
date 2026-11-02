@@ -23,6 +23,7 @@ export function eligibility(booking: Booking, policy: PolicyEvidence | undefined
   if (isUnknown(booking.paid)) return unknown('Original paid amount is unknown; review before calculating recovery.');
   if (tier.refund.currency !== booking.paid.currency) return unknown('Refund and original payment currencies do not match.');
   if (tier.refund.amountMinor < 0 || tier.refund.amountMinor > booking.paid.amountMinor) return unknown('Refund amount is outside the reviewed payment amount.');
+  if (tier.method === 'points') return unknown('Points recovery needs a quantity in points, not a money amount.');
   if (tier.method === 'unknown' || (tier.method === 'none' && tier.refund.amountMinor !== 0)) return unknown('Recovery method needs review.');
   return { amount: tier.refund, cash: tier.method === 'original_payment' ? tier.refund : zero(tier.refund.currency), tier, reason: excerpt.text };
 }
@@ -75,7 +76,15 @@ export function computeComparison(s: WorkspaceSnapshot, tripId: string, now: Ins
   const total = (values: MaybeMoney[]): MaybeMoney => values.some(v => !isUnknown(v) && v.currency !== currency) || currencies.size !== 1
     ? unknownValue('A single known currency is required; no currency conversion is available.') : sumMaybe(values, currency);
   const policyFor = (b: Booking) => s.policies.find(p => p.id === b.policyId && s.documents.some(doc => doc.id === p.sourceDocumentId));
+  const recorded = (b: Booking) => s.actions.find(a => a.tripId === tripId && a.bookingId === b.id && a.disruptionId === disruption.id && (a.result.status === 'simulated' || a.result.status === 'provider_confirmed') && (a.action === 'cancel' || a.action === 'replace'));
   const evaluate = (b: Booking, time: Instant) => eligibility(b, policyFor(b), time, cancellationCondition(b, disruption, s));
+  const outcome = (b: Booking): Eligibility => {
+    const saved = recorded(b);
+    if (!saved) return evaluate(b, now);
+    const cash = saved.expectedRecovery.filter(c => c.kind === 'cash_refund' && c.method === 'original_payment').map(c => c.value.unit === 'money' ? c.value.amount : unknownValue('Cash component has invalid units.'));
+    const amount = total(cash);
+    return { amount, cash: amount, tier: policyFor(b)?.refundTiers.find(t => t.id === saved.expectedRecovery[0]?.refundTierId) ?? null, reason: 'Previously recorded simulated recovery; not recalculated at later deadlines.' };
+  };
   const impacts = analyzeImpacts(bookings, disruption);
   const deadlines: DeadlineRow[] = bookings.flatMap<DeadlineRow>(b => {
     const p = policyFor(b);
@@ -91,7 +100,7 @@ export function computeComparison(s: WorkspaceSnapshot, tripId: string, now: Ins
   }).sort((a, b) => (a.at ? Date.parse(a.at) : Infinity) - (b.at ? Date.parse(b.at) : Infinity));
   const baseline = total(bookings.map(b => b.paid));
   const root = bookings.find(b => b.id === disruption.bookingId)!;
-  const quote = s.quotes.find(q => q.tripId === tripId && q.forBookingId === root.id && q.kind === root.kind);
+  const quote = s.quotes.filter(q => q.tripId === tripId && q.forBookingId === root.id && q.kind === root.kind).sort((a, b) => b.createdAt.localeCompare(a.createdAt) || b.id.localeCompare(a.id))[0];
   const quoteProblem = !quote ? 'Replacement quote is missing.'
     : !quote.validUntil || !isBefore(now, quote.validUntil) ? 'Replacement quote is expired or has unknown validity.'
     : !quote.startsAt || !quote.endsAt || !isBefore(now, quote.startsAt) || !isBefore(quote.startsAt, quote.endsAt) ? 'Replacement travel times need review.'
@@ -103,15 +112,15 @@ export function computeComparison(s: WorkspaceSnapshot, tripId: string, now: Ins
     if (kind === 'continue' && quoteProblem) constraints.push(quoteProblem);
     const bookingActions = bookings.map(b => {
       const action = kind === 'cancel_trip' ? 'cancel' as const : b.id === root.id ? 'replace' as const : 'keep' as const;
-      const e = evaluate(b, now);
+      const e = outcome(b);
       if (action !== 'keep' && isUnknown(e.amount)) constraints.push(`${b.title}: ${e.reason}`);
-      if (action !== 'keep' && (b.state === 'cancelled' || b.state === 'replaced')) constraints.push(`${b.title}: already ${b.state}; inspect recorded actions.`);
+      if ((b.state === 'cancelled' || b.state === 'replaced') && recorded(b)?.action !== action) constraints.push(`${b.title}: already ${b.state}; this choice is incompatible with its recorded action.`);
       return { bookingId: b.id, action, replacementQuoteId: action === 'replace' ? quote?.id ?? null : null,
         refundTierId: action === 'keep' ? null : e.tier?.id ?? null, expectedRecovery: action === 'keep' ? zero(currency) : e.amount,
         method: action === 'keep' ? 'none' as const : e.tier?.method ?? 'unknown' as const };
     });
     const extraCashNeeded = kind === 'cancel_trip' ? zero(currency) : quoteProblem ? unknownValue(quoteProblem) : quote!.price;
-    const expectedCashRecovery = total(bookingActions.map(a => a.action === 'keep' ? zero(currency) : evaluate(bookings.find(b => b.id === a.bookingId)!, now).cash));
+    const expectedCashRecovery = total(bookingActions.map(a => a.action === 'keep' ? zero(currency) : outcome(bookings.find(b => b.id === a.bookingId)!).cash));
     const cashPaidBeforeRefunds = addMaybe(baseline, extraCashNeeded);
     const forecastCost = subtractMaybe(cashPaidBeforeRefunds, expectedCashRecovery);
     for (const value of [extraCashNeeded, expectedCashRecovery, cashPaidBeforeRefunds, forecastCost]) if (isUnknown(value)) constraints.push(value.reason);
