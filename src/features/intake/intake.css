@@ -1,5 +1,8 @@
 /* Booking intake composition from r1-draft; no shared token or schema changes. */
-.wf-intake-layout { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: var(--wf-space-5); align-items: start; }
+.wf-intake-layout { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); grid-template-areas: 'main capability' 'main context'; grid-template-rows: auto 1fr; gap: var(--wf-space-5); align-items: start; }
+.wf-intake-main { grid-area: main; }
+.wf-intake-capability { grid-area: capability; }
+.wf-intake-context { grid-area: context; }
 .wf-intake-layout > *,
 .wf-intake-field { min-width: 0; }
 .wf-intake-review-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--wf-space-4); }
@@ -14,6 +17,7 @@
 .wf-intake-checkbox input { margin-top: var(--wf-space-1); accent-color: var(--wf-color-accent); flex-shrink: 0; }
 .wf-intake pre { margin: 0; }
 @media (max-width: 63.99rem) {
+  .wf-intake-layout { grid-template-areas: 'capability' 'main' 'context'; grid-template-rows: auto auto auto; }
   .wf-intake-layout,
   .wf-intake-review-fields { grid-template-columns: minmax(0, 1fr); }
 }
