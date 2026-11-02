@@ -1,8 +1,8 @@
 # Agent 1 handoff
 
-Status: shared foundation and Wayfinder/intake are merged. TripWallet milestone PR #25 is being integrated under #8; ReRoute is not delivered. The dated sections below retain historical checks; the latest milestone supersedes their status.
-Task Issue: https://github.com/Jiwoo-Jung-Cal/wayfare/issues/3 (foundation). Integration follows on #8.
-Branch / commit / PR: main `bf4d2c7` (#12, #13 merged). Integration work is on `agent-1/integration` (PR linked from #8).
+Status (2026-11-01, cloud session): foundation, Wayfinder/intake, TripWallet, design r1 (interim, approval pending), Figma Code Layer scripts and vendor chunk splitting (#32) are merged. ReRoute/CancelClock (#6) is **not started**, so the full approval-to-wallet journey is still unintegrated. The dated sections below keep their historical checks; the latest section supersedes their status.
+Task Issue: https://github.com/Jiwoo-Jung-Cal/wayfare/issues/3 (foundation, closed). Integration is tracked on #8.
+Branch / commit / PR: main `80c4462` (after #32). Work goes on short-lived `agent-1/<slug>` branches cut from main.
 
 ## For Agent 3 (CI)
 
@@ -176,3 +176,16 @@ The wallet browser flow also checks the populated/reconciled wallet at 390/360/3
   - The Points AssetCard text.
   - The spacing specimen overflow.
 - **Not reconciled:** TripWallet code (#25 / #27) merged while the draft was being made. The frames follow the published requirements, and reconciling them with Brian's implemented states is an open review item. ReRoute code does not exist yet; its frames follow `design/handoffs/reroute.md`.
+
+
+## Cloud session (2026-11-01)
+
+- **Environment:** a Claude Code cloud container. The image ships Node 22 / npm 10, so checks ran on a checksum-verified Node 24.21.0 with npm 11.19.0 (matching CI). Google Chrome is installed, so `CI=1 npm run e2e` uses the default `chrome` channel. `PW_CHANNEL=` does **not** work in this image (the bundled headless shell for Playwright 1.64.1 is absent). That is an environment gap, not a code failure. `gh` is not authenticated here; reports and PRs go through the GitHub connector.
+- **Baseline main `1d42523`:** typecheck and build pass; 128 unit/integration passed, 1 skipped, 2 todo; e2e 13 passed, 2 skipped. GitHub Application and Coordination checks green.
+- **#32 (merged, Jiwoo-approved):** `vite.config.ts` Rolldown `codeSplitting` groups. A sourcemap breakdown showed react-dom/react-router/zod are about 90% of the bundle and feature pages about 60 kB of source, so I split out vendors instead of lazy-loading routes (which would need a `FeatureModule` contract change). Chunks: app 136 kB, vendor-react 219 kB, vendor-router 91 kB, vendor-zod 92 kB. No size warning. Built `dist/` was served from a sub-path and loaded in Chrome: all chunks 200, the dashboard and the plan/import/wallet routes render, no page errors. No Anthropic strings in any built JS chunk. This supersedes the "Bundle size" line under Integration above.
+- **Figma:** the connector is available in the cloud (whoami: Jiwoo Jung, code layers enabled). The Code Layer `24:1182` preview is still **not verified**, and it predates #32.
+- **Open, owner:**
+  - ReRoute/CancelClock (#6, Kelvin): no code, no PR. When it lands, integrate it, verify ReRoute → TripWallet claim sync, and convert the 2 skipped e2e / 2 todo integration steps.
+  - PR #21 (Agent 2) and PR #20 (Agent 3): Jiwoo's merge decision.
+  - Design r1 approval, Code Layer preview, live AI, and hosting (Jiwoo).
+  - Optional TripWallet `DashboardPanel` (Brian, #7).
