@@ -1,7 +1,7 @@
 // Feature-owned real-control browser journey. Uses installed Chrome on the CI
 // runner; skips explicitly when no supported local browser exists. No fixture
 // action records are seeded: imports, disruption and approval use actual UI.
-import { existsSync } from 'node:fs';
+import { existsSync, mkdirSync } from 'node:fs';
 import { test } from 'vitest';
 import { chromium, expect, type Page } from '@playwright/test';
 import { createServer } from 'vite';
@@ -16,7 +16,7 @@ const trip = '#/trips/trip-demo-nyc';
 async function snapshot(page: Page) {
   return page.evaluate(async () => {
     const path = '/src/core/index.ts';
-    const core = await import(/* @vite-ignore */ path) as typeof import('../../core/index.ts');
+    const core = await new Function('path', 'return import(path)')(path) as typeof import('../../core/index.ts');
     return core.unwrap(await core.createLocalRepository({ storage: localStorage, workspaceId: localStorage.getItem(core.ACTIVE_WORKSPACE_KEY)! }).snapshot());
   });
 }
@@ -89,7 +89,7 @@ test.skipIf(!available)('ReRoute actual approval → shell claims → receipts; 
     await button(stale, 'Review cancel-trip actions').click();
     await stale.getByLabel('I understand these are simulated actions').check();
     await stale.evaluate(async () => {
-      const path = '/src/core/index.ts'; const c = await import(/* @vite-ignore */ path) as typeof import('../../core/index.ts');
+      const path = '/src/core/index.ts'; const c = await new Function('path', 'return import(path)')(path) as typeof import('../../core/index.ts');
       c.unwrap(await c.createLocalRepository({ storage: localStorage, workspaceId: localStorage.getItem(c.ACTIVE_WORKSPACE_KEY)! }).setClock({ mode: 'sample', current: c.DEMO_TIMES.hotelDeadline }));
     });
     await button(stale, 'Approve actions').click();
@@ -106,7 +106,7 @@ test.skipIf(!available)('ReRoute actual approval → shell claims → receipts; 
     const partialContext = await browser.newContext(); const partial = await partialContext.newPage();
     partial.on('pageerror', e => errors.push(e.message)); await start(partial);
     await partial.evaluate(async () => {
-      const path = '/src/core/index.ts'; const c = await import(/* @vite-ignore */ path) as typeof import('../../core/index.ts');
+      const path = '/src/core/index.ts'; const c = await new Function('path', 'return import(path)')(path) as typeof import('../../core/index.ts');
       const original = c.StoreRepository.prototype.recordBookingAction;
       let failed = false;
       c.StoreRepository.prototype.recordBookingAction = async function(input) {
@@ -125,5 +125,9 @@ test.skipIf(!available)('ReRoute actual approval → shell claims → receipts; 
     expect((await snapshot(partial)).actions.slice(0, 3)).toEqual(successes);
     expect(errors).toEqual([]);
     await partialContext.close();
+  } catch (error) {
+    mkdirSync('test-results/reroute', { recursive: true });
+    for (const [i, p] of browser.contexts().flatMap(c => c.pages()).entries()) await p.screenshot({ path: `test-results/reroute/failure-${i}.png`, fullPage: true }).catch(() => {});
+    throw error;
   } finally { await browser.close(); await server.close(); }
 }, 90_000);

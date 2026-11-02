@@ -4,7 +4,11 @@
 .wf-reroute blockquote { margin-inline: 0; padding-left: var(--wf-space-4); border-left: 3px solid var(--wf-color-border); white-space: pre-wrap; }
 .wf-reroute summary { cursor: pointer; font-weight: 600; }
 @media (max-width: 1023px) { .wf-reroute-options { grid-template-columns: minmax(0, 1fr); } }
-@media (max-width: 767px) { .wf-reroute-options { order: 0; } .wf-reroute-bookings { order: 1; } }
+
 .wf-reroute-dialog { width: min(640px, calc(100vw - 32px)); max-height: calc(100dvh - 32px); overflow: auto; box-sizing: border-box; border: 1px solid var(--wf-color-border); border-radius: var(--wf-radius-md); padding: var(--wf-space-5); color: var(--wf-color-text); background: var(--wf-color-surface); overflow-wrap: anywhere; }
 .wf-reroute-dialog::backdrop { background: rgb(0 0 0 / 55%); }
 .wf-reroute-dialog input[type=checkbox] { flex-shrink: 0; }
+
+.wf-reroute-booking { display: grid; grid-template-columns: minmax(0, 1fr) minmax(180px, 30%); gap: var(--wf-space-5); padding-block: var(--wf-space-4); border-top: 1px solid var(--wf-color-border); }
+.wf-reroute-booking > div { min-width: 0; }
+@media (max-width: 767px) { .wf-reroute-booking { grid-template-columns: minmax(0, 1fr); } }

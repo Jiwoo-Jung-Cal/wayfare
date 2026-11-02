@@ -79,19 +79,22 @@ export function ReRoutePage({ tripId, ctx }: FeaturePageProps) {
         <details><summary>Disruption evidence</summary><blockquote>{data.snapshot.documents.find(d => d.id === data.disruption.sourceDocumentId)?.text ?? 'Source unavailable'}</blockquote></details>
       </Card>
       <section className="wf-stack wf-reroute-bookings" aria-label="Affected bookings">
-        <h2>Affected bookings</h2>
-        {data.impacts.map(i => <Card key={i.booking.id} title={i.booking.title}>
-          <StatusBadge tone={i.affected ? 'warning' : 'neutral'}>{i.booking.id === data.disruption.bookingId ? 'Disrupted' : i.booking.state} · {i.affected ? 'May be affected' : 'Unaffected'}</StatusBadge>
-          <p>{i.reason}</p><KeyValue label="Originally paid" value={<MoneyText value={i.booking.paid} />} />
-          <details><summary>Inspect policy and dependency evidence</summary><p>Booking {i.booking.id} · dependencies: {i.booking.dependsOn.join(', ') || 'None'}</p>
-            {data.snapshot.policies.filter(p => p.id === i.booking.policyId).map(p => <div key={p.id}><p>{p.reviewState} · {p.id}</p>{p.excerpts.map(e => <blockquote key={e.id}>{e.text}</blockquote>)}</div>)}
-          </details>
-        </Card>)}
+        <Card title="Affected bookings">
+        {data.impacts.map(i => <div key={i.booking.id} className="wf-reroute-booking">
+          <div><h3>{i.booking.title}</h3><p className="wf-muted">{i.reason}</p>
+            <details><summary>Inspect policy and dependency evidence</summary><p>Booking {i.booking.id} · dependencies: {i.booking.dependsOn.join(', ') || 'None'}</p>
+              {data.snapshot.policies.filter(p => p.id === i.booking.policyId).map(p => <div key={p.id}><p>{p.reviewState} · {p.id}</p>{p.excerpts.map(e => <blockquote key={e.id}>{e.text}</blockquote>)}</div>)}
+            </details>
+          </div>
+          <div className="wf-stack"><span>{formatInstant(i.booking.startsAt, i.booking.localTimezone)}</span><StatusBadge tone={i.affected ? 'warning' : 'neutral'}>{i.booking.id === data.disruption.bookingId && i.booking.state !== 'cancelled' && i.booking.state !== 'replaced' ? 'Disrupted' : i.booking.state} · {i.affected ? 'May be affected' : 'Unaffected'}</StatusBadge><span>Paid <MoneyText value={i.booking.paid} /></span></div>
+        </div>)}
+        </Card>
       </section>
       <section className="wf-reroute-options" aria-label="Recovery comparison">
         {data.options.map(o => <Card key={o.id} title={o.label} as="article">
           <StatusBadge tone={o.constraints.length ? 'warning' : 'simulated'}>{o.constraints.length ? 'Review needed' : 'Simulated recovery'}</StatusBadge>
-          {o.bookingActions.filter(a => a.action !== 'keep').map(a => <KeyValue key={a.bookingId} label={`${data.impacts.find(i => i.booking.id === a.bookingId)?.booking.title} · ${a.action}`} value={<MoneyText value={a.expectedRecovery} />} />)}
+          {o.kind === 'continue' && <KeyValue label={data.snapshot.quotes.find(q => q.id === o.bookingActions.find(a => a.action === 'replace')?.replacementQuoteId)?.description ?? 'Replacement quote unavailable'} value={<MoneyText value={o.extraCashNeeded} />} />}
+          {o.bookingActions.filter(a => o.kind === 'cancel_trip' && a.action !== 'keep').map(a => <KeyValue key={a.bookingId} label={`${data.impacts.find(i => i.booking.id === a.bookingId)?.booking.title} · ${a.action}`} value={<MoneyText value={a.expectedRecovery} />} />)}
           <KeyValue label="Extra cash needed now" value={<MoneyText value={o.extraCashNeeded} />} />
           <KeyValue label="Expected cash refunds" value={<MoneyText value={o.expectedCashRecovery} />} />
           <KeyValue label="Cash paid before refunds arrive" value={<MoneyText value={o.cashPaidBeforeRefunds} />} emphasis="muted" />
