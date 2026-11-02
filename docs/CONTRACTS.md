@@ -77,7 +77,7 @@ All writes validate against the schema and are scoped to the workspace. A record
 | `saveReviewedBooking` | `{ idempotencyKey, document, booking, policy }` → `{ document, booking, policy, replayed }` | Atomic. Replaying the same key, or importing the same document content, returns the original booking. |
 | `recordDisruption` | `Disruption` → `{ disruption, created }` | Insert-if-absent by ID. |
 | `replaceRecoveryOptions` | `{ tripId, disruptionId, options }` → options | Replaces the options for that pair. |
-| `recordBookingAction` | `{ action: ActionRecord, expectedBookingRevision }` → `{ action, booking, replayed }` | Atomic. Sets `booking.state = action.resultingBookingState`. Replaying the same `idempotencyKey` returns the original. `precondition_failed` if the booking is already cancelled or replaced. |
+| `recordBookingAction` | `{ action: ActionRecord, expectedBookingRevision, preconditions?: ActionPreconditions }` → `{ action, booking, replayed }` | Atomic. Sets `booking.state = action.resultingBookingState`. Replaying the same `idempotencyKey` returns the original. `precondition_failed` if the booking is already cancelled or replaced. Optional `preconditions` are checked in the same write (see below). |
 | `ensureClaims` | `RefundClaim[]` → `{ claims, created, existing }` | Insert-if-absent by `(actionRecordId, recoveryComponentId)`. Never overwrites an existing claim; change one with `saveClaim`. |
 | `putReceipt` | `Receipt` → `{ receipt, created }` | Unique by normalized `reference`. Same reference and amount is a replay; a different amount returns `duplicate` with `details.existingReceiptId`. |
 | `resetDemo` | `'empty' \| 'planning' \| 'booked'` → snapshot | Resets **this** workspace only. |
@@ -102,6 +102,45 @@ const r = await ctx.repo.recordBookingAction({
 if (r.ok) await ctx.notifyActionRecorded({ tripId: DEMO_TRIP_ID, actionRecordId: r.value.action.id });
 // error example: { ok: false, error: { code: 'conflict', message: 'Booking is at revision 2; reload and retry', retryable: false, details: { currentRevision: 2 } } }
 ```
+
+### Action preconditions (atomic preview guard, additive in v1)
+
+A ReRoute preview is computed from a read. Before this addition, another tab or request could move the active clock past a cutoff, or save a new policy revision, between that read and the write, and the old refund would still commit, because only `expectedBookingRevision` was checked atomically (Agent 4's request on #8). Pass the facts the preview relied on as `preconditions`. The repository checks them **inside the same exclusive write** as the action, against the stored policy, the write's active-clock `now` and the stored quote. Sample mode (browser Web Lock) and connected mode (server workspace queue) share the same implementation.
+
+```ts
+type ActionPreconditions = {
+  policyId: Id | null;                 // must equal booking.policyId at write time
+  expectedPolicyRevision: number | null; // stored policy.revision; null exactly when policyId is null
+  validBefore: Instant | null;         // exclusive: succeeds only while now < validBefore
+  expectedClock?: ClockState;          // optional: stored clock must equal this exactly
+  replacementQuoteId?: Id | null;      // optional: must equal action.replacementQuoteId; a non-null quote
+                                       // must exist in the trip, be for this booking (or unbound),
+                                       // and still be valid (now < quote.validUntil when set)
+};
+
+const r = await ctx.repo.recordBookingAction({
+  action, expectedBookingRevision: hotel.revision,
+  preconditions: { policyId: DEMO_IDS.policies.hotel, expectedPolicyRevision: hotelPolicy.revision, validBefore: DEMO_TIMES.hotelDeadline },
+});
+// at or after the cutoff:
+// { ok: false, error: { code: 'conflict', message: 'Recovery preview expired; review again', retryable: false,
+//   details: { precondition: true, validBefore: '2026-11-19T23:00:00Z', now: '2026-11-19T23:00:00Z' } } }
+```
+
+| Failure | Result |
+| --- | --- |
+| booking's `policyId` differs from `preconditions.policyId` (attached, replaced or removed) | `conflict` "Booking policy changed; review again" |
+| stored policy revision ≠ `expectedPolicyRevision` | `conflict` "Policy changed; review again", `details.currentRevision` |
+| `expectedClock` given and the stored clock differs | `conflict` "The active clock changed; review again" |
+| `now >= validBefore` | `conflict` "Recovery preview expired; review again" |
+| replacement quote expired (`now >= validUntil`) | `conflict` "Replacement quote expired; review again" |
+| malformed preconditions, half-null policy pair, quote ID ≠ action's, quote for another booking | `validation_failed` |
+
+- Every precondition `conflict` has `retryable: false` and `details.precondition: true`. Rebuild the preview from fresh reads; never auto-resubmit the same action.
+- **No partial writes.** A failed check returns before the commit: no action, no booking change, no claim.
+- **Replays win.** If the `idempotencyKey` is already recorded, the original result is returned (`replayed: true`) **without** re-checking preconditions, so a retry after a lost response still gets the record and can call `notifyActionRecorded`.
+- **Compatible.** Omit `preconditions` and behavior is unchanged. Over HTTP the field travels in the existing `/api/repo/recordBookingAction` arguments.
+- Regressions: `src/core/store/actionPreconditions.test.ts` covers two local tabs on one store and two HTTP clients on one server session, including concurrent clock-move vs. action races where a committed $400 action is never at or after the cutoff.
 
 ### Claim sync handoff (ReRoute to shell to TripWallet)
 
