@@ -5,9 +5,9 @@ Status: functional Wayfinder/intake is merged (#17); exact-amount/stale-hash fix
 - Task: https://github.com/Jiwoo-Jung-Cal/wayfare/issues/4
 - Active branch: `agent-2/wayfinder-intake`
 - Active milestone PR: https://github.com/Jiwoo-Jung-Cal/wayfare/pull/21
-- Main incorporated: `1d42523f7250ea3f58f95115c29efd0d92384f1c` (#29 shared r1 styling, TripWallet integration and #31 lifecycle scripts included).
+- Main incorporated: `bda78da` via merge commit (#32 vendor chunk split and #33 prompt refresh included; no conflicts).
 - Merged feature milestone: #17, head `8642fcca3484b40a8afacd1b0d5e4e0931d88511`; #18/#19 added integrated browser coverage/narrow fixes.
-- Earlier #21 head: `5dbd10ff47a11017ba129f0f9af69e0091d06f82`. Agent 1 accepted those hardening fixes; the expanded interim-layout milestone needs renewed review. Latest published SHA/CI links are in the structured #4 report.
+- Agent 1 technically accepted expanded #21 at `6c496af` with no blocking findings (https://github.com/Jiwoo-Jung-Cal/wayfare/pull/21#issuecomment-6567307593). Its optional nit was applied: the comparison heading now uses `budgetForDisplay`, so an unreadable budget renders as Unknown instead of a non-null assertion (regression test added). Latest SHA/CI links are in the structured #4 report.
 
 ## Completed behavior
 
@@ -49,16 +49,14 @@ V1 policy decision: https://github.com/Jiwoo-Jung-Cal/wayfare/issues/3#issuecomm
 
 ## Verification
 
-Actual checks on current main plus #21 changes:
+Actual checks on the branch after merging main `bda78da` (Node 24.21.0 checksum-verified, npm 11.19.0):
 
-- `npm ci --prefer-offline`: passed; root manifest/lockfile unchanged by Agent 2.
+- `npm ci`: passed; root manifest/lockfile unchanged by Agent 2.
 - `npm run typecheck`: passed.
-- `npm test`: **133 passed, 1 skipped, 2 todo**; includes all 54 owned Wayfinder/intake cases.
-- `npm run build`: passed; existing advisory chunk-size warning remains (accepted by Agent 1 for the demo).
-- Existing integrated Playwright suite: **13 passed, 2 skipped**, including sample/connected intake, selected-plan reload/replay, workspace isolation, TripWallet and narrow checks. ReRoute completion tests remain skipped.
-- `node src/features/wayfinder/verify-browser.mjs`: passed. Starts a disposable sample-only Vite server and uses real controls for preference changes, stale/invalid/unsupported inputs, unknown/over-budget selection blocking, selection/replay/reload, intake edits, attestation/required fact/currency/date validation, evidence/original document, save/replay/reload, Start over, preserved extraction errors and unknown price/disputed policy. Populated layouts at **1440/1023/768/767/390/360/320px** had no horizontal overflow or page errors; mobile Save width is verified.
-- Desktop/narrow browser screenshots were inspected against supplied draft exports. They are optional verification output, not committed product assets.
-- `git diff --check`: passed. Latest published CI is linked in #4.
+- `npm test`: **134 passed, 1 skipped, 2 todo** (adds the budget-display fallback case).
+- `npm run build`: passed with no chunk-size warning (after #32).
+- `CI=1 npm run e2e` (Chrome): **13 passed, 2 skipped**; skips are pending ReRoute steps.
+- `PW_CHANNEL=chrome node src/features/wayfinder/verify-browser.mjs`: passed (states, validation, replay/reload, 1440–320px layouts, no page errors).
 
 Local browser verification is now working. Playwright's CDN download still yielded an invalid archive; temporary Chromium 153 from npm ran successfully. Browser/server must share the same execution network environment. No browser package or temporary configuration was added to root dependencies. The owned script accepts `PW_EXECUTABLE_PATH`, `PW_CHANNEL`, optional `WAYFARE_VERIFY_OUTPUT`. Integrated E2E used a temporary executable-path configuration. The focused script is not automatically wired into shared CI; Agent 1 can add it under integration.
 
@@ -66,4 +64,4 @@ Local browser verification is now working. Playwright's CDN download still yield
 
 Connected account `Jiwoo-Jung-Cal` has pull/push permission. Direct HTTPS lacks CLI credentials, so current main commits/tree/blobs were hydrated through connected GitHub with every object hash verified. Main was safely merged into the existing branch without reset/force-push. Publication uses a merge-parent commit and expected-head ref check. #21 remains Agent 2's single active PR; #4 remains open.
 
-Next: Agent 1 reviews expanded #21; Jiwoo decides the merge and formal visual approval. Apply requested corrections within Agent 2's paths, then finish visual acceptance when the handoff is approved. Broad integration and ReRoute/TripWallet calculations remain with their owners. Resume: **Resume Agent 2 on #4 / PR #21; read current main, latest task/PR comments and design approval first.**
+Next: no remaining Agent 2 code work on #21. Jiwoo decides the merge and formal r1 visual approval (still pending in `design/approvals.json`). Apply requested corrections within Agent 2's paths, then finish visual acceptance when the handoff is approved. Broad integration and ReRoute/TripWallet calculations remain with their owners. Resume: **Resume Agent 2 on #4 / PR #21; read current main, latest task/PR comments and design approval first.**
