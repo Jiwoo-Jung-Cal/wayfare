@@ -52,10 +52,14 @@ export async function approveRecovery(preview: ApprovalPreview, ctx: FeatureCont
   const pending = chosen.filter(a => !savedAction(initial.value.snapshot, current, a.bookingId));
   if (pending.length && (current.constraints.length || (preview.option.validUntil && !isBefore(initial.value.options[0]!.computedAt, preview.option.validUntil))
     || pending.some(a => fingerprint(initial.value.snapshot, current, a.bookingId) !== preview.fingerprints[a.bookingId]))) {
-    return ok({ stale: true, outcomes: chosen.map(a => {
+    const blocked: ActionOutcome[] = chosen.map(a => {
       const saved = savedAction(initial.value.snapshot, current, a.bookingId);
       return saved ? { bookingId: a.bookingId, status: 'already_recorded', action: saved } : { bookingId: a.bookingId, status: 'stale', error: appError('conflict', 'The preview changed or expired. Review updated consequences and confirm again.') };
-    }) });
+    });
+    for (const outcome of blocked) if (outcome.action) {
+      try { await ctx.notifyActionRecorded({ tripId: outcome.action.tripId, actionRecordId: outcome.action.id }); } catch { outcome.notificationPending = true; }
+    }
+    return ok({ stale: true, outcomes: blocked });
   }
   for (const requested of chosen) {
     // Re-read between actions; a late deadline or concurrent edit must not allow
@@ -82,6 +86,9 @@ export async function approveRecovery(preview: ApprovalPreview, ctx: FeatureCont
       outcomes.push({ bookingId: booking.id, status: 'failed', error: appError('precondition_failed', 'Recovery requires policy review.') }); continue;
     }
     const identity = await sha256Hex(JSON.stringify([booking.workspaceId, booking.tripId, option.disruptionId, booking.id, a.action]));
+    const policy = snapshot.policies.find(p => p.id === booking.policyId);
+    const tier = policy?.refundTiers.find(t => t.id === a.refundTierId);
+    const excerpt = policy?.excerpts.find(e => e.id === tier?.excerptId)?.text;
     const action: ActionRecord = {
       id: `act-${identity}`, workspaceId: booking.workspaceId, tripId: booking.tripId, bookingId: booking.id,
       recoveryOptionId: option.id, disruptionId: option.disruptionId, action: a.action, replacementQuoteId: a.replacementQuoteId,
@@ -89,7 +96,7 @@ export async function approveRecovery(preview: ApprovalPreview, ctx: FeatureCont
         id: `rc-${identity}`, kind: a.method === 'original_payment' ? 'cash_refund' : a.method === 'points' ? 'points' : a.method,
         value: { unit: 'money', amount: a.expectedRecovery }, method: a.method, refundTierId: a.refundTierId, dueAt: null, dueAtSource: null,
       }], resultingBookingState: a.action === 'replace' ? 'replaced' : 'cancelled',
-      result: { status: 'simulated', detail: 'Simulated action recorded. No provider was contacted and no refund was received.' },
+      result: { status: 'simulated', detail: `Simulated action recorded. No provider was contacted and no refund was received. Policy ${policy?.id ?? 'none'} revision ${policy?.revision ?? 'unknown'}, tier ${a.refundTierId ?? 'none'}, source ${policy?.sourceDocumentId ?? 'unknown'}. ${excerpt ?? ''}` },
       capability: 'simulated', approvedAt: option.computedAt, createdAt: option.computedAt,
     };
     let saved;

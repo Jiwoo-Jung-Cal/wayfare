@@ -105,26 +105,28 @@ export function ReRoutePage({ tripId, ctx }: FeaturePageProps) {
           <Button variant={o.kind === 'cancel_trip' ? 'danger' : 'secondary'} disabled={busy || o.constraints.length > 0 || o.bookingActions.filter(a => a.action !== 'keep').every(a => data.snapshot.actions.some(saved => saved.bookingId === a.bookingId && saved.disruptionId === o.disruptionId && saved.action === a.action && saved.result.status === 'simulated'))} onClick={() => void review(o.kind)}>{o.kind === 'cancel_trip' ? 'Review cancel-trip actions' : 'Choose continue'}</Button>
         </Card>)}
       </section>
-      <Card title="CancelClock">
-        <p>Deadlines use the active clock. At exactly a cutoff, the later refund tier applies.</p>
+      <section className="wf-reroute-clock"><Card title="CancelClock">
+        <p>Deadlines show hypothetical new cancellation amounts using the active clock. At exactly a cutoff, the later tier applies. Previously recorded refunds remain unchanged.</p>
         {data.deadlines.map(d => <div className="wf-reroute-deadline wf-stack" key={`${d.booking.id}-${d.at}`}>
           <div className="wf-row"><strong>{d.booking.title}</strong><StatusBadge tone={d.status === 'Passed' || d.status === 'Unknown' ? 'warning' : 'neutral'}>{d.status}</StatusBadge></div>
           <p>{d.label}</p>{d.at && <p>{formatInstant(d.at, d.timezone)} · <span className="wf-mono">{d.at}</span>{d.status !== 'Passed' && ` · ${Math.max(0, Math.ceil((Date.parse(d.at) - Date.parse(ctx.clock.now())) / 3600_000))} hours left`}</p>}
           <p className="wf-muted">Source: {d.source}</p><KeyValue label="Before cutoff (cash)" value={<MoneyText value={d.before} />} /><KeyValue label="At or after cutoff (cash)" value={<MoneyText value={d.after} />} />
         </div>)}
       </Card>
-      <Card title="Recorded actions">
+      </section>
+      <section className="wf-reroute-recorded"><Card title="Recorded actions">
         <p>Durable simulated outcomes; these are not provider confirmations or refund receipts.</p>
         {data.snapshot.actions.filter(a => a.tripId === tripId).map(a => <div key={a.id} className="wf-stack"><strong>{data.impacts.find(i => i.booking.id === a.bookingId)?.booking.title} · {a.action}</strong><StatusBadge tone="simulated">{a.result.status} · action recorded</StatusBadge><p>{a.result.detail}</p>{a.expectedRecovery.map(c => <KeyValue key={c.id} label={c.kind} value={c.value.unit === 'money' ? <MoneyText value={c.value.amount} /> : 'Points'} />)}</div>)}
         {!data.snapshot.actions.some(a => a.tripId === tripId) && <p>No actions recorded.</p>}
         <Link to="../wallet">Open TripWallet</Link>
       </Card>
-      {result && <Card title={result.outcomes.some(o => o.status === 'failed' || o.status === 'stale') ? 'Some actions are not recorded' : 'Simulated actions recorded'}>
+      </section>
+      {result && <section className="wf-reroute-results"><Card title={result.outcomes.some(o => o.status === 'failed' || o.status === 'stale') ? 'Some actions are not recorded' : 'Simulated actions recorded'}>
         <div role="status">{result.outcomes.filter(o => o.status === 'recorded' || o.status === 'already_recorded').length} recorded; {result.outcomes.filter(o => o.status === 'failed' || o.status === 'stale').length} unfinished.</div>
         {result.outcomes.map(o => <div key={o.bookingId}><strong>{o.bookingId}: {o.status.replaceAll('_', ' ')}</strong>{o.error && <ErrorState error={o.error} />}{o.notificationPending && <Notice tone="warning">Action preserved. Claim notification pending; open TripWallet to retry synchronization.</Notice>}</div>)}
         {result.outcomes.some(o => o.status === 'failed' || o.status === 'stale') && <Button disabled={busy} onClick={() => void review(resultKind)}>Review unfinished actions for retry</Button>}
         <p>Claim synchronization is separate. Check the shell notice and TripWallet for actual claim status.</p>
-      </Card>}
+      </Card></section>}
       <Notice>Expected refunds are not receipts. Vouchers and points remain separate from cash.</Notice>
     </>}
     {preview && <dialog ref={dialog} className="wf-reroute-dialog" aria-labelledby="reroute-approval-title" onCancel={e => { e.preventDefault(); close(); }}>

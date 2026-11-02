@@ -136,7 +136,7 @@ export function computeComparison(s: WorkspaceSnapshot, tripId: string, now: Ins
       cashPaidBeforeRefunds, forecastCost, noncashEffects: s.assets.filter(a => a.tripId === tripId).map(a => ({ assetId: a.id,
         description: `${a.issuer}: ${a.value.unit === 'money' ? formatMaybeMoney(a.value.amount) : isUnknown(a.value.quantity) ? 'Unknown points' : `${a.value.quantity.toLocaleString('en-US')} points`} unchanged; not counted as cash.` })),
       constraints: [...new Set(constraints)], assumptions: ['Expected refunds are forecasts, not provider promises or money received.',
-        'Provider actions are simulations. No provider is contacted.', ...(kind === 'continue' ? ['Keep dependent bookings; hotel late arrival must be confirmed with the hotel.'] : ['Explicit approval applies to all listed trip bookings, including any not flagged as affected.'])],
+        'Provider actions are simulations. No provider is contacted.', ...impacts.map(i => `${i.booking.title}: ${i.reason}`), ...(kind === 'continue' ? ['Keep dependent bookings; hotel late arrival must be confirmed with the hotel.'] : ['Explicit approval applies to all listed trip bookings, including any not flagged as affected.'])],
       evidenceDocumentIds: [...new Set([disruption.sourceDocumentId, ...bookings.flatMap(b => b.evidenceDocumentIds),
         ...bookings.map(b => policyFor(b)?.sourceDocumentId ?? null), kind === 'continue' ? quote?.provenance.documentId ?? null : null].filter((id): id is string => id !== null))],
       computedAt: now, validUntil: times.sort()[0] ?? null, createdAt: existing?.createdAt ?? now } satisfies RecoveryOption;

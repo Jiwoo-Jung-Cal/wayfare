@@ -12,3 +12,12 @@
 .wf-reroute-booking { display: grid; grid-template-columns: minmax(0, 1fr) minmax(180px, 30%); gap: var(--wf-space-5); padding-block: var(--wf-space-4); border-top: 1px solid var(--wf-color-border); }
 .wf-reroute-booking > div { min-width: 0; }
 @media (max-width: 767px) { .wf-reroute-booking { grid-template-columns: minmax(0, 1fr); } }
+
+@media (max-width: 767px) {
+  .wf-reroute-options { order: 1; }
+  .wf-reroute-bookings { order: 2; }
+  .wf-reroute-clock { order: 3; }
+  .wf-reroute-recorded { order: 4; }
+  .wf-reroute-results { order: 5; }
+  .wf-reroute > .wf-alert { order: 6; }
+}
