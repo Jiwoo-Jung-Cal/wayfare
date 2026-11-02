@@ -1,51 +1,48 @@
 # Agent 3 handoff
 
-- CI task: https://github.com/Jiwoo-Jung-Cal/wayfare/issues/5 — completed through merged PR #11.
-- Release task: https://github.com/Jiwoo-Jung-Cal/wayfare/issues/9 — final acceptance still requires integration #8.
-- Existing documentation PR: https://github.com/Jiwoo-Jung-Cal/wayfare/pull/20
-- Branch: `agent-3/status-docs`; the PR and latest structured #9 report record its published head.
-- Source checkpoint: main `1d42523f7250ea3f58f95115c29efd0d92384f1c`, November 1, 2026 (America/Los_Angeles).
+- Active final-verification task: https://github.com/Jiwoo-Jung-Cal/wayfare/issues/9
+- Dependency: https://github.com/Jiwoo-Jung-Cal/wayfare/issues/8
+- CI #5 is complete. Preparation [PR #20](https://github.com/Jiwoo-Jung-Cal/wayfare/pull/20) is merged at `cab1167f6715d8f9915760164369303dc44dccb4`; do not update that merged PR as active work.
+- Local follow-up branch: `agent-3/release-status-refresh`. Publication is currently blocked by the authentication failure below; no new PR or final report is claimed.
+- Source checkpoint: main `d7b0fd16cddf42012fefddb3d716a0978850fbb2`, checked November 2, 2026 (America/Los_Angeles).
 
-## Completed bounded reconciliation
+## Current bounded pass
 
-Read current #9/#8, #6/#7 owner comments and PR #20's technical-accuracy reviews. PR #20 was open at `b75fd9ceb97c1658b87a0c48034d56e2f79c7cea`; main still matched the source checkpoint. The [verified session-start report](https://github.com/Jiwoo-Jung-Cal/wayfare/issues/9#issuecomment-6564530750) records resumption after the environment was published.
+Read current #9/#8/#6/#7/#2 reports, #9 closure events, and PR #20/#36/#37 state/check metadata. Reopened existing #9: it was closed shortly after preparation #20 merged, while its acceptance items and integration #8 were still pending. Updated the Issue's status/dependency/handoff text so the dashboard no longer counts preparation as final completion. No duplicate task or tracker was created.
 
-Merged current main into the existing local documentation branch without conflicts, preserving other owners' work. This pass addresses Agent 1's [runbook re-review](https://github.com/Jiwoo-Jung-Cal/wayfare/pull/20#issuecomment-6563945079):
-- TripWallet's cash-wallet milestone is merged (#25/#27); remaining #7 acceptance is distinct from undelivered ReRoute #6.
-- Wallet browser checks drive the actual confirmation, receipt allocation, duplicate, follow-up and reload controls. Canonical upstream actions are seeded; ReRoute approval and the full approval-to-wallet journey are not verified.
-- Browser persistence uses IndexedDB commits under a workspace Web Lock, with migration of older localStorage snapshots.
-- Browser tests manage sample Vite 5174, connected Vite 5175 and an in-memory API 8788 with AI disabled.
-- The runbook includes current session/rate-limit/proxy configuration, 401/429 behavior, bundled fonts and the architecture/decision link.
-- Native draft r1 exists and is applied (#28/#29). Formal approval is still pending. Agent 1 reports a Code Layer import; preview verification is still outstanding, as detailed below.
-- Kelvin's supplied exact handle `Wildtypers` is recorded without granting or claiming access. Brian's known handle/write-access evidence is retained, not replaced with an old invitation blocker. No fresh collaborator permission check was needed for this pass.
+ReRoute now exists in [draft PR #37](https://github.com/Jiwoo-Jung-Cal/wayfare/pull/37), head `b69d02e1ba32646a2a9f6d3c7661f51a56faf2a9`. Its actual-control browser journey covers simulated approval, four shell-created claims/$820 and hotel $400/$250/$150 reconciliation without fixture ActionRecords. [Kelvin's report](https://github.com/Jiwoo-Jung-Cal/wayfare/issues/6#issuecomment-6570772236) records the feature checks and remaining limitations. Do not repeat the obsolete “ReRoute not started” blocker.
 
-The diff against main is limited to README, setup/runbook/evidence documentation, this own handoff and coordination metadata. Product code, packages, lockfiles, contracts, other owners' handoffs, design artifacts and privileged progress automation have no new changes relative to main. No extra agents or trackers were created. The evidence template remains NOT VERIFIED; no release item is checked by preparation alone.
+The [transactional policy/clock precondition request](https://github.com/Jiwoo-Jung-Cal/wayfare/issues/8#issuecomment-6570629325) remains Agent 1-owned. The last read/write gap is not solved by booking revision alone. Kelvin is waiting for that additive contract, then must integrate it and its race regression. Agent 3 does not change shared contracts or feature implementation.
 
-## Verification
+Preparation #20's final application check is now successful. PR #36 adds Agent 2 state/layout shared E2E coverage and is open with passing checks. Brian has resumed feature-owned wallet evidence/review work under #7; the merged ledger and earlier shared allocation/evidence-transport fixes remain intact.
 
-At main `1d42523`, the API confirms successful [Application run 41351300885](https://github.com/Jiwoo-Jung-Cal/wayfare/actions/runs/41351300885) and [Coordination run 41351300895](https://github.com/Jiwoo-Jung-Cal/wayfare/actions/runs/41351300895), with exact source SHA and successful install/typecheck/unit/build/browser and coordination steps. Agent 1's [same-commit cloud report](https://github.com/Jiwoo-Jung-Cal/wayfare/issues/8#issuecomment-6564154027) records Node 24.21.0/npm 11.19.0, 128 unit/integration passes (1 skipped, 2 todo), 13 Chrome passes (2 skipped). Counts are owner-reported; raw application logs were not reread here. Final-release evidence must use the accepted integrated commit, not these preparation counts.
+## Documentation and verification
 
-The local documentation/metadata checks passed: 5 named dashboard behavior tests, 4 Python setup-safety tests, npm script and configuration-name/default consistency, local Markdown links/fences, owned-path scope and whitespace. The standard `node --test` command also passed but reports a file-level result in this cloud runtime; direct `node coordination/update-dashboard.test.cjs` verifies the five named cases. No application suites were manually rerun for this prose/known-handle metadata change. PR CI results are recorded in the PR and latest #9 report; do not infer new-head results from an older green run.
+Refreshed README, setup status, release guide/checklist, the blank evidence template and only this own handoff. The docs distinguish existing feature-branch results, merged preparation and future accepted-release results. The source was refreshed through verified GitHub Git objects because native Git transport is blocked by current network policy; imported hashes and Git connectivity were verified. No environment changes or publication were made.
 
-## Figma and capability evidence
+API metadata verifies current main application/coordination success and PR #20/#36/#37 check results; [SETUP_STATUS.md](../SETUP_STATUS.md) carries exact source/run links. Owner-reported branch test counts are not relabeled as accepted-release checks. No application suites are rerun for this documentation-only refresh. Local checks passed: 5 named Node dashboard tests, 4 Python safety tests, 40 local Markdown links/anchors across 6 files, fences, npm/config consistency, owned-path scope and whitespace. A current PR check is distinct from an accepted integrated release check.
 
-[Agent 1's import report](https://github.com/Jiwoo-Jung-Cal/wayfare/issues/8#issuecomment-6564005638) records source `5249cb7` imported into [Code Layer `24:1182`](https://www.figma.com/design/ZZS9jEmANeCrjGxWxxCofK?node-id=24-1182). The latest #8 report still marks its running preview NOT VERIFIED and requests a signed-in human check. Successful import, a working preview, actual runtime/source alignment and judge access are distinct. Lifecycle scripts (#31) are on main; Agent 3 did not deploy or edit Figma.
+## Publication blocker
 
-All entries in `design/approvals.json` remain pending with null revision. Live AI and hosted backend/demo are unverified. Travel-provider actions remain simulated; wallet facts are explicitly reviewed sample/manual inputs until feature-owned live evidence is implemented and checked.
+The earlier Issue #9 reopen/body update and session-start report POST succeeded. Before final read-back/publication, both REST and GraphQL began returning HTTP 401 Bad credentials; `gh auth status` reports the injected `GH_TOKEN` invalid. The variable is present, the current `api.github.com` policy is enforced, and no alternative GitHub binding is declared in runtime metadata. This is an authentication blocker, not an application failure or a new domain requirement. No credential value was read or requested.
 
-## Access and publication
+Refresh this environment's GitHub authentication securely, then verify current main, #8/#9, #37 and any new accepted commit/demo before publishing. The source snapshot and local documentation/PR/report drafts are retained. Do not blindly rerun old configuration updates, replace credentials with an invented token, or claim the final report/PR was shared. If Agent 1 has since supplied the acceptance inputs, continue the accepted-release pass rather than publishing stale status text.
 
-The earlier API CONNECT denial was resolved after Jiwoo published the environment. Current authenticated REST/GraphQL reads and the existing progress reporter work. The current network policy permits `api.github.com` but blocks normal Git transport to `github.com`. Publication can use the GitHub Git Data API with exact tree/commit checks and a non-forced, expected-head-guarded update of the existing branch. No force-push, replacement PR, secret extraction or additional environment configuration/publication is needed.
+## Official instructions and judge links
 
-Do not repeat the earlier network draft update or ask for a new token solely because native Git is blocked. API access is verified for this repository; it is not a blanket authorization for other repositories or services. Leave technical approval and merging to Agent 1/eligible reviewers.
+No official deadline timezone or submission-form instructions were found in current repository/Issue/PR evidence. The team-provided November 10, 2026, 11:59 PM time still lacks an organizer source/timezone. Agent 3 asked Jiwoo for the official Round 2 URL or text, including required links and private-access rules. Do not infer a timezone from the session or convert an unconfirmed deadline.
 
-## Remaining owners and next bounded step
+[SETUP_STATUS.md](../SETUP_STATUS.md#deadline-and-judge-links) records the current link matrix. The repository is private; Code Layer `24:1182` is imported but its running preview/judge path is unverified. No judge-facing runnable URL, recording or official submission portal is recorded. GitHub/demo requirements come from the team brief; video/Figma/form specifics remain unconfirmed. Native designs are not a substitute for a working demo. Do not grant access or claim judge access based on the owner's authenticated session.
 
-- Kelvin / Agent 4: deliver ReRoute/CancelClock and policy/deadline/approval evidence.
-- Agent 1: integrate ReRoute with the existing wallet milestone; supply the accepted complete demo/source/runtime commit, retry/reload checks and technical acceptance. Shared atomic allocation and wallet evidence transport are already on main.
-- Brian / Agent 5: remaining asset/acceptance work, feature-owned evidence handler/client wiring, any live AI evidence and feature r1 composition.
-- Agent 2: remaining feature/design acceptance.
-- Jiwoo: review the Code Layer preview, formally approve design, verify judge repo/demo access and confirm the official submission timezone.
-- Agent 3: obtain technical review of updated PR #20; after #8 supplies the accepted integrated journey, populate the prepared evidence template and inspect/run accepted-commit checks once.
+## Accepted-release gate and next action
 
-Release #9 stays open. No task is closed, merged or independently approved by this documentation pass. Stop after the bounded PR/report update; do not monitor in an idle loop.
+Agent 1 has not supplied an accepted integrated commit/demo. Await an explicit acceptance comment, full source SHA, executable complete-demo script, runtime/source mapping and known limitations under #8. Do not fill the final evidence with current main or unmerged #37 results in their place.
+
+Once those inputs exist:
+1. Confirm #37's atomic policy/clock contract and race regression are integrated. Use the accepted source and inspect exact-commit CI results before running checks still outstanding.
+2. Execute the required complete journey/shared scenarios; preserve failed, passed, skipped, todo and unrun outcomes distinctly. Verify successful replay, retry/reload, deadline boundaries, duplicate protection and wallet totals at that source.
+3. Populate the prepared evidence record with actual commands, tested SHA/runner/runtime, counts and run/log links. Verify required judge links/access and official deadline/source. Record sample/live limitations honestly.
+4. Route feature failures to Agent 2/#4, Kelvin/#6 or Brian/#7; route shared/backend/integration failures to Agent 1/#8. Include command/error/commit/log evidence; fix only Agent 3-owned coordination defects.
+5. Obtain technical/design acceptance as applicable. Keep #9 open until its final criteria are complete; do not merge or close tasks on behalf of reviewers.
+
+Jiwoo owns official instructions, visual approval and judge access; Agent 1 owns the atomic contract and accepted integration; feature owners retain their implementations. Stop this bounded refresh after the published PR/report. Do not monitor in an idle loop or reapply old environment configuration.

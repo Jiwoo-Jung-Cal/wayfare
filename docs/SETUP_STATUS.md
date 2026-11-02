@@ -1,38 +1,60 @@
-# Coordination setup — source checkpoint
+# Coordination setup — current release gates
 
-Source checked November 1, 2026 (America/Los_Angeles), against main `1d42523f7250ea3f58f95115c29efd0d92384f1c`. Later Issue reports and merged PRs supersede this checkpoint. This is preparation evidence, not release acceptance.
+Checked November 2, 2026 (America/Los_Angeles), against main `d7b0fd16cddf42012fefddb3d716a0978850fbb2` and current Issue/PR records. Later owner reports and merged PRs supersede this checkpoint. This is coordination evidence, not accepted-release evidence.
 
 - Private repository: https://github.com/Jiwoo-Jung-Cal/wayfare
-- Team dashboard: https://github.com/Jiwoo-Jung-Cal/wayfare/issues/1
-- Jiwoo design handoffs: https://github.com/Jiwoo-Jung-Cal/wayfare/issues/2
-- Seven task Issues (#3–#9), dependencies and reporting instructions already exist; reuse them.
-- Structured reports refresh the shared dashboard through trusted default-branch coordination code. They do not wake inactive assistants.
-- Historical bootstrap verification: a real report appeared on the dashboard; nine coordination tests passed. https://github.com/Jiwoo-Jung-Cal/wayfare/issues/5#issuecomment-6549389794
+- Existing dashboard: https://github.com/Jiwoo-Jung-Cal/wayfare/issues/1
+- Design handoffs: https://github.com/Jiwoo-Jung-Cal/wayfare/issues/2
+- Integration dependency: https://github.com/Jiwoo-Jung-Cal/wayfare/issues/8
+- Final verification: https://github.com/Jiwoo-Jung-Cal/wayfare/issues/9
 
-## Application CI and integration
+The existing reporting/dashboard system is installed; reuse it. CI task #5 is complete. Structured reports refresh the dashboard but do not wake paused assistants.
 
-CI PR #11 merged at `0eb41c4b5c147443d8e61749e392f06b25f94754`; task #5 was completed. The workflow uses Node 24.21.0/npm 11.19.0 and the established install, typecheck, test, build and browser commands. The initial Linux mobile failure was fixed by Agent 1 in merged PR #19; it is historical, not an outstanding CI-installation task.
+## Preparation is merged; final verification is pending
 
-Wayfinder/intake are merged (#17/#18). Brian's TripWallet cash-wallet milestone (#25) was integrated through #27, including browser allocation fixes. Sample snapshots now commit to IndexedDB under a workspace Web Lock, with migration of older localStorage snapshots. Wallet browser tests exercise actual confirmation, receipt matching, duplicate import, follow-up draft and reload controls. They seed canonical action records because ReRoute is not delivered at this source checkpoint; they do not verify recovery approval through ReRoute.
+[PR #20](https://github.com/Jiwoo-Jung-Cal/wayfare/pull/20) merged at `cab1167f6715d8f9915760164369303dc44dccb4`, preserving the release runbook and blank NOT VERIFIED evidence template. Its final head `7803027` passed application and coordination checks. Issue #9 was closed shortly after that merge, while its final acceptance criteria and #8 were still pending. Agent 3 reopened the existing issue for final verification; there is no replacement tracker or completed-release claim.
 
-Browser checks now start sample Vite on 5174, connected Vite on 5175 and an in-memory API on 8788 with AI disabled. Connected checks cover isolated visitors, scoped reset and reload. No separate hosted API or paid model call is required.
+Agent 1 has not supplied an accepted integrated release commit/demo. Final checks must wait for that exact source and executable demo; this current main checkpoint is not a substitute.
 
-At main `1d42523`, this pass verified successful [Application run 41351300885](https://github.com/Jiwoo-Jung-Cal/wayfare/actions/runs/41351300885) and [Coordination run 41351300895](https://github.com/Jiwoo-Jung-Cal/wayfare/actions/runs/41351300895), including the exact source SHA and individual job-step results. Agent 1's [same-commit report](https://github.com/Jiwoo-Jung-Cal/wayfare/issues/8#issuecomment-6564154027) records 128 unit/integration passes (1 skipped, 2 todo) and 13 browser passes (2 skipped). Counts are owner-reported; raw application logs were not reread in this pass. Full release evidence still depends on Agent 1's accepted integrated commit, executable demo and complete journey under #8.
+## ReRoute exists; Agent 1 owns the atomic contract
 
-## Collaborator access
+[Draft PR #37](https://github.com/Jiwoo-Jung-Cal/wayfare/pull/37), head `b69d02e1ba32646a2a9f6d3c7661f51a56faf2a9`, implements disruption/options, CancelClock, explicit simulation approval, stable per-booking actions and partial-failure retry. Its feature-owned browser journey drives actual controls through four automatic claims/$820, a $400 hotel confirmation, $250 then $150 receipts, and $420 remaining on the other claims. It seeds no ActionRecords. These are owner-reported branch results, not an accepted integrated release.
 
-Brian's supplied handle is `brianren-cmd`; main's coordination metadata and the November 1 migration handoff record verified write access. Do not repeat the older claim that his handle is unknown or that his invitation is the blocker. This pass did not perform a fresh permission check.
+The remaining [atomic-precondition request](https://github.com/Jiwoo-Jung-Cal/wayfare/issues/8#issuecomment-6570629325) is Agent 1-owned. `recordBookingAction` currently checks booking revision atomically, but a concurrent policy/clock change after the last read can still commit the old recovery amount. Agent 1 must publish transactional policy/clock preconditions; Kelvin then integrates the seam and race regression. Successful idempotent replays must remain supported. Do not repeat the old claim that ReRoute has not started or implement the shared contract in Agent 3's scope.
 
-Kelvin's supplied handle is `Wildtypers`, now recorded in coordination metadata. The migration handoff's last permission result was `none`; an earlier invitation was sent, but current acceptance/access is unverified. Recording his known handle does not grant access. Check current permissions/invitation state before any access-dependent work; do not send a duplicate invitation based on this status file. Neither teammate needs Figma access.
+Brian's cash-wallet milestone is already merged (#25/#27); shared receipt-allocation/evidence-transport dependencies are resolved. His current #7 follow-up covers feature-owned evidence extraction/review and remaining asset/acceptance work. Wayfinder/intake's interim-r1 work is merged (#21); [PR #36](https://github.com/Jiwoo-Jung-Cal/wayfare/pull/36) adds shared state/layout browser coverage and remains open. Agent 1 owns shared integration and acceptance, including conversion of remaining shared journey skips/todos.
 
-Judge access to the private repository and eventual demo remains separate evidence.
+## Verified check metadata
 
-## Design, runtime and review limits
+| Target | Current evidence | Limit |
+| --- | --- | --- |
+| Main `d7b0fd1` | [Application 41383324098](https://github.com/Jiwoo-Jung-Cal/wayfare/actions/runs/41383324098) and [Coordination 41383324183](https://github.com/Jiwoo-Jung-Cal/wayfare/actions/runs/41383324183) succeeded | API check metadata verified; no accepted release source/demo yet |
+| PR #20 head `7803027` | [Application 41355457546](https://github.com/Jiwoo-Jung-Cal/wayfare/actions/runs/41355457546) and coordination passed before merge | Preparation only; the earlier pending application result is now complete |
+| PR #37 head `b69d02e1` | [Application 41400613022](https://github.com/Jiwoo-Jung-Cal/wayfare/actions/runs/41400613022) and coordination succeeded | Draft/unmerged; atomic policy/clock guarantee pending; counts and actual-control results are attributed to [Kelvin's report](https://github.com/Jiwoo-Jung-Cal/wayfare/issues/6#issuecomment-6570772236) |
+| PR #36 head `dbfa3bc6` | [Application 41383578002](https://github.com/Jiwoo-Jung-Cal/wayfare/actions/runs/41383578002) and coordination succeeded | Open/unmerged; do not add its browser counts to main's results |
 
-Native editable r1-draft frames, components, handoffs and exports exist in [DESIGN_MAP.md](DESIGN_MAP.md). PR #29 applied draft r1 to the app as its interim look. Every feature in `design/approvals.json` still has pending approval and a null revision. Jiwoo owns visual approval; feature-specific r1 composition remains with the feature owners.
+This documentation pass does not rerun application suites or copy branch counts into a final release record. Use [RELEASE_GUIDE.md](RELEASE_GUIDE.md) and [the evidence template](templates/release-evidence.md) after Agent 1 supplies the accepted commit/demo. Route any application failure with its command, error, tested SHA and log link to its feature owner or Agent 1; do not absorb product debugging into coordination work.
 
-Main includes Figma Code Layer lifecycle scripts (#31). [Agent 1 reports importing source `5249cb7`](https://github.com/Jiwoo-Jung-Cal/wayfare/issues/8#issuecomment-6564005638) into [Code Layer `24:1182`](https://www.figma.com/design/ZZS9jEmANeCrjGxWxxCofK?node-id=24-1182), with preview NOT VERIFIED. A signed-in human still needs to open the preview; runtime/source alignment and judge access remain outstanding. The native design prototype remains separate from the Code Layer. Live AI and hosted backend/demo remain unverified. Provider booking/cancellation/refund actions are simulated.
+## Deadline and judge links
 
-The private-repository plan is documented as not enforcing branch protection. Agent 1/eligible reviewers retain technical acceptance and merge decisions. No invitations, visibility, billing, branch protection or publication were changed by this documentation pass. After Jiwoo published the environment, GitHub API access and structured reporting work. This resumed pass makes no further environment changes.
+**Official instructions are still missing.** The team-provided deadline is November 10, 2026 at 11:59 PM, with no confirmed official timezone/year source in repository records. Agent 3 requested the organizer's Round 2 instructions (URL or text). Do not assume Pacific time, convert to UTC, or label the timezone confirmed before that source is available. Record the organizer's exact deadline, timezone/offset and source in the final evidence.
 
-The team-provided deadline is November 10, 2026 at 11:59 PM; the official timezone remains unconfirmed. Keep #9 open until the release checklist and accepted-commit evidence are complete.
+[PROJECT_BRIEF.md](PROJECT_BRIEF.md) records the team's requirement for working code, a GitHub repository and a demo; it is not a copy of the official submission form. Required URL formats, recording length, additional Figma links and private-access rules remain unconfirmed.
+
+| Artifact | Current link / evidence | Remaining confirmation |
+| --- | --- | --- |
+| GitHub repository and accepted source | [Private repository](https://github.com/Jiwoo-Jung-Cal/wayfare); accepted release SHA not supplied | Confirm official source-link/private-access rules, record accepted commit, and verify access as the intended judge |
+| Runnable demo | [Code Layer `24:1182`](https://www.figma.com/design/ZZS9jEmANeCrjGxWxxCofK?node-id=24-1182) is an imported editor surface; no verified judge-facing runnable URL is recorded | Confirm permitted demo format; obtain the actual runtime URL/version and verify the full journey and judge access |
+| Recording/video | No URL recorded | Confirm whether required, format/duration and viewing permissions; if required, record and verify the final demo recording |
+| Figma/prototype | [Native design file](https://www.figma.com/design/ZZS9jEmANeCrjGxWxxCofK); design map in [DESIGN_MAP.md](DESIGN_MAP.md) | Confirm whether an additional design link is required; a design prototype does not replace the runnable app |
+| Submission form/portal | No official URL recorded | Obtain the organizer's form, required fields and final submission receipt |
+
+An authenticated owner's repository read or Figma editor session does not verify judge access. Do not make the repository public, invite guessed accounts or change permissions to satisfy an unknown access rule. Record actual access outcomes against the official instructions.
+
+## Design, runtime and access limits
+
+Native r1-draft designs and exports exist, and the interim look is applied. Every feature in `design/approvals.json` still has pending approval/null revision. [Agent 1 reports a Code Layer import](https://github.com/Jiwoo-Jung-Cal/wayfare/issues/8#issuecomment-6564005638) from `5249cb7`; a signed-in preview check and actual runtime/source alignment remain unverified. Agent 3 made no Figma or deployment changes.
+
+Known collaborator handles remain `Wildtypers` (Kelvin) and `brianren-cmd` (Brian). Their published work/reports supersede bootstrap-era missing-handle statements; this pass makes no new permission claim and sends no invitations. Collaborator access is separate from judge access.
+
+Live AI and hosted backend/demo remain unverified. Label sample/manual extraction and simulated provider actions honestly; verify real AI only if it will be claimed live. Agent 1/eligible reviewers retain technical acceptance and merging; Jiwoo retains visual approval. No environment configuration/publication, visibility, billing or branch-protection changes are part of this refresh.

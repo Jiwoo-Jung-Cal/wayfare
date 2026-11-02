@@ -1,8 +1,14 @@
 # Release preparation runbook
 
-Source checkpoint: main `1d42523f7250ea3f58f95115c29efd0d92384f1c` (November 1, 2026, America/Los_Angeles). This guide documents existing commands and outstanding evidence. It is not a completed release sign-off. Agent 1 approves technical accuracy; Jiwoo approves design.
+Source checkpoint: main `d7b0fd16cddf42012fefddb3d716a0978850fbb2` (checked November 2, 2026, America/Los_Angeles). Preparation PR #20 is merged; final submission verification is pending under reopened #9. This guide is not release sign-off. Agent 1 approves technical accuracy; Jiwoo approves design.
 
 [Release task #9](https://github.com/Jiwoo-Jung-Cal/wayfare/issues/9) · [Integration #8](https://github.com/Jiwoo-Jung-Cal/wayfare/issues/8) · [Release checklist](RELEASE_CHECKLIST.md) · [Evidence template](templates/release-evidence.md) · [Architecture and tool decisions](ARCHITECTURE.md)
+
+## Gate for final verification
+
+ReRoute exists in [draft PR #37](https://github.com/Jiwoo-Jung-Cal/wayfare/pull/37), head `b69d02e1ba32646a2a9f6d3c7661f51a56faf2a9`. Its feature-owned browser check drives approval through automatic wallet claims and hotel receipt reconciliation without seeded ActionRecords. That branch's passing CI is not acceptance of an integrated release. The remaining [atomic-precondition request](https://github.com/Jiwoo-Jung-Cal/wayfare/issues/8#issuecomment-6570629325) belongs to Agent 1: policy/clock changes between the final read and action write must be checked inside the transaction, while successful idempotent replays remain supported.
+
+Before running final release checks, obtain Agent 1's explicit acceptance link, full integrated commit SHA, executable complete-demo script, actual demo/runtime source mapping and known limitations under #8. None is supplied by merging the preparation guide. Record the official submission deadline/timezone and required judge-link/access rules from the organizer's instructions; the current [submission checklist](SETUP_STATUS.md#deadline-and-judge-links) marks those inputs unresolved.
 
 ## Reproduce the current sample app
 
@@ -17,7 +23,7 @@ npm run dev
 
 Open the URL Vite prints. For sample mode, leave `VITE_WAYFARE_API_URL` unset in both the shell and Vite environment files. No API server or AI credential is required. Start from a separate browser profile if testing workspace isolation. Sample snapshots persist in IndexedDB, with writes protected by a workspace Web Lock; older localStorage snapshots migrate on mutation. This is separate from connected-mode server storage.
 
-The currently available smoke sequence is load the sample trip, compare/select a Wayfinder plan, reload and confirm selection, then review/save a canonical confirmation through intake. Replaying an import should not duplicate it; unknown policy should remain unknown. Agent 1's merged browser tests cover these flows. TripWallet claim sync, reviewed confirmation, partial/final receipts, duplicate protection and reload are covered by the merged wallet browser test. That test seeds canonical action records because ReRoute is absent; the real recovery/approval-to-wallet journey still awaits integration.
+The current main smoke sequence is load the sample trip, compare/select a Wayfinder plan, reload and confirm selection, then review/save a canonical confirmation through intake. Replaying an import should not duplicate it; unknown policy should remain unknown. The merged wallet browser test covers claim sync, reviewed confirmation, partial/final receipts, duplicate protection and reload using canonical action fixtures. PR #37 adds a real-control ReRoute-to-wallet check on its own branch; the atomic contract and accepted shared journey still await integration.
 
 ## Optional local connected mode
 
@@ -87,7 +93,7 @@ python3 -m unittest discover -s coordination -p 'test_*.py'
 
 On Windows, use an available Python 3 interpreter if `python3` is not installed. Browser checks default to installed Google Chrome and manage three servers: sample Vite on 5174, connected Vite on 5175, and the test API on 8788. The API uses in-memory data, AI provider `none`, and a session limit of 1000 for the test. No separately started API or app secret is required. Avoid unrelated processes on those ports when validating a release, so server reuse cannot pick up the wrong configuration. If using Playwright Chromium instead, follow the repository's `PW_CHANNEL` override and install that browser first. Preserve failures and route feature defects to their feature owner; shared/server/integration defects go to Agent 1.
 
-Current source-checkpoint evidence, not final-release sign-off: at main `1d42523f7250ea3f58f95115c29efd0d92384f1c`, [Application run 41351300885](https://github.com/Jiwoo-Jung-Cal/wayfare/actions/runs/41351300885) and [Coordination run 41351300895](https://github.com/Jiwoo-Jung-Cal/wayfare/actions/runs/41351300895) completed successfully. This pass verified their exact source SHA and successful install/typecheck/unit/build/browser and coordination job steps through the GitHub API. [Agent 1's same-commit cloud report](https://github.com/Jiwoo-Jung-Cal/wayfare/issues/8#issuecomment-6564154027) records Node 24.21.0/npm 11.19.0, 128 unit/integration tests passed (1 skipped, 2 todo), and 13 Chrome tests passed (2 skipped). Counts come from that owner report; this pass did not reread raw application logs or rerun the application suites. Replace this checkpoint with checks at the accepted release commit; skipped ReRoute/full-flow steps do not establish a complete journey.
+Current checkpoint evidence, not final-release sign-off: main `d7b0fd16cddf42012fefddb3d716a0978850fbb2` has successful [Application run 41383324098](https://github.com/Jiwoo-Jung-Cal/wayfare/actions/runs/41383324098) and [Coordination run 41383324183](https://github.com/Jiwoo-Jung-Cal/wayfare/actions/runs/41383324183). Preparation PR #20's final head `7803027` also completed its application/coordination checks successfully. The API confirms the current check results; no raw application logs were reread or application suites rerun in this documentation pass. PR #37's [branch CI](https://github.com/Jiwoo-Jung-Cal/wayfare/actions/runs/41400613022) is green, but its owner-reported counts and real-control journey remain branch evidence until Agent 1 accepts the integrated commit. Preserve remaining shared skips/todos explicitly; do not use any of these records as final-release results.
 
 Main includes `.figma/make/{install,dev,deploy,deploy-preview}` lifecycle scripts (#31) for a static sample-mode Code Layer. [Agent 1 reports a successful import](https://github.com/Jiwoo-Jung-Cal/wayfare/issues/8#issuecomment-6564005638) at source `5249cb7` into [Code Layer `24:1182`](https://www.figma.com/design/ZZS9jEmANeCrjGxWxxCofK?node-id=24-1182). The scripts are now merged; successful import is distinct from a running preview. The latest owner report still marks the preview NOT VERIFIED and asks a signed-in human to open it. Actual preview/runtime-to-source alignment and judge access remain unverified. The native design prototype is a separate surface. Do not run a deployment merely to prepare this guide.
 
@@ -102,7 +108,7 @@ Fonts are bundled through the pinned `@fontsource/inter` and `@fontsource/roboto
 | Intake review/save and duplicate protection | Working with sample extraction | Source-backed review; disputed terms remain unknown |
 | Connected API and persistence | Browser and CI verified, local only | Owner-reported file persistence; browser tests cover two isolated in-memory workspaces, scoped reset and reload; not hosted |
 | Live AI extraction | Unverified | No recorded successful configured model call |
-| ReRoute / CancelClock | Pending feature delivery/integration | Kelvin / #6; shell disruption facts alone are not recovery calculations |
+| ReRoute / CancelClock | Implemented in draft #37; final contract/integration pending | Kelvin's real-control journey exists; Agent 1's atomic policy/clock preconditions and accepted #8 release commit are outstanding |
 | TripWallet cash reconciliation | Working milestone (#25/#27); further #7 acceptance pending | Actual wallet controls cover $400 confirmed, $250 received, $150 outstanding, final receipt, duplicate import, follow-up draft and reload; upstream actions are seeded fixtures |
 | Wallet AI and noncash assets | Partial / unverified | Reviewed sample evidence and separate voucher/points displays exist; live wallet AI, executable asset eligibility and remaining asset workflows are not established |
 | Real provider booking/cancellation/refund | Simulated boundary | No live provider execution claimed |
@@ -116,11 +122,19 @@ Sources: [Agent 1 handoff](handoffs/agent-1.md), [Agent 2 handoff](handoffs/agen
 
 | Owner | Required final handoff |
 | --- | --- |
-| Agent 1 | Integrate delivered ReRoute with the existing wallet milestone; accepted integrated commit; executable demo sequence; complete journey and retry/reload evidence; actual capability labels; technical acceptance and tool-decision notes |
-| Kelvin / Agent 4 | ReRoute/CancelClock PR/commit and checks; before/at/after deadline results; approved-action behavior; failure/unknown-policy handling |
+| Agent 1 | Publish atomic action preconditions, review/integrate #37 with the wallet milestone, and supply the accepted full commit/demo, complete shared journey and retry/reload/race evidence, capability labels and technical acceptance |
+| Kelvin / Agent 4 | Integrate Agent 1's contract and race regression in #37, retain policy/deadline/approval/retry checks and obtain formal visual acceptance; implementation is already published |
 | Brian / Agent 5 | Remaining #7 acceptance/asset behavior, feature-owned wallet evidence handler/client wiring and any live AI evidence; current limitations and r1 feature composition. The shared wallet evidence transport and atomic cross-claim allocation seam are already on main (#26/#27) |
 | Agent 2 | Any remaining design-revision implementation and feature limitations; current #4 acceptance evidence |
 | Jiwoo | Approved design revisions; actual Figma/runtime version and code mapping; judge repository/demo access; confirmed official submission timezone |
 | Agent 3 | Assemble the evidence template, run/inspect accepted-commit checks once, route failures and record the release outcome after #8 |
 
 Keep release #9 open until its acceptance evidence exists. Judge-access verification must use the intended judge access path; the owner's signed-in session is insufficient. This preparation does not change repository visibility, invitations, billing or design.
+
+## Execute the accepted-commit pass
+
+Use [the evidence template](templates/release-evidence.md) to create the actual release record only after the acceptance inputs exist. Verify the checked-out SHA and target/runtime before each recorded suite. Inspect same-commit CI logs when available, then run required checks that remain unexecuted; record commands, exit status, actual test counts, skips/todos and run/log links. Do not copy old green counts. The shared approval-to-wallet scenarios must execute rather than remain placeholders. Verify the atomic policy/clock race regression, successful replays, partial-failure retry, deadline boundary, duplicate protection and reload at that accepted source.
+
+Check every required judge link through the organizer's intended access path, including the actual runnable demo and recording if required. An authenticated owner's repository read or Figma editor session is insufficient. Record the official timezone/source and the demo/runtime's exact source version. Exercise live AI only if it will be claimed as live; otherwise retain explicit sample/simulated/unconfigured labels.
+
+For a failed check, record the command/scenario, short useful error, tested commit and run/log link. Route ReRoute failures to Kelvin/#6, Wayfinder/intake to Agent 2/#4, wallet to Brian/#7, and shared/backend/integration failures to Agent 1/#8. Agent 3 fixes only coordination/CI/documentation defects in its scope; it does not bypass failures, disable assertions or take over feature debugging. Leave #9 blocked until required failures are resolved and acceptance evidence is complete.
