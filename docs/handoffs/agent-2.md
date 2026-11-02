@@ -1,11 +1,12 @@
 # Agent 2 handoff
 
-Status: Wayfinder/intake (#17) and the hardening/interim r1-draft layouts (#21) are merged. Jiwoo approved #21 at head `15eb46d`; merge commit `617ac337d1f67f435a314ebd4c4460113652d3a9`. Issue #4 remains open only for formal r1 visual acceptance, which is still pending.
+Status: core Wayfinder/intake and PRs #21/#35 are merged. The current r1 review reproduced one owned layout defect: below 1024px the simulation notice followed the whole review. The feature fix and order regression are ready for review on the branch below. A shared root-font scale mismatch is routed to Agent 1. Formal r1 approval remains pending; #4 stays open.
 
 - Task: https://github.com/Jiwoo-Jung-Cal/wayfare/issues/4
-- Reconciliation branch: `agent-2/wayfinder-intake-followup`, created from current main. This follow-up changes the handoff only.
+- Current review branch: `agent-2/intake-r1-notice-order`, from main `d7b0fd16cddf42012fefddb3d716a0978850fbb2`.
+- Merged reconciliation PR: https://github.com/Jiwoo-Jung-Cal/wayfare/pull/35 (historical branch `agent-2/wayfinder-intake-followup`; do not add commits there).
 - Merged milestone PR: https://github.com/Jiwoo-Jung-Cal/wayfare/pull/21
-- Main reconciled: `58349bb05434fe40e09e7bc7da696062964106ee`, including #20, #21, #32, #33 and #34.
+- Previous reconciliation baseline: `58349bb05434fe40e09e7bc7da696062964106ee`; current reviewed main `d7b0fd1` also includes #35.
 - Merged feature milestone: #17, head `8642fcca3484b40a8afacd1b0d5e4e0931d88511`; #18/#19 added integrated browser coverage/narrow fixes.
 - Agent 1 technically accepted expanded #21 at `6c496af` with no blocking findings (https://github.com/Jiwoo-Jung-Cal/wayfare/pull/21#issuecomment-6567307593). Its optional nit was applied: the comparison heading now uses `budgetForDisplay`, so an unreadable budget renders as Unknown instead of a non-null assertion (regression test added). Latest SHA/CI links are in the structured #4 report.
 
@@ -51,6 +52,22 @@ V1 policy decision: https://github.com/Jiwoo-Jung-Cal/wayfare/issues/3#issuecomm
 
 ## Verification
 
+### R1 visual/state review — November 2, 2026
+
+Reviewed the actual desktop/mobile screens against `design/exports/wayfinder-intake/` and the foundation token export. Reviewed PR #36 at `dbfa3bc642bbf309a4fcab2b4a7db5721201f738`; its four added cases and proposed full suite passed with retries disabled (17 passed, 2 pending ReRoute skips). It covers financial/state correctness and column/overflow behavior, not reference-image fidelity. Coverage review and the suggested additional order assertions are posted on #36.
+
+Reproduced feature defect: at 390px the simulation notice's heading was at y≈3590, after a review beginning at y≈908; the r1 mobile reference places the notice before review. The new geometry regression failed before the fix at 1023px. Intake now uses named grid areas with a single mode notice: beside the main form on desktop, before it below 1024px; original document/saved bookings remain below the form on narrow screens. At 390px after the fix the notice heading is at y≈921 and review at y≈1104. Existing column counts, field validation, Save width, evidence, sources and financial semantics are preserved.
+
+The owned browser check now asserts notice-before-review and original-document-after-review at 1023/768/767/390/360/320px. Manual checks at 1440/1024/1023/768/767/390/360/320px showed no horizontal overflow, page errors or failed requests. PR #36's blank-price/disputed-policy save/reload case also verifies Unknown and excludes `$0.00`; no money/service logic changed. Keep the standalone check until shared CI includes this new order regression.
+
+Shared fidelity finding (Agent 1): global `html, body` rem sizing produces body 14.0625px vs r1 15px, H1 24.375 vs 26, hero 30 vs 32, card padding 22.5 vs 24 and content width 1125 vs 1200 at 1440px. A temporary browser-only root `font-size: 100%` restores all expected values. Exact evidence/request: https://github.com/Jiwoo-Jung-Cal/wayfare/issues/4#issuecomment-6587211156. No shared style or feature compensation was committed. This and Jiwoo's formal approval remain outside the completed owned fix.
+
+Post-fix checks on Node 24.22.1/npm 11.19.0 passed: install/typecheck, 134 unit/integration tests (1 skipped, 2 todo), production build, current-main E2E (13 passed, 2 pending ReRoute skips), PR #36's proposed suite against the fixed application (17 passed, 2 skips, retries disabled), and the owned browser check with the new order assertions. The pre-fix order assertion failed at 1023px; post-fix it passes through 320px. Browser overrides were external temporary runner configurations; no root dependencies/configuration or shared E2E files changed.
+
+Final commit/PR and CI links are in the latest structured #4 report. This is a ready handoff for the reproduced feature correction, not a claim of complete visual approval. No additional feature scope was added.
+
+### Historical checks
+
 Historical results recorded by the separate cloud session after merging `bda78da` (its reported runtime: Node 24.21.0, npm 11.19.0; independently corroborated by CI on `15eb46d`):
 
 - `npm ci`: passed; root manifest/lockfile unchanged by Agent 2.
@@ -68,4 +85,4 @@ Local browser verification is now working. Playwright's CDN download still yield
 
 Connected account `Jiwoo-Jung-Cal` has pull/push permission. Direct Git fetch was attempted but HTTPS CLI credentials are still unavailable. Current main was therefore fetched through the connected GitHub interface with commit/tree/blob identities verified; a clean checkout of local main was fast-forwarded to `58349bb`. Pre-existing local edits were preserved in their original worktree. The follow-up branch starts from that current main; publication uses a new PR and expected-head branch checks. No commits may be added to the merged `agent-2/wayfinder-intake` branch, and no rebase, force-push or PR merge is authorized.
 
-Next: wait for Jiwoo's formal r1 visual approval or specific design feedback; there is no remaining application-code correction from this reconciliation. #21 is finished and merged. Any further correction must use a new branch from then-current main and a new PR linked to #4; Jiwoo approves each merge in chat. Shared contract/config requests go to Agent 1 on #4. Broad integration and ReRoute/TripWallet calculations remain with their owners. Resume: **Resume Agent 2 on Issue #4; re-read current main, Agent 1's reconciliation note, latest task comments and design approval first. Do not resume coding on merged PR #21.**
+Next: Jiwoo reviews the notice-order fix; Agent 1 handles the reproduced shared root-font issue and may add the suggested order assertion to #36. Await formal r1 approval or concrete feedback after those reviews. No other reproduced owned defect remains from this pass; pause rather than expand scope. Further corrections use a fresh current-main branch/new PR linked to #4; Jiwoo approves each merge. Resume: **Continue Agent 2 on #4 after review/design feedback; read current main, task comments and approval first. Never resume coding on merged PR #21/#35 branches.**
