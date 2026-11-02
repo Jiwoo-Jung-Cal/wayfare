@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router';
-import { appError, isUnknown, parseMajorUnits, type AppError, type FeatureModule, type FeaturePageProps, type PlanOption } from '../../core/index.ts';
+import { appError, isUnknown, type AppError, type FeatureModule, type FeaturePageProps, type PlanOption } from '../../core/index.ts';
 import { Button, Card, ErrorState, InstantText, KeyValue, LoadingState, MoneyStat, MoneyText, Notice, StatusBadge } from '../../ui/index.tsx';
-import { SAMPLE_SCOPE, createPlanGenerator, defaultPreferences, type PlanningResult, type Preferences } from './handler.ts';
+import { SAMPLE_SCOPE, budgetForDisplay, createPlanGenerator, defaultPreferences, type PlanningResult, type Preferences } from './handler.ts';
 import { selectPlanningOption } from './selection.ts';
 import './wayfinder.css';
 
@@ -129,7 +129,7 @@ export function WayfinderPage({ tripId, ctx }: FeaturePageProps) {
     {message && <div role="status"><Notice tone={replayed ? 'info' : 'success'}>{message}</Notice></div>}
     {dirty && result && <Notice tone="warning">Preferences changed. These are previous results; regenerate before selecting.</Notice>}
     {result && <section aria-label="Plan comparison" className="wf-stack">
-      <h2>Compare proposed plans</h2><p>Ordered by {result.preferences.priority} · budget <MoneyText value={parseMajorUnits(result.preferences.budget, 'USD')!} /> for listed components</p><p className="wf-muted">{result.options[0]?.explanation}</p>
+      <h2>Compare proposed plans</h2><p>Ordered by {result.preferences.priority} · budget <MoneyText value={budgetForDisplay(result.preferences.budget)} /> for listed components</p><p className="wf-muted">{result.options[0]?.explanation}</p>
       <p>Results: {result.preferences.origin} → {result.preferences.destination}, {result.preferences.startDate}–{result.preferences.endDate}; {result.preferences.interest === 'skyline' ? 'skyline walk' : 'free time'}.</p>
       <div className="wf-plan-options">{result.options.map(({ plan, knownSubtotal, budgetStatus }, index) => <article className="wf-card wf-stack wf-plan-card" key={plan.id} data-selected={saved?.id === plan.id || undefined}>
         <div className="wf-plan-card-title"><h3>{`${index + 1}. ${plan.label}`}</h3><StatusBadge tone="simulated" wrap>Sample quote</StatusBadge></div><p className="wf-muted">{plan.summary}</p>
