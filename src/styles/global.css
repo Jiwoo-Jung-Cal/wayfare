@@ -18,9 +18,18 @@ body {
   background: var(--wf-color-bg);
   color: var(--wf-color-text);
   font-family: var(--wf-font-sans);
-  font-size: var(--wf-text-md);
   line-height: var(--wf-line-height);
   -webkit-font-smoothing: antialiased;
+}
+
+/* The root must stay at the browser default (16px) because every r1 token is in rem.
+   Setting the body size on html too made 1rem = 15px and shrank all tokens by 1/16. */
+html {
+  font-size: 100%;
+}
+
+body {
+  font-size: var(--wf-text-md);
 }
 
 h1,

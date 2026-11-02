@@ -71,6 +71,23 @@ test.describe('demo journey: shell steps', () => {
     await expect(page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: 'ReRoute' })).toBeVisible();
   });
 
+  test('r1 type scale renders at token size: root 16px, body 15px, H1 26px, 1200px content at 1440px', async ({ page }) => {
+    // Every r1 token is in rem; a non-default root font size silently rescales all of them (#4 comment 6587211156).
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto(TRIP);
+    const h1 = page.getByRole('heading', { level: 1, name: 'San Francisco to New York' });
+    await expect(h1).toBeVisible();
+    const size = (selector: string) => page.locator(selector).first().evaluate((el) => getComputedStyle(el).fontSize);
+    expect(await size('html')).toBe('16px');
+    expect(await size('body')).toBe('15px');
+    expect(await h1.evaluate((el) => getComputedStyle(el).fontSize)).toBe('26px');
+    const contentWidth = await page.locator('#wf-content').evaluate((el) => {
+      const s = getComputedStyle(el);
+      return el.clientWidth - parseFloat(s.paddingLeft) - parseFloat(s.paddingRight);
+    });
+    expect(contentWidth).toBe(1200);
+  });
+
   test('@mobile narrow layout has no horizontal scroll', async ({ page }) => {
     await page.goto(TRIP);
     await control(page, 'Import sample bookings').click();
