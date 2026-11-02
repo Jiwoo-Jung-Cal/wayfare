@@ -18,6 +18,7 @@ import type { Id } from './ids.ts';
 import type { Result } from './result.ts';
 import type { ClockState } from './time.ts';
 import type {
+  ActionPreconditions,
   ActionRecord,
   Booking,
   Disruption,
@@ -69,6 +70,12 @@ export type RecordBookingActionInput = {
   action: ActionRecord;
   /** Current revision of the booking being changed (optimistic check). */
   expectedBookingRevision: number;
+  /**
+   * Optional (additive, contract v1-compatible): policy revision, active-clock cutoff and
+   * replacement-quote conditions the preview relied on, enforced in the same atomic write.
+   * See ActionPreconditionsSchema in schema.ts.
+   */
+  preconditions?: ActionPreconditions;
 };
 export type RecordBookingActionResult = { action: ActionRecord; booking: Booking; replayed: boolean };
 
