@@ -399,6 +399,31 @@ export const ActionRecordSchema = z.strictObject({
 });
 export type ActionRecord = z.infer<typeof ActionRecordSchema>;
 
+/**
+ * Optional conditions a recorded action was previewed under. The repository
+ * checks them inside the same exclusive write as recordBookingAction, against
+ * the stored policy, the active clock and the stored quote; any failure returns
+ * a non-retryable "conflict" and changes nothing. A successful idempotent replay
+ * (same idempotencyKey already recorded) returns the original record without
+ * re-checking, so a retry after a lost response can still notify the shell.
+ */
+export const ActionPreconditionsSchema = z.strictObject({
+  /** Policy the preview used, or null if the booking had no policy. Must equal booking.policyId at write time. */
+  policyId: IdSchema.nullable(),
+  /** Stored policy revision the preview read; null exactly when policyId is null. */
+  expectedPolicyRevision: z.number().int().min(1).nullable(),
+  /** Exclusive cutoff: the write succeeds only while active-clock now < validBefore (null = no cutoff). */
+  validBefore: InstantSchema.nullable(),
+  /** If set, the stored clock state must equal this (e.g. the sample instant the preview was computed at). */
+  expectedClock: ClockStateSchema.optional(),
+  /**
+   * If present, must equal action.replacementQuoteId. A non-null quote must exist in this trip,
+   * be for this booking (or unbound), and still be valid (now < quote.validUntil when set).
+   */
+  replacementQuoteId: IdSchema.nullable().optional(),
+});
+export type ActionPreconditions = z.infer<typeof ActionPreconditionsSchema>;
+
 // ---------------------------------------------------------------------------
 // RefundClaim (created/updated by TripWallet / Agent 5 from ActionRecords)
 

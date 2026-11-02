@@ -11,8 +11,9 @@
 import type { z } from 'zod';
 import type { Id } from '../ids.ts';
 import { err, ok, parseWith, type Result } from '../result.ts';
-import { ClockStateSchema, createClock, type ClockState, type Instant } from '../time.ts';
+import { ClockStateSchema, createClock, isBefore, type ClockState, type Instant } from '../time.ts';
 import {
+  ActionPreconditionsSchema,
   ActionRecordSchema,
   BookingSchema,
   DisruptionSchema,
@@ -26,6 +27,7 @@ import {
   TripSchema,
   WalletAssetSchema,
   WorkspaceSnapshotSchema,
+  type ActionRecord,
   type Booking,
   type RefundClaim,
   type WorkspaceSnapshot,
@@ -516,12 +518,73 @@ export class StoreRepository implements WorkspaceRepository {
       }
       const componentIds = action.expectedRecovery.map((c) => c.id);
       if (new Set(componentIds).size !== componentIds.length) return err('validation_failed', 'Recovery component IDs must be unique');
+      if (input.preconditions !== undefined) {
+        const checked = StoreRepository.checkActionPreconditions(d, action, booking, input.preconditions, now);
+        if (!checked.ok) return checked;
+      }
 
       Object.assign(booking, { state: action.resultingBookingState, revision: booking.revision + 1, updatedAt: now });
       const stored = { ...action, createdAt: now };
       d.actions.push(stored);
       return ok({ action: stored, booking, replayed: false });
     });
+  }
+
+  /**
+   * Runs inside the recordBookingAction write, against the draft and the write's
+   * active-clock `now`, so no clock/policy/quote change can land between this
+   * check and the commit. Failures are non-retryable conflicts: review again.
+   */
+  private static checkActionPreconditions(
+    d: WorkspaceSnapshot,
+    action: ActionRecord,
+    booking: Booking,
+    input: unknown,
+    now: Instant,
+  ): Result<void> {
+    const parsed = parseWith(ActionPreconditionsSchema, input);
+    if (!parsed.ok) return parsed;
+    const pre = parsed.value;
+    const stale = (message: string, details: Record<string, unknown>) =>
+      err('conflict', message, { retryable: false, details: { precondition: true, ...details } });
+
+    if ((pre.policyId === null) !== (pre.expectedPolicyRevision === null)) {
+      return err('validation_failed', 'policyId and expectedPolicyRevision must both be set or both be null');
+    }
+    if (booking.policyId !== pre.policyId) {
+      return stale('Booking policy changed; review again', { expectedPolicyId: pre.policyId, currentPolicyId: booking.policyId });
+    }
+    if (pre.policyId !== null) {
+      const policy = d.policies.find((p) => p.id === pre.policyId);
+      if (!policy || policy.bookingId !== booking.id || policy.tripId !== booking.tripId) {
+        return err('not_found', `Policy ${pre.policyId} not found for booking ${booking.id}`);
+      }
+      if (policy.revision !== pre.expectedPolicyRevision) {
+        return stale('Policy changed; review again', { policyId: policy.id, expectedRevision: pre.expectedPolicyRevision, currentRevision: policy.revision });
+      }
+    }
+    if (pre.expectedClock !== undefined && JSON.stringify(pre.expectedClock) !== JSON.stringify(d.clock)) {
+      return stale('The active clock changed; review again', { expectedClock: pre.expectedClock, currentClock: d.clock });
+    }
+    if (pre.validBefore !== null && !isBefore(now, pre.validBefore)) {
+      return stale('Recovery preview expired; review again', { validBefore: pre.validBefore, now });
+    }
+    if (pre.replacementQuoteId !== undefined) {
+      if (pre.replacementQuoteId !== action.replacementQuoteId) {
+        return err('validation_failed', 'preconditions.replacementQuoteId must equal action.replacementQuoteId');
+      }
+      if (pre.replacementQuoteId !== null) {
+        const quote = d.quotes.find((q) => q.id === pre.replacementQuoteId);
+        if (!quote || quote.tripId !== action.tripId) return err('not_found', `Quote ${pre.replacementQuoteId} not found for trip ${action.tripId}`);
+        if (quote.forBookingId !== null && quote.forBookingId !== booking.id) {
+          return err('validation_failed', `Quote ${quote.id} is for booking ${quote.forBookingId}, not ${booking.id}`);
+        }
+        if (quote.validUntil !== null && !isBefore(now, quote.validUntil)) {
+          return stale('Replacement quote expired; review again', { quoteId: quote.id, validUntil: quote.validUntil, now });
+        }
+      }
+    }
+    return ok(undefined);
   }
 
   // -- claims / receipts / assets --------------------------------------------
