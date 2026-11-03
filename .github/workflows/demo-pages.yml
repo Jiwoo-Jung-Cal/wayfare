@@ -19,6 +19,9 @@ jobs:
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    permissions:
+      contents: read
+      pages: read   # configure-pages reads the Pages site config (403 without it)
     steps:
       - uses: actions/checkout@v6
         with:
