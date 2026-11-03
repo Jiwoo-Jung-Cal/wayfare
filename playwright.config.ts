@@ -9,8 +9,10 @@ const channel = process.env.PW_CHANNEL ?? 'chrome';
 const PORT = 5174; // sample mode (no server)
 const CONNECTED_PORT = 5175; // connected mode (app -> local API)
 const API_PORT = 8788;
+const DEMO_PORT = 5176; // production build (dist/), served under a sub-path like a static host
 const reuse = !process.env.CI;
 const connected = /connected\.spec\.ts$/;
+const demo = /demo\.spec\.ts$/;
 
 export default defineConfig({
   testDir: './e2e',
@@ -24,8 +26,14 @@ export default defineConfig({
     ...(channel ? { channel } : {}),
   },
   projects: [
-    { name: 'desktop', testIgnore: connected, use: { ...devices['Desktop Chrome'], ...(channel ? { channel } : {}) } },
-    { name: 'mobile', testIgnore: connected, use: { ...devices['Pixel 7'], ...(channel ? { channel } : {}) }, grep: /@mobile/ },
+    { name: 'desktop', testIgnore: [connected, demo], use: { ...devices['Desktop Chrome'], ...(channel ? { channel } : {}) } },
+    { name: 'mobile', testIgnore: [connected, demo], use: { ...devices['Pixel 7'], ...(channel ? { channel } : {}) }, grep: /@mobile/ },
+    {
+      // The shareable demo: the documented walkthrough (docs/DEMO.md) against the real production build.
+      name: 'demo',
+      testMatch: demo,
+      use: { ...devices['Desktop Chrome'], ...(channel ? { channel } : {}), baseURL: `http://localhost:${DEMO_PORT}/wayfare/` },
+    },
     {
       name: 'connected',
       testMatch: connected,
@@ -40,6 +48,14 @@ export default defineConfig({
       reuseExistingServer: reuse,
       env: { VITE_WAYFARE_API_URL: '' },
       timeout: 60_000,
+    },
+    {
+      // Fresh sample-mode production build of the current tree, served statically under /wayfare/.
+      command: `npx vite build && npx vite preview --port ${DEMO_PORT} --strictPort --base /wayfare/`,
+      url: `http://localhost:${DEMO_PORT}/wayfare/`,
+      reuseExistingServer: reuse,
+      env: { VITE_WAYFARE_API_URL: '' },
+      timeout: 120_000,
     },
     {
       // Local API in memory. AI is forced off so E2E never makes paid model calls, even if a key is set.

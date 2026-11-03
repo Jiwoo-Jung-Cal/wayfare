@@ -1,8 +1,8 @@
 # Agent 1 handoff
 
-Status (2026-11-02, cloud session, later): main `87ad471` has foundation, Wayfinder/intake (#21, #40), TripWallet, interim design r1 (approval pending), the r1 root-font fix (#41), Figma Code Layer scripts, vendor chunk splitting, atomic action preconditions (#38) and the Wayfinder/intake e2e coverage (#36). ReRoute (#37, Kelvin) is integrated **on branch** in draft PR #39, which is green on current main and waits on Kelvin's link fix and precondition adoption in #37. The dated sections below keep their historical checks; the latest section supersedes their status.
+Status (2026-11-03): main `17623fc` has the complete integrated sample-mode journey (Wayfinder/intake, ReRoute, TripWallet). PR #44 adds the demo guide (`docs/DEMO.md`), build provenance (`version.json`) and a CI check of the walkthrough on the production build. No hosted URL yet. Figma Code Layer `24:1182` is an older snapshot (`5249cb7`) with an unverified preview. The dated sections below keep their historical checks; the latest section supersedes their status.
 Task Issue: https://github.com/Jiwoo-Jung-Cal/wayfare/issues/3 (foundation, closed). Integration is tracked on #8.
-Branch / commit / PR: main `87ad471` (after #36). Open: #37 (Kelvin, draft), #39 (Agent 1 ReRoute integration, draft, head `812f5a6`). Work goes on short-lived `agent-1/<slug>` branches cut from main.
+Branch / commit / PR: main `17623fc`. Open: #44 (demo baseline, `agent-1/demo-baseline`). Work goes on short-lived `agent-1/<slug>` branches cut from main.
 
 ## For Agent 3 (CI)
 
@@ -259,4 +259,19 @@ The wallet browser flow also checks the populated/reconciled wallet at 390/360/3
 - #39 merged `30f2dbb`. The shared journey now clicks ReRoute's own "Open TripWallet" and asserts the trip wallet URL and heading. Restoring the old route-relative link fails it with `/#/`.
 - Checks on #39: typecheck; **174 passed, 0 skipped, 0 todo**; build; **e2e 20 passed, 0 skipped**; ReRoute journeys 3/3 runs green with retries=0.
 - Remaining: Jiwoo's r1 visual approval; the Code Layer preview output; live AI; hosting; Agent 3's release pass (#9).
+
+
+## Demo baseline and hosting (2026-11-03)
+
+- **Baseline: main `17623fc` in sample mode.** The guide is `docs/DEMO.md`: launch, what's simulated, a 10-step walkthrough (plan → intake → disruption → ReRoute comparison/approval → TripWallet → receipts → reload), and limitations.
+- **Provenance:** every production build writes `version.json` and `<meta name="wayfare-source" content="<SHA>[-dirty]; mode=…">`. `WAYFARE_SOURCE_SHA` overrides git.
+- **Executable check:** `e2e/demo.spec.ts` (Playwright project `demo`) runs the walkthrough with real controls against a fresh production build served by `vite preview` under `/wayfare/`. PR #44 CI (run 41621290545, job 125867364487): 21 e2e passed, including `[demo]`. Locally: typecheck; 174 tests; build; e2e 21 passed / 0 skipped; demo 3/3 runs with retries=0.
+- **Hosting: no URL yet.** GitHub Pages is the established path (`docs/ARCHITECTURE.md`: static `dist/`, relative base, hash routing). Two inputs are missing:
+  - Jiwoo: Settings → Pages → Source **GitHub Actions**. The repo is private, so this needs a plan that allows Pages there, and the site will be public.
+  - Agent 3: a `.github/workflows/demo-pages.yml`. The exact YAML was requested on #9 (comment 6601462179).
+
+  Once a run deploys: verify the live URL with the walkthrough, and record the URL and the `version.json` SHA on #8.
+- **Figma:** re-checked 2026-11-03. Page `1:8` still has a single code layer (`24:1182`, source `5249cb7`, not current main); the native prototype frames are untouched. The static render is still an empty frame, and the preview output can only be read by a signed-in human. No re-import was done, since Jiwoo is preparing an updated design.
+- **Reviews:** #43 (Agent 4 handoff) is technically accurate (comment 6601335309); its merge is Jiwoo's call. #42 (Agent 3) is 14 commits behind, so a refresh was requested before the technical review.
+- **Brian (#7):** no new PR or shared-contract request. The evidence-handler seam is on main already (#26). His follow-up gets integrated when it's reviewed.
 
