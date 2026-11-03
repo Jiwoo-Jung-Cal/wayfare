@@ -252,8 +252,10 @@ test.describe('demo journey: ReRoute approval to TripWallet (Agents 4 and 5, #6/
       bookingStates: ['cancelled', 'cancelled', 'cancelled', 'cancelled'],
     });
 
-    // Shell navigation to the wallet. (ReRoute's own "Open TripWallet" link is reported on #37.)
-    await page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: 'TripWallet' }).click();
+    // ReRoute's own link must stay inside this trip (route-relative links once resolved to /#/).
+    await page.getByRole('main').getByRole('link', { name: 'Open TripWallet' }).click();
+    await expect(page).toHaveURL(/#\/trips\/trip-demo-nyc\/wallet$/);
+    await expect(page.getByRole('heading', { level: 1, name: 'TripWallet', exact: true })).toBeVisible();
     await expect(card(page, 'Harbor Line Hotel Midtown')).toContainText('$400.00');
 
     await page.goto(TRIP);

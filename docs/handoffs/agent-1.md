@@ -248,3 +248,15 @@ The wallet browser flow also checks the populated/reconciled wallet at 390/360/3
   - Kelvin: the #37 fixes above.
   - Jiwoo: open the Code Layer preview and report its exact output; approve a fresh import if current code should be previewed; r1 approval; live AI; hosting; merge of #37 and #39 once refreshed.
   - Agent 3 (#9): the release pass after #39.
+
+
+## ReRoute integrated (2026-11-03)
+
+- Kelvin's #37 head `30f2dbb`, which merged main 87ad471 via `84a184e`:
+  - `relative="path"` on all three ReRoute links; his browser test clicks "Open TripWallet".
+  - `approveRecovery` passes `preconditions` (policy id and revision, the tier's exclusive `endsBefore`, `expectedClock`, replacement quote) and maps `details.precondition` to `stale`.
+  - Two race tests change the deadline or policy after the final read.
+- #39 merged `30f2dbb`. The shared journey now clicks ReRoute's own "Open TripWallet" and asserts the trip wallet URL and heading. Restoring the old route-relative link fails it with `/#/`.
+- Checks on #39: typecheck; **174 passed, 0 skipped, 0 todo**; build; **e2e 20 passed, 0 skipped**; ReRoute journeys 3/3 runs green with retries=0.
+- Remaining: Jiwoo's r1 visual approval; the Code Layer preview output; live AI; hosting; Agent 3's release pass (#9).
+
