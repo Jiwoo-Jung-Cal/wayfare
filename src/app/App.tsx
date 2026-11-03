@@ -3,12 +3,12 @@
 // (e.g. a Figma Code Layer) without server rewrites.
 
 import { Component, useEffect, type ReactNode } from 'react';
-import { createHashRouter, Navigate, NavLink, Outlet, RouterProvider, useParams } from 'react-router';
+import { createHashRouter, Navigate, Outlet, RouterProvider, useParams } from 'react-router';
 import { appError, DEMO_TRIP_ID, forgetGuestSession, formatInstant, type AppError } from '../core/index.ts';
 import { Button, CapabilityLabel, EmptyState, ErrorState, LoadingState, StatusBadge } from '../ui/index.tsx';
 import { AppServicesProvider, CONNECTED_API_URL, useAppServices } from './AppServices.tsx';
 import { DemoControls } from './DemoControls.tsx';
-import { ThemeToggle } from './ThemeToggle.tsx';
+import { BottomTabs, TopBar } from './TopBar.tsx';
 import { ClaimSyncNotice } from './ClaimSyncNotice.tsx';
 import { TripDashboard, TripList } from './Dashboard.tsx';
 import { FEATURES, ROUTE_TABLE } from './featureRegistry.ts';
@@ -26,33 +26,27 @@ class RouteErrorBoundary extends Component<{ children: ReactNode }, { error: App
   }
 }
 
-const MOBILE_LABEL: Record<string, string> = { plan: 'Plan', import: 'Import', reroute: 'ReRoute', wallet: 'Wallet' };
-
 function Layout() {
   const { load, repo, extraction, refresh, clock } = useAppServices();
-  const tripId = load.status === 'ready' ? (load.snapshot.trips[0]?.id ?? null) : null;
+  const trips = load.status === 'ready' ? load.snapshot.trips : [];
+  const tripId = trips[0]?.id ?? null;
   const now = clock.now();
+  const disruption = load.status === 'ready' ? load.snapshot.disruptions.find((d) => d.tripId === tripId) : undefined;
+  const alerts = disruption
+    ? [{ title: 'Flight disruption', detail: `${disruption.description}${disruption.capability === 'simulated' ? ' (simulated)' : ''}`, to: `/trips/${tripId}/reroute` }]
+    : [];
   return (
     <div className="wf-shell">
       <a href="#wf-content" className="wf-visually-hidden">
         Skip to content
       </a>
-      <header className="wf-header">
-        <div className="wf-header-inner">
-          <NavLink to="/" className="wf-brand">
-            WayFare
-          </NavLink>
-          <nav className="wf-nav" aria-label="Main">
-            <NavLink to="/" end>
-              Dashboard
-            </NavLink>
-            {tripId &&
-              ROUTE_TABLE.map((r) => (
-                <NavLink key={r.path} to={`/trips/${tripId}/${r.path}`}>
-                  {r.title}
-                </NavLink>
-              ))}
-          </nav>
+      <TopBar trips={trips} tripId={tripId} alerts={alerts} />
+      <div className="wf-clockbar">
+        <div className="wf-clockbar-inner">
+          <StatusBadge tone="simulated">{clock.mode === 'sample' ? 'Demo clock' : 'Real-time clock'}</StatusBadge>
+          <span className="wf-clockbar-time" aria-label="Current app time">
+            {formatInstant(now, 'America/New_York')} · {now}
+          </span>
           <span className="wf-capabilities" title={`${repo.capabilities.description} ${extraction.description}`}>
             <CapabilityLabel status={repo.capabilities.mode === 'sample' ? 'sample' : 'live'}>
               {repo.capabilities.mode === 'sample' ? 'saved in this browser' : 'server workspace'}
@@ -60,20 +54,8 @@ function Layout() {
             <span className="wf-hide-narrow">
               <CapabilityLabel status={extraction.capability === 'live' ? 'live' : 'simulated'}>AI extraction</CapabilityLabel>
             </span>
-            <span className="wf-hide-narrow">
-              <CapabilityLabel status="simulated">provider actions</CapabilityLabel>
-            </span>
+            <CapabilityLabel status="simulated">provider actions</CapabilityLabel>
           </span>
-          <ThemeToggle />
-        </div>
-      </header>
-      <div className="wf-clockbar">
-        <div className="wf-clockbar-inner">
-          <StatusBadge tone="simulated">{clock.mode === 'sample' ? 'Demo clock' : 'Real-time clock'}</StatusBadge>
-          <span className="wf-clockbar-time" aria-label="Current app time">
-            {formatInstant(now, 'America/New_York')} · {now}
-          </span>
-          <span>{repo.capabilities.mode === 'sample' ? 'Sample mode · fictional providers · actions are simulated' : 'Connected mode · fictional providers · actions are simulated'}</span>
         </div>
       </div>
       <main id="wf-content" className="wf-main">
@@ -101,17 +83,7 @@ function Layout() {
           </RouteErrorBoundary>
         )}
       </main>
-      <nav className="wf-tabbar" aria-label="Sections">
-        <NavLink to="/" end>
-          Trip
-        </NavLink>
-        {tripId &&
-          ROUTE_TABLE.map((r) => (
-            <NavLink key={r.path} to={`/trips/${tripId}/${r.path}`}>
-              {MOBILE_LABEL[r.path]}
-            </NavLink>
-          ))}
-      </nav>
+      <BottomTabs tripId={tripId} />
       <DemoControls />
     </div>
   );
