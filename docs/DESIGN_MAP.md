@@ -3,7 +3,20 @@
 Design owner for every area: Jiwoo. Kelvin and Brian do not need Figma access.
 Figma: https://www.figma.com/design/ZZS9jEmANeCrjGxWxxCofK
 
-**Latest draft: r1-draft (2026-11-01).** Agent 1 created it under Jiwoo's direction, and visual approval is **pending** for every area. The native, editable designs live in Figma. GitHub holds the handoffs and PNG exports. Figma edits do **not** sync to GitHub automatically.
+**Current approved revision: r2-final (2026-11-03).** Jiwoo approved it as final; the full specification is [`design/handoffs/r2-final.md`](../design/handoffs/r2-final.md). The native, editable designs live in Figma page `09 — WayFare final` (`55:3`). GitHub holds the handoffs, PNG exports and a single-file reference page (`design/exports/prototype/r2/index.html`). Figma edits do **not** sync to GitHub automatically.
+
+| Area | r2 Figma node | Code owner | Repository handoff | r2 exports |
+| --- | --- | --- | --- | --- |
+| Foundations: tokens, type, icons, logo | `Foundations · tokens, icons, logo` `55:39` | Agent 1 | `design/handoffs/r2-final.md` §1 | `design/exports/foundation/r2-*.png` |
+| Components (Tag, Button, Nav tab, Trip button, Google sign-in, mode toggle, bell, Ask pill, Toast, Top bar) | `Components` `56:7` | Agent 1 | `design/handoffs/r2-final.md` §1–2 | — |
+| Overview (was Dashboard) | `Screen · Overview` `60:116` | Agent 1 | `design/handoffs/r2-final.md` §3 | `design/exports/dashboard/r2-overview-*.png` |
+| Itinerary (new) | `Screen · Itinerary` `67:294` | Agent 1 | `design/handoffs/r2-final.md` §3 | `design/exports/dashboard/r2-itinerary-desktop.png` |
+| Plan / Wayfinder | `Screen · Plan (Wayfinder)` `61:196` | Agent 2 | `design/handoffs/wayfinder-intake.md` (r2 section) | `design/exports/wayfinder-intake/r2-*.png` |
+| ReRoute / CancelClock | `Screen · ReRoute` `68:403` | Kelvin / Agent 4 | `design/handoffs/reroute.md` (r2 section) | `design/exports/reroute/r2-*.png` |
+| TripWallet | `Screen · TripWallet` `68:579` | Brian / Agent 5 | `design/handoffs/tripwallet.md` (r2 section) | `design/exports/tripwallet/r2-*.png` |
+| States and responsive (trip menu, stub tear, sign-in, narrow window) | `States & responsive` `72:541` | all | `design/handoffs/r2-final.md` §2–3 | `design/exports/dashboard/r2-overview-trip-menu.png`, `…-stub-hover.png`, `…-narrow-*.png` |
+
+### History: r1-draft (2026-11-01, superseded)
 
 | Area | Figma page (node) | Draft r1 frames (node IDs) | Code owner | Repository handoff | Exports |
 | --- | --- | --- | --- | --- | --- |

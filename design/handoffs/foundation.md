@@ -1,5 +1,9 @@
 # Foundation design handoff
 
+> **Superseded by r2-final (approved 2026-11-03).** The approved foundations (colour tokens in light and dark, Figtree / IBM Plex Mono type, logo, components, app shell, top bar, trip menu, responsive and windowed rules) and the Overview and Itinerary screens are specified in [`r2-final.md`](r2-final.md). Exports: `design/exports/dashboard/r2-*.png`, `design/exports/foundation/r2-*.png`; reference page `design/exports/prototype/r2/index.html`; Figma page `09 — WayFare final` (`55:3`). The r1 notes below are kept for history only.
+
+---
+
 Design owner: Jiwoo. Visual approval: **pending**. Latest draft: **r1-draft (2026-11-01)**. It was created by Agent 1 at Jiwoo's direction and is awaiting his review.
 
 Jiwoo supplies typography, colors, spacing, responsive rules, and states for buttons, inputs, cards, status/money displays, navigation, dialogs, loading and errors. Agent 1 translates approved tokens and components into code and documents the supported API.

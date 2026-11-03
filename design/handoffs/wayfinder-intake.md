@@ -1,5 +1,26 @@
 # Wayfinder and intake handoff
 
+## r2-final — approved 2026-11-03 (current)
+
+Shared foundations, shell and responsive rules: [`r2-final.md`](r2-final.md). Figma: `Screen · Plan (Wayfinder)` (`61:196`). Exports: `design/exports/wayfinder-intake/r2-plan-wayfinder-desktop.png`, `r2-plan-wayfinder-free-time-flexibility.png`, `r2-plan-composer-pickers.png`, `r2-plan-narrow-390.png`.
+
+**Plan tab, top to bottom.**
+1. Faint w-logo watermark, "Where to next?" (Figtree 600, 36) and "Describe the trip you want. WayFare compares options, shows every cost, and books it for you."
+2. **Composer** (720 wide, 16 radius, hairline, `WF/Hover`): an empty textarea whose **grey placeholder** is the example request (submitting empty uses the placeholder). Controls row, all 34 px tall and vertically centred: attach (paper clip, opens booking import), travelers chip, dates chip, then the blue round send button on the right.
+   - Travelers chip opens a popover: Adults (min 1) and Children steppers, total 1–9, "Done". Label "N traveler(s)" — no currency text.
+   - Dates chip opens Leave / Return date inputs; return must be after leave (inline error).
+3. "Or start from an example": three outline cards (Plan a weekend away · Keep it refundable · Find a cheaper flight), then "NY Trip · booked from this plan · 2 days ago".
+4. Answer header with a blue sparkle: "I found 3 plans for New York, {dates} · {travelers}." plus the scope line.
+5. **Wayfinder controls** card: Budget input ($), "What matters most" segmented (Price / Convenience / Flexibility), "Saturday morning" segmented (Skyline walk · $80 / Free time), and an info line explaining the order ("Ordered by listed cost. A plan with a missing price goes last." / "Ordered by {priority}, then by price. Budget checks stay the same."). Changing any control re-ranks immediately.
+6. **Plan cards** (3-up): 3:2 photo with a tag (top card: "Best price" / "Most convenient" / "Most flexible"; booked plan: "Your current trip"), "OPTION n" (+ "· BOOKED"), title, summary, total (`WF/Money`; unknown shows "$1,010 + ?") with budget status in jade/coral, a stacked cost bar in category colours (unquoted part striped), Convenience and Flexibility as three dots, expandable "Where the money goes" (each line item with "Sample quote" / "No quote received yet", total or "Known so far", assumptions), and the action: "Choose this plan" (dark), "View your trip" (line) for the booked plan, or disabled with the reason underneath for unknown-price or over-budget plans. Choosing shows "Chosen · tap to undo" and a toast; nothing is booked.
+7. **Side by side** table: Flight, Hotel, Activity (hidden with Free time), Airport ride, Total per plan; the lowest price per row is jade; unquoted shows "Not quoted".
+
+Data and rules are unchanged from the merged Wayfinder module (#17): the same three sample candidates ($815, $900, unknown), integer cents, unknown never treated as free, free time removes the activity, a selected plan is not a booking. The plan photos are in `design/exports/prototype/r2/photos/`.
+
+**Booking intake** keeps the r1 layout below, restyled with r2 foundations (tokens, type, buttons, tags). It is reached from the composer's attach button.
+
+---
+
 Design owner: Jiwoo. Code owner: Agent 2. Visual approval: **pending**. Latest draft: **r1-draft (2026-11-01)**, awaiting Jiwoo's review.
 
 Required interactions:

@@ -1,5 +1,21 @@
 # ReRoute / CancelClock handoff
 
+## r2-final — approved 2026-11-03 (current)
+
+Shared foundations and shell: [`r2-final.md`](r2-final.md). Figma: `Screen · ReRoute` (`68:403`). Exports: `design/exports/reroute/r2-reroute-desktop.png`, `r2-reroute-narrow-390.png`.
+
+1. "What should you do?" and "Your flight is cancelled, so you have two choices. Nothing happens until you confirm."
+2. Disruption card (hairline, coral alert icon): "Bayline Air cancelled flight BL 214" and the airline-owes-you sentence with **+$320** in jade.
+3. Two choice cards side by side, selectable (selected = 2 px dark outline and filled radio):
+   - **Cancel the whole trip:** "+$820 back to you" with an EXPECTED tag; "You lose −$80 in fees you can’t get back"; "Do it in the next 29 hours to get the most back".
+   - **Keep the trip:** "−$360 for a new flight"; "You still get +$320 back for the cancelled flight"; "Fly Bayline Air BL 230 instead (sample price). Hotel and plans stay."
+4. **How much comes back if you cancel later:** a step chart (jade line and fade, $0–$900 axis, Now → Sat 12 PM) where each step down is a dashed coral deadline labelled "Hotel −$200", "Ride −$40", "Walk −$60"; "You paid $900" reference line; hover/drag shows a tooltip for any moment. Beside it, "IF YOU CANCEL NOW": Flight +$320, Hotel +$400, Skyline Walk +$60, Ride from JFK +$40, **Back to you +$820**, Can’t be recovered −$80, and the note that the $75 voucher and 8,000 points are not cash and not counted.
+5. Footer action: "You’ll review everything before anything is cancelled." + dark "Review and confirm" (opens the approval step; nothing is sent to providers without approval).
+
+Below 1000 px the chart card stacks (chart, then breakdown); below 760 px the choice cards stack. Amounts and deadlines come from the shared CancelClock data; this revision does not change the calculation rules below.
+
+---
+
 Design owner: Jiwoo. Code owner: Kelvin / Agent 4. Figma access for Kelvin: not required.
 
 Visual approval: **pending**. Latest draft: **r1-draft (2026-11-01)**, awaiting Jiwoo's review. ReRoute code is **not implemented yet**. These screens were designed from the published requirements below and the canonical fixture; they do not show working behavior.
