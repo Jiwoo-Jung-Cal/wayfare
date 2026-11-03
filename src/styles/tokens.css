@@ -1,72 +1,153 @@
 /*
- * WayFare design tokens — draft r1 (Figma file ZZS9jEmANeCrjGxWxxCofK, 2026-11-01).
+ * WayFare design tokens: r2-final (approved 2026-11-03; design/handoffs/r2-final.md §1).
+ * Figma: collection "WayFare", modes Light / Dark, page 09 — WayFare final (55:3).
  *
- * Jiwoo asked to build the demo with this draft while formal visual approval
- * is pending (design/approvals.json stays "pending"). Values mirror the Figma
- * variables 1:1: each Figma variable's WEB code syntax is the name below.
+ * Existing --wf-* names are kept so feature CSS keeps working; names marked "new"
+ * come from r2. Values not in the r2 table (hover/accent-text/info/neutral/
+ * simulated-bg/warning-bg/border-strong) are derived from the same palette.
  * Feature code uses these names only; never hard-code colors, sizes or fonts.
+ *
+ * Mode: <html data-theme="light|dark"> is set from the user's choice (remembered
+ * per browser); with no stored choice, prefers-color-scheme decides.
  */
 :root {
-  /* Color: surfaces and text */
-  --wf-color-bg: #f7f8f9;
-  --wf-color-surface: #ffffff;
-  --wf-color-surface-muted: #f1f3f5;
-  --wf-color-text: #161b20;
-  --wf-color-text-muted: #56616b;
-  --wf-color-border: #d3d8dd;
-  --wf-color-border-strong: #8a949e;
-  --wf-color-focus: #0e6f7c;
+  color-scheme: light;
 
-  /* Color: accent */
-  --wf-color-accent: #0e6f7c;
-  --wf-color-accent-hover: #0b5b66;
-  --wf-color-accent-subtle: #e8f4f5;
+  /* Color: surfaces and text */
+  --wf-color-bg: #ffffff;
+  --wf-color-surface: #ffffff;
+  --wf-color-surface-muted: #f7f7f7;
+  --wf-color-surface-strong: #f1f1f1; /* new */
+  --wf-color-paper: #fcfbf7; /* new: boarding pass */
+  --wf-color-paper-line: #e3ded1; /* new */
+  --wf-color-text: #222222;
+  --wf-color-text-muted: #6a6a6a;
+  --wf-color-text-faint: #929292; /* new */
+  --wf-color-border: #dddddd;
+  --wf-color-border-soft: #ebebeb; /* new */
+  --wf-color-border-strong: #b0b0b0;
+  --wf-color-focus: #1f5fa8;
+
+  /* Color: accent (brand blue) */
+  --wf-color-accent: #1f5fa8;
+  --wf-color-accent-hover: #194e8a;
+  --wf-color-accent-subtle: #eaf1fb;
   --wf-color-accent-text: #ffffff;
 
-  /* Color: intent (always paired with words, never color alone) */
-  --wf-color-positive: #1b7340;
-  --wf-color-positive-bg: #e7f5ec;
-  --wf-color-warning: #8a5800;
-  --wf-color-warning-bg: #fdf3dc;
-  --wf-color-danger: #b42318;
-  --wf-color-danger-bg: #fce8e6;
-  --wf-color-info: #2f55c5;
-  --wf-color-info-bg: #e8eefc;
-  --wf-color-neutral-bg: #e6e9ec;
-  /* Sample data, simulated provider actions, unverified live capability */
-  --wf-color-simulated: #5b3fa8;
-  --wf-color-simulated-bg: #f1ecfb;
+  /* Color: money and status (always paired with words and +/- signs) */
+  --wf-color-positive: #0e7c62; /* money coming back, "+" */
+  --wf-color-positive-bg: #e6f4ef;
+  --wf-color-danger: #c9402c; /* money lost / extra cost / deadlines, "−" */
+  --wf-color-danger-bg: #fdeeeb;
+  --wf-color-warning: #8a5a00; /* at risk */
+  --wf-color-warning-bg: #fbf1dc;
+  --wf-color-info: #1f5fa8;
+  --wf-color-info-bg: #eaf1fb;
+  --wf-color-neutral-bg: #f1f1f1;
+  /* Credits, points, sample data, simulated provider actions */
+  --wf-color-simulated: #5e4dbf;
+  --wf-color-simulated-bg: #efecfa;
 
-  /* Typography (Figma text styles) */
-  --wf-font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-  --wf-font-mono: 'Roboto Mono', ui-monospace, 'SFMono-Regular', Consolas, monospace;
-  --wf-text-xs: 0.75rem; /* Label/Caption 12/16 */
-  --wf-text-sm: 0.8125rem; /* Body/Small 13/18 */
-  --wf-text-md: 0.9375rem; /* Body/Default 15/22 */
-  --wf-text-h3: 1rem; /* Heading/H3 16/24 */
-  --wf-text-amount: 1.125rem; /* Amount/Medium 18/24 */
-  --wf-text-lg: 1.25rem; /* Heading/H2 20/28 */
-  --wf-text-xl: 1.625rem; /* Heading/H1 26/32 */
-  --wf-text-hero: 2rem; /* Amount/Hero 32/40 */
+  /* Color: booking categories (new) */
+  --wf-color-cat-flight: #1f5fa8;
+  --wf-color-cat-stay: #7a3e6b;
+  --wf-color-cat-activity: #b4621a;
+  --wf-color-cat-ride: #0f7381;
+
+  /* Typography (Figma text styles WF/*) */
+  --wf-font-sans: 'Figtree', 'Helvetica Neue', Arial, system-ui, sans-serif;
+  --wf-font-mono: 'IBM Plex Mono', ui-monospace, Menlo, Consolas, monospace;
+  --wf-text-xs: 0.6875rem; /* WF/Label mono 11, +8%, uppercase */
+  --wf-text-sm: 0.8125rem; /* WF/Small 13/1.45 */
+  --wf-text-md: 0.9375rem; /* WF/Body 15/1.5 */
+  --wf-text-h3: 1rem; /* WF/Title 16/1.4 */
+  --wf-text-amount: 1.5rem; /* WF/Money 24, tabular */
+  --wf-text-lg: 1.375rem; /* WF/Heading 22/1.2 */
+  --wf-text-xl: 2.1875rem; /* WF/Display 35/1.1, −2% */
+  --wf-text-hero: 2rem; /* money tiles: 32 Regular */
+  --wf-text-code: 4.5rem; /* WF/Airport code 72/0.95, −3% */
   --wf-weight-regular: 400;
   --wf-weight-medium: 500;
-  --wf-weight-strong: 600;
-  --wf-line-height: 1.47;
+  --wf-weight-strong: 600; /* titles only, never body */
+  --wf-line-height: 1.5;
 
-  /* Spacing, radius, elevation */
+  /* Spacing */
   --wf-space-1: 0.25rem;
   --wf-space-2: 0.5rem;
   --wf-space-3: 0.75rem;
   --wf-space-4: 1rem;
   --wf-space-5: 1.5rem;
   --wf-space-6: 2rem;
-  --wf-radius-sm: 6px;
-  --wf-radius-md: 12px;
-  --wf-radius-full: 999px;
-  --wf-shadow-card: 0 1px 2px rgb(16 24 40 / 0.06), 0 1px 3px rgb(16 24 40 / 0.08);
-  --wf-shadow-dialog: 0 12px 32px rgb(16 24 40 / 0.18), 0 2px 6px rgb(16 24 40 / 0.08);
+
+  /* Shape */
+  --wf-radius-sm: 8px; /* buttons */
+  --wf-radius-md: 12px; /* inputs, cards, photos */
+  --wf-radius-lg: 16px; /* large cards, calendar, menus */
+  --wf-radius-pass: 18px; /* boarding pass */
+  --wf-radius-bar: 22px; /* floating top bar */
+  --wf-radius-full: 999px; /* pills, tabs, chips */
+
+  /* Elevation (Figma effect styles WF/Pill, WF/Hover, WF/Lift, WF/Ticket) */
+  --wf-shadow-pill: 0 1px 2px rgb(0 0 0 / 0.08), 0 4px 12px rgb(0 0 0 / 0.08);
+  --wf-shadow-hover: 0 6px 16px rgb(0 0 0 / 0.12);
+  --wf-shadow-lift: 0 18px 40px rgb(0 0 0 / 0.16);
+  --wf-shadow-ticket: 0 1px 1px rgb(0 0 0 / 0.06), 0 16px 32px rgb(0 0 0 / 0.09);
+  --wf-shadow-card: 0 1px 2px rgb(0 0 0 / 0.04);
+  --wf-shadow-dialog: var(--wf-shadow-lift);
+
+  /* Motion */
+  --wf-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --wf-duration: 0.25s;
 
   /* Layout */
-  --wf-content-max: 75rem; /* 1200 px content inside 1440 frames */
-  --wf-nav-breakpoint: 48rem; /* documentation only; media queries use 48rem */
+  --wf-content-max: 71.25rem; /* 1140 px content column (r2) */
+  --wf-nav-breakpoint: 47.5rem; /* documentation only: bottom tab bar below 760 px */
+}
+
+/* Dark mode: same variable names, Figma mode "Dark". */
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --wf-color-bg: #121314;
+  --wf-color-surface: #1b1c1e;
+  --wf-color-surface-muted: #232427;
+  --wf-color-surface-strong: #2a2b2f;
+  --wf-color-paper: #1f2024;
+  --wf-color-paper-line: #3a3b41;
+  --wf-color-text: #f1f1f1;
+  --wf-color-text-muted: #a8a8a8;
+  --wf-color-text-faint: #7c7c7c;
+  --wf-color-border: #34353a;
+  --wf-color-border-soft: #2a2b2f;
+  --wf-color-border-strong: #55565c;
+  --wf-color-focus: #7fa8ff;
+  --wf-color-accent: #7fa8ff;
+  --wf-color-accent-hover: #a3c0ff;
+  --wf-color-accent-subtle: #1d2a44;
+  --wf-color-accent-text: #121314;
+  --wf-color-positive: #4fd1a5;
+  --wf-color-positive-bg: #123228;
+  --wf-color-danger: #ff8a73;
+  --wf-color-danger-bg: #3a201c;
+  --wf-color-warning: #ffc46b;
+  --wf-color-warning-bg: #3a2c12;
+  --wf-color-info: #7fa8ff;
+  --wf-color-info-bg: #1d2a44;
+  --wf-color-neutral-bg: #2a2b2f;
+  --wf-color-simulated: #b3a6ff;
+  --wf-color-simulated-bg: #2a2546;
+  --wf-color-cat-flight: #3e6fc2;
+  --wf-color-cat-stay: #8e4a7e;
+  --wf-color-cat-activity: #a9601f;
+  --wf-color-cat-ride: #13808c;
+  --wf-shadow-pill: 0 1px 2px rgb(0 0 0 / 0.5), 0 4px 12px rgb(0 0 0 / 0.4);
+  --wf-shadow-hover: 0 6px 16px rgb(0 0 0 / 0.5);
+  --wf-shadow-lift: 0 18px 40px rgb(0 0 0 / 0.6);
+  --wf-shadow-ticket: 0 1px 1px rgb(0 0 0 / 0.4), 0 16px 32px rgb(0 0 0 / 0.5);
+  --wf-shadow-card: 0 1px 2px rgb(0 0 0 / 0.4);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --wf-duration: 0s;
+  }
 }
