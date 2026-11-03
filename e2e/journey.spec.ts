@@ -71,21 +71,38 @@ test.describe('demo journey: shell steps', () => {
     await expect(page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: 'ReRoute' })).toBeVisible();
   });
 
-  test('r1 type scale renders at token size: root 16px, body 15px, H1 26px, 1200px content at 1440px', async ({ page }) => {
-    // Every r1 token is in rem; a non-default root font size silently rescales all of them (#4 comment 6587211156).
+  test('r2 type scale renders at token size: root 16px, body 15px Figtree, H1 35px, 1140px content at 1440px', async ({ page }) => {
+    // Every token is in rem; a non-default root font size silently rescales all of them (#4 comment 6587211156).
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto(TRIP);
     const h1 = page.getByRole('heading', { level: 1, name: 'San Francisco to New York' });
     await expect(h1).toBeVisible();
-    const size = (selector: string) => page.locator(selector).first().evaluate((el) => getComputedStyle(el).fontSize);
-    expect(await size('html')).toBe('16px');
-    expect(await size('body')).toBe('15px');
-    expect(await h1.evaluate((el) => getComputedStyle(el).fontSize)).toBe('26px');
+    const style = (selector: string, prop: 'fontSize' | 'fontFamily') => page.locator(selector).first().evaluate((el, p) => getComputedStyle(el)[p], prop);
+    expect(await style('html', 'fontSize')).toBe('16px');
+    expect(await style('body', 'fontSize')).toBe('15px');
+    expect(await style('body', 'fontFamily')).toMatch(/^Figtree/);
+    expect(await h1.evaluate((el) => getComputedStyle(el).fontSize)).toBe('35px');
     const contentWidth = await page.locator('#wf-content').evaluate((el) => {
       const s = getComputedStyle(el);
       return el.clientWidth - parseFloat(s.paddingLeft) - parseFloat(s.paddingRight);
     });
-    expect(contentWidth).toBe(1200);
+    expect(contentWidth).toBe(1140);
+  });
+
+  test('colour mode: the sun/moon toggle switches light and dark, and the choice survives reload', async ({ page }) => {
+    await page.goto(TRIP);
+    const bg = () => page.evaluate(() => getComputedStyle(document.body).backgroundColor);
+    const mode = page.getByRole('group', { name: 'Colour mode' });
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
+    expect(await bg()).toBe('rgb(255, 255, 255)');
+    await mode.getByRole('button', { name: 'Dark mode' }).click();
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+    await expect(mode.getByRole('button', { name: 'Dark mode' })).toHaveAttribute('aria-pressed', 'true');
+    await expect.poll(bg).toBe('rgb(18, 19, 20)');
+    await page.reload();
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+    await mode.getByRole('button', { name: 'Light mode' }).click();
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
   });
 
   test('@mobile narrow layout has no horizontal scroll', async ({ page }) => {

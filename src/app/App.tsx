@@ -8,6 +8,7 @@ import { appError, DEMO_TRIP_ID, forgetGuestSession, formatInstant, type AppErro
 import { Button, CapabilityLabel, EmptyState, ErrorState, LoadingState, StatusBadge } from '../ui/index.tsx';
 import { AppServicesProvider, CONNECTED_API_URL, useAppServices } from './AppServices.tsx';
 import { DemoControls } from './DemoControls.tsx';
+import { ThemeToggle } from './ThemeToggle.tsx';
 import { ClaimSyncNotice } from './ClaimSyncNotice.tsx';
 import { TripDashboard, TripList } from './Dashboard.tsx';
 import { FEATURES, ROUTE_TABLE } from './featureRegistry.ts';
@@ -63,6 +64,7 @@ function Layout() {
               <CapabilityLabel status="simulated">provider actions</CapabilityLabel>
             </span>
           </span>
+          <ThemeToggle />
         </div>
       </header>
       <div className="wf-clockbar">
