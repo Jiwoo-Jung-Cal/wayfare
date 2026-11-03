@@ -85,6 +85,43 @@ describe('explicit simulated approval', () => {
     const retry = unwrap(await prepareApproval(I.trip, 'cancel_trip', ctx));
     expect(unwrap(await approveRecovery(retry, ctx)).outcomes.filter(o => o.status === 'recorded')).toHaveLength(3);
   });
+  it.each(['deadline', 'policy'])('atomically rejects a %s change after the final read', async mode => {
+    const { repo, ctx, notifyActionRecorded } = await setup();
+    const preview = unwrap(await prepareApproval(I.trip, 'cancel_trip', ctx));
+    const hotelBefore = unwrap(await repo.getBooking(I.bookings.hotel));
+    const write = repo.recordBookingAction.bind(repo);
+    const spy = vi.spyOn(repo, 'recordBookingAction').mockImplementation(async input => {
+      if (input.action.bookingId === I.bookings.hotel) {
+        if (mode === 'deadline') unwrap(await repo.setClock({ mode: 'sample', current: T.hotelDeadline }));
+        else {
+          const policy = unwrap(await repo.getPolicy(I.policies.hotel));
+          unwrap(await repo.savePolicy({ ...policy, reviewState: 'needs_review' }, { expectedRevision: policy.revision }));
+        }
+      }
+      return write(input);
+    });
+    const result = unwrap(await approveRecovery(preview, ctx));
+    spy.mockRestore();
+    expect(result.stale).toBe(true);
+    expect(result.outcomes.find(o => o.bookingId === I.bookings.hotel)).toMatchObject({
+      status: 'stale', error: { code: 'conflict', details: { precondition: true } },
+    });
+    const saved = unwrap(await repo.listActions(I.trip));
+    expect(saved).toHaveLength(1);
+    expect(saved[0]!.bookingId).toBe(I.bookings.flight);
+    expect(unwrap(await repo.getBooking(I.bookings.hotel))).toEqual(hotelBefore);
+    expect(notifyActionRecorded).toHaveBeenCalledTimes(1);
+    const renewed = unwrap(await prepareApproval(I.trip, 'cancel_trip', ctx));
+    if (mode === 'deadline') {
+      expect(renewed.option.expectedCashRecovery).toEqual({ currency: 'USD', amountMinor: 62000 });
+      expect(unwrap(await approveRecovery(renewed, ctx)).outcomes.filter(o => o.status === 'recorded')).toHaveLength(3);
+      expect(unwrap(await repo.listActions(I.trip))).toHaveLength(4);
+    } else {
+      expect(renewed.option.constraints.length).toBeGreaterThan(0);
+      expect(unwrap(await approveRecovery(renewed, ctx)).stale).toBe(true);
+      expect(unwrap(await repo.listActions(I.trip))).toEqual(saved);
+    }
+  });
   it('preserves recorded refunds across later cutoffs and preserves action if notification fails', async () => {
     const { repo, ctx } = await setup();
     ctx.notifyActionRecorded = async () => { throw Error('Injected notification failure'); };
