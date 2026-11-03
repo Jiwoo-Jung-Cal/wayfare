@@ -1,6 +1,6 @@
 # Release evidence — fill on the accepted integrated commit
 
-Status: NOT VERIFIED. This blank record is prepared before integration; no release item is approved by creating it.
+Status: NOT VERIFIED. This is the final demo/source acceptance template. Verified integrated-source/CI evidence already exists at `17623fc`; see [SETUP_STATUS.md](../SETUP_STATUS.md#verified-source-and-ci). Creating or leaving this template blank does not negate that source evidence or constitute final release sign-off.
 
 - Release task: https://github.com/Jiwoo-Jung-Cal/wayfare/issues/9
 - Integration task / acceptance:
@@ -29,7 +29,7 @@ Status: NOT VERIFIED. This blank record is prepared before integration; no relea
 | Python coordination checks | Unverified | |
 
 Do not copy earlier counts or substitute a successful configuration check for an actual capability result.
-Record the actual tested SHA/runner target, including a CI merge SHA if it differs from the accepted source. Preparation #20 and unmerged #37 branch results are not final-release evidence.
+Record the actual tested SHA/runner target, including a CI merge SHA if it differs from the accepted source. Reuse source/CI evidence only for the matching target. #37/#39 are merged; their old pending integration/fix descriptions are superseded. Any later integration, including Brian’s wallet milestone, requires a new source identity and affected check/capability/runtime evidence updates before final acceptance.
 
 ## Complete journey evidence
 
@@ -38,6 +38,7 @@ Use [RELEASE_CHECKLIST.md](../RELEASE_CHECKLIST.md). Link the actual demo script
 - Demo script and recording:
 - ReRoute owner evidence / known limitations:
 - TripWallet owner evidence / known limitations:
+- Brian #7 milestone disposition, resulting source SHA and affected evidence updates:
 - End-to-end check and retry/reload evidence:
 - Atomic policy/clock action preconditions, successful replay and race-regression evidence:
 - Design revision and desktop/narrow review evidence:
