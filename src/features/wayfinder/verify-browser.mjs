@@ -124,6 +124,15 @@ try {
     expect(await overflow(page), `review overflow at ${width}`).toBeLessThanOrEqual(0);
     expect(await columns(page, '.wf-intake-review-fields')).toBe(1);
     expect(await columns(page, '.wf-intake-layout')).toBe(1);
+    const modeNotice = page.locator('.wf-alert').filter({ has: page.getByText('Sample mode: extraction is simulated', { exact: true }) });
+    const noticeBox = await modeNotice.boundingBox();
+    const reviewBox = await review.boundingBox();
+    const originalBox = await card(page, 'Original document').boundingBox();
+    expect(noticeBox).not.toBeNull();
+    expect(reviewBox).not.toBeNull();
+    expect(originalBox).not.toBeNull();
+    expect(noticeBox.y + noticeBox.height, `sample notice must precede review at ${width}px`).toBeLessThanOrEqual(reviewBox.y);
+    expect(originalBox.y, `original document stays below review at ${width}px`).toBeGreaterThanOrEqual(reviewBox.y + reviewBox.height);
     if (width < 768) {
       const saveWidth = (await button(page, 'Save reviewed booking').boundingBox()).width;
       const actionsWidth = (await page.locator('.wf-intake-actions').boundingBox()).width;
@@ -167,7 +176,7 @@ try {
   await other.reload();
   await expect(card(other, 'Saved bookings in this trip')).toContainText('Unknown');
   expect(errors).toEqual([]);
-  console.log('PASS: r1-draft comparison, preference changes, stale/invalid/unknown/over-budget states, selection/replay/reload; intake field validation, evidence/original source, edits, save/replay/reload, Start over, preserved errors, unknown money/policy; populated 1440/1023/768/767/390/360/320px layouts; no page errors.');
+  console.log('PASS: r1-draft comparison, preference changes, stale/invalid/unknown/over-budget states, selection/replay/reload; intake field validation, evidence/original source, edits, save/replay/reload, Start over, preserved errors, unknown money/policy; populated 1440/1023/768/767/390/360/320px layouts; narrow mode notice before review and original document after; no page errors.');
 } finally {
   await browser?.close();
   await server.close();
