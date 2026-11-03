@@ -100,8 +100,21 @@ export async function approveRecovery(preview: ApprovalPreview, ctx: FeatureCont
       capability: 'simulated', approvedAt: option.computedAt, createdAt: option.computedAt,
     };
     let saved;
-    try { saved = await ctx.repo.recordBookingAction({ action, expectedBookingRevision: booking.revision }); }
+    try { saved = await ctx.repo.recordBookingAction({
+      action, expectedBookingRevision: booking.revision,
+      preconditions: {
+        policyId: booking.policyId ?? null,
+        expectedPolicyRevision: policy?.revision ?? null,
+        validBefore: tier?.window.endsBefore ?? null,
+        expectedClock: snapshot.clock,
+        ...(a.replacementQuoteId ? { replacementQuoteId: a.replacementQuoteId } : {}),
+      },
+    }); }
     catch (e) { outcomes.push({ bookingId: booking.id, status: 'failed', error: appError('unavailable', String(e)) }); continue; }
+    if (!saved.ok && saved.error.details?.precondition === true) {
+      stale = true;
+      outcomes.push({ bookingId: booking.id, status: 'stale', error: saved.error }); continue;
+    }
     if (!saved.ok) { outcomes.push({ bookingId: booking.id, status: 'failed', error: saved.error }); continue; }
     let notificationPending = false;
     try { await ctx.notifyActionRecorded({ tripId: booking.tripId, actionRecordId: saved.value.action.id }); } catch { notificationPending = true; }

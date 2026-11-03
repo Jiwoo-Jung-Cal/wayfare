@@ -70,7 +70,7 @@ export function ReRoutePage({ tripId, ctx }: FeaturePageProps) {
     <p className="wf-muted">Compare recovery choices using reviewed policies and the active clock.</p>
     {loading && <LoadingState label="Calculating recovery options…" />}
     {!loading && error && (error.code === 'precondition_failed'
-      ? <EmptyState title="No supported disruption to compare"><p>Import the flight booking, then trigger the simulated cancellation.</p><Button onClick={() => void trigger()}>Simulate flight cancellation</Button><Link to={`../import`}>Import bookings</Link></EmptyState>
+      ? <EmptyState title="No supported disruption to compare"><p>Import the flight booking, then trigger the simulated cancellation.</p><Button onClick={() => void trigger()}>Simulate flight cancellation</Button><Link relative="path" to="../import">Import bookings</Link></EmptyState>
       : <ErrorState error={error} onRetry={() => setAttempt(n => n + 1)} />)}
     {data && <>
       <Card title={data.disruption.description}>
@@ -100,7 +100,7 @@ export function ReRoutePage({ tripId, ctx }: FeaturePageProps) {
           <KeyValue label="Cash paid before refunds arrive" value={<MoneyText value={o.cashPaidBeforeRefunds} />} emphasis="muted" />
           <KeyValue label={o.kind === 'continue' ? 'Forecast trip cost after expected refund' : 'Unrecovered original cost'} value={<MoneyText value={o.forecastCost} />} emphasis="total" />
           {o.noncashEffects.map(n => <p className="wf-muted" key={n.assetId}>{n.description}</p>)}
-          {o.constraints.length > 0 && <Notice tone="warning"><ul>{o.constraints.map(c => <li key={c}>{c}</li>)}</ul><Link to="../import">Review policy in intake</Link></Notice>}
+          {o.constraints.length > 0 && <Notice tone="warning"><ul>{o.constraints.map(c => <li key={c}>{c}</li>)}</ul><Link relative="path" to="../import">Review policy in intake</Link></Notice>}
           <details><summary>Assumptions, sources and validity</summary><ul>{o.assumptions.map(a => <li key={a}>{a}</li>)}</ul><p>Computed {o.computedAt} · Valid until {o.validUntil ?? 'source changes'}</p><p>Evidence: {o.evidenceDocumentIds.join(', ')}</p></details>
           <Button variant={o.kind === 'cancel_trip' ? 'danger' : 'secondary'} disabled={busy || o.constraints.length > 0 || o.bookingActions.filter(a => a.action !== 'keep').every(a => data.snapshot.actions.some(saved => saved.bookingId === a.bookingId && saved.disruptionId === o.disruptionId && saved.action === a.action && saved.result.status === 'simulated'))} onClick={() => void review(o.kind)}>{o.kind === 'cancel_trip' ? 'Review cancel-trip actions' : 'Choose continue'}</Button>
         </Card>)}
@@ -118,7 +118,7 @@ export function ReRoutePage({ tripId, ctx }: FeaturePageProps) {
         <p>Durable simulated outcomes; these are not provider confirmations or refund receipts.</p>
         {data.snapshot.actions.filter(a => a.tripId === tripId).map(a => <div key={a.id} className="wf-stack"><strong>{data.impacts.find(i => i.booking.id === a.bookingId)?.booking.title} · {a.action}</strong><StatusBadge tone="simulated">{a.result.status} · action recorded</StatusBadge><p>{a.result.detail}</p>{a.expectedRecovery.map(c => <KeyValue key={c.id} label={c.kind} value={c.value.unit === 'money' ? <MoneyText value={c.value.amount} /> : 'Points'} />)}</div>)}
         {!data.snapshot.actions.some(a => a.tripId === tripId) && <p>No actions recorded.</p>}
-        <Link to="../wallet">Open TripWallet</Link>
+        <Link relative="path" to="../wallet">Open TripWallet</Link>
       </Card>
       </section>
       {result && <section className="wf-reroute-results"><Card title={result.outcomes.some(o => o.status === 'failed' || o.status === 'stale') ? 'Some actions are not recorded' : 'Simulated actions recorded'}>
