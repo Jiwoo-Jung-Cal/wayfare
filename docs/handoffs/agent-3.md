@@ -3,7 +3,7 @@
 - Task: https://github.com/Jiwoo-Jung-Cal/wayfare/issues/9 — final release verification remains open.
 - Source/runtime handoff: https://github.com/Jiwoo-Jung-Cal/wayfare/issues/8
 - Existing PR: https://github.com/Jiwoo-Jung-Cal/wayfare/pull/42
-- Branch: `agent-3/release-status-refresh`; the PR and latest verified structured #9 report record the published head/check status.
+- Local branch: `agent-3/release-status-refresh`; this refresh is committed locally but publication is blocked as recorded below. PR #42's last verified remote head is `a43ed6804e9ecde16dfeb080e80429d8f2183fe5`.
 - Source/CI checkpoint: main `17623fc12bd60c33b5a4927562469dbbcb660857`, checked November 3, 2026 (America/Los_Angeles).
 
 ## Resolved integration and source evidence
@@ -40,6 +40,10 @@ The team-provided November 10, 2026, 11:59 PM deadline has no confirmed official
 [SETUP_STATUS.md](../SETUP_STATUS.md#deadline-and-judge-links) retains the link matrix. Code Layer `24:1182` was imported from `5249cb7`, not this integration checkpoint; its running preview/source alignment remains unverified. Agent 1 needs the signed-in preview's actual output. No judge-facing runtime URL, recording or submission portal has been verified by this pass.
 
 ## Pause and next accepted-version pass
+
+The start report POST succeeded, but the publication attempt failed on its first read before updating PR #42: GitHub REST returned HTTP 401 Bad credentials and `gh auth status` confirmed the injected `GH_TOKEN` invalid. The API hostname is allowed/enforced and runtime metadata declares no alternative GitHub credential; no connected GitHub tool is available. This is a publication-authentication blocker, not a source/application failure. Local PR/Issue/report drafts are retained; no refreshed PR head, Issue body or final report is claimed as published.
+
+Refresh the environment's GitHub authentication securely, then reread current main/#8/#9/#42/#7 before retrying. Preserve remote work, update this temporary authentication note after verified recovery, and reconcile any later source or accepted-demo inputs rather than publishing stale status. Do not request secret values in chat or reapply unrelated environment configuration.
 
 After publishing this refresh and verifying its structured #9 report, pause. Do not debug product code, repeat successful application suites without reason, close #9, merge PRs or monitor in an idle loop.
 
