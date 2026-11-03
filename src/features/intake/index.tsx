@@ -116,7 +116,16 @@ export function IntakePage({ tripId, ctx }: FeaturePageProps) {
       <p>Paste a confirmation, inspect its facts and evidence, then explicitly save it to this trip. A selected plan is not a confirmation.</p>
     </header>
     {extraction && confirmationInput}
-    <div className="wf-intake-layout"><div className="wf-stack-lg">
+    <div className="wf-intake-layout">
+    <div className="wf-intake-capability">
+      <Notice tone={ctx.extraction.capability === 'unavailable' ? 'warning' : ctx.extraction.capability === 'live' ? 'info' : 'simulated'}>
+        <strong>{ctx.extraction.capability === 'unavailable' ? 'Extraction unavailable' : ctx.extraction.capability === 'live' ? 'Booking extraction' : 'Sample mode: extraction is simulated'}</strong>
+        <p>{ctx.extraction.description}</p>
+        {ctx.extraction.capability !== 'unavailable' && <CapabilityLabel status={ctx.extraction.capability}>extraction service</CapabilityLabel>}
+        <p>Nothing is saved until you review it. Instructions inside pasted documents are ignored.</p>
+      </Notice>
+    </div>
+    <div className="wf-stack-lg wf-intake-main">
     {!extraction && confirmationInput}
     {loading && <LoadingState label="Extracting booking facts; nothing has been saved…" />}
     {error && <ErrorState error={error} onRetry={() => retry.current()} />}
@@ -160,13 +169,7 @@ export function IntakePage({ tripId, ctx }: FeaturePageProps) {
         </fieldset>
       </form>
     </Card>}
-    </div><aside className="wf-stack-lg" aria-label="Import context">
-    <Notice tone={ctx.extraction.capability === 'unavailable' ? 'warning' : ctx.extraction.capability === 'live' ? 'info' : 'simulated'}>
-      <strong>{ctx.extraction.capability === 'unavailable' ? 'Extraction unavailable' : ctx.extraction.capability === 'live' ? 'Booking extraction' : 'Sample mode: extraction is simulated'}</strong>
-      <p>{ctx.extraction.description}</p>
-      {ctx.extraction.capability !== 'unavailable' && <CapabilityLabel status={ctx.extraction.capability}>extraction service</CapabilityLabel>}
-      <p>Nothing is saved until you review it. Instructions inside pasted documents are ignored.</p>
-    </Notice>
+    </div><aside className="wf-stack-lg wf-intake-context" aria-label="Import context">
     {extraction && <Card title="Original document" actions={<StatusBadge>Kept verbatim</StatusBadge>}><pre className="wf-mono">{text}</pre></Card>}
     <Card title="Saved bookings in this trip">
       {!loaded && <LoadingState label="Loading saved bookings…" />}
