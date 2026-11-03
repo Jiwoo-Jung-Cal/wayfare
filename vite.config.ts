@@ -29,6 +29,11 @@ export default defineConfig({
     strictPort: true,
   },
   test: {
+    // Vitest's persistent transform cache (default on) keys modules by their own
+    // content, so featureRegistry.ts's import.meta.glob kept a stale feature list
+    // when a new src/features/<name>/ folder appeared: ReRoute's registration
+    // check was silently skipped locally. The suite is small; correctness first.
+    fsModuleCache: false,
     environment: 'node',
     include: ['src/**/*.test.ts', 'server/**/*.test.ts'],
   },

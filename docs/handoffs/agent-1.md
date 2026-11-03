@@ -1,8 +1,8 @@
 # Agent 1 handoff
 
-Status (2026-11-01, cloud session): foundation, Wayfinder/intake, TripWallet, design r1 (interim, approval pending), Figma Code Layer scripts and vendor chunk splitting (#32) are merged. ReRoute/CancelClock (#6) is **not started**, so the full approval-to-wallet journey is still unintegrated. The dated sections below keep their historical checks; the latest section supersedes their status.
+Status (2026-11-02, cloud session, later): main `87ad471` has foundation, Wayfinder/intake (#21, #40), TripWallet, interim design r1 (approval pending), the r1 root-font fix (#41), Figma Code Layer scripts, vendor chunk splitting, atomic action preconditions (#38) and the Wayfinder/intake e2e coverage (#36). ReRoute (#37, Kelvin) is integrated **on branch** in draft PR #39, which is green on current main and waits on Kelvin's link fix and precondition adoption in #37. The dated sections below keep their historical checks; the latest section supersedes their status.
 Task Issue: https://github.com/Jiwoo-Jung-Cal/wayfare/issues/3 (foundation, closed). Integration is tracked on #8.
-Branch / commit / PR: main `80c4462` (after #32). Work goes on short-lived `agent-1/<slug>` branches cut from main.
+Branch / commit / PR: main `87ad471` (after #36). Open: #37 (Kelvin, draft), #39 (Agent 1 ReRoute integration, draft, head `812f5a6`). Work goes on short-lived `agent-1/<slug>` branches cut from main.
 
 ## For Agent 3 (CI)
 
@@ -189,3 +189,74 @@ The wallet browser flow also checks the populated/reconciled wallet at 390/360/3
   - PR #21 (Agent 2) and PR #20 (Agent 3): Jiwoo's merge decision.
   - Design r1 approval, Code Layer preview, live AI, and hosting (Jiwoo).
   - Optional TripWallet `DashboardPanel` (Brian, #7).
+
+
+## Cloud session: ReRoute integration (2026-11-02)
+
+- **Atomic action preconditions, PR #38** (Kelvin's request: https://github.com/Jiwoo-Jung-Cal/wayfare/issues/8#issuecomment-6570629325).
+  - `recordBookingAction` accepts optional `preconditions: { policyId, expectedPolicyRevision, validBefore, expectedClock?, replacementQuoteId? }`, defined by `ActionPreconditionsSchema`.
+  - They're checked inside the same `StoreRepository` write, against the draft and the write's active-clock `now`. One implementation serves the browser Web Lock and the server workspace queue.
+  - A stale check returns a non-retryable `conflict` (`details.precondition: true`; "Recovery preview expired; review again" at the cutoff) and commits nothing.
+  - Successful idempotent replays return the original without re-checking. Omitting the field keeps the old behavior.
+  - The contract is in `docs/CONTRACTS.md` → "Action preconditions"; adoption notes are on #6.
+  - Tests: `src/core/store/actionPreconditions.test.ts`, 11 tests covering two local tabs and two HTTP clients, plus concurrent clock-vs-action races that must hit both interleavings. Disabling the check fails 9 of 11 (replay and compatibility correctly still pass).
+- **#37 review** (https://github.com/Jiwoo-Jung-Cal/wayfare/pull/37#issuecomment-6587326231).
+  - Contract use and ownership are fine, and Kelvin's real-Chrome `browser.test.ts` passed here.
+  - **Bug:** `<Link to="../wallet">` and `<Link to="../import">` resolve to `/#/`, because React Router 7 resolves relative links against the route hierarchy and the shell's routes are flat. Fix: `relative="path"` or an absolute path.
+  - Still to adopt: #38's preconditions.
+  - Minor: points and voucher components are typed as money.
+- **Integration, PR #39** (draft; branch `agent-1/integrate-reroute`, which merges #37 `b69d02e` and #38):
+  - The two `test.fixme` journey steps are now real UI flows: approval → shell claim sync → TripWallet and the dashboard ($820, hotel $400). A second flow runs at the exact cutoff ($620, hotel $200) and covers reload, disabled re-approval, re-trigger, wallet-load sync and a duplicate receipt import.
+  - The two `it.todo`s are replaced by a data-level journey through `prepareApproval`/`approveRecovery`, the orchestrator and TripWallet's real sync.
+  - The ReRoute registration check is now required.
+  - **Found:** Vitest 5's default `fsModuleCache` kept `featureRegistry`'s glob stale, so ReRoute was silently missing from the registry in local runs. Set `test.fsModuleCache: false`.
+  - Results: 172 tests passed, 0 skipped, 0 todo; e2e 15 passed, 0 skipped (19 passed with #36 merged on top).
+- **Figma Code Layer `24:1182`.**
+  - The node exists: a 1512×982 code instance on page `1:8`.
+  - Figma's server-side screenshot is an empty light-grey frame. That's neither a success nor a failure: a static render doesn't run the code.
+  - Running `.figma/make/install` and `.figma/make/dev` from a clean worktree of main works: `npm ci` OK, Vite ready, `localhost` → 200 with the WayFare page.
+  - **But any non-localhost `Host` header gets 403** "Blocked request. This host is not allowed" (Vite's host check). If Figma's preview reaches the dev server through a proxy hostname, it would show that page instead of the app.
+  - Not fixed speculatively, because the real hostname is unknown. When a signed-in human opens the preview, Vite's error names the host. Then set `__VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS=<that host>` inside `.figma/make/dev` only. That keeps the change to Figma's runs, with no `vite.config.ts` change and no global disable.
+  - The preview is still **not verified**. The cloud sandbox can't reach figma.com directly (proxy 403).
+- **Open, owner:**
+  - Kelvin (#6): fix the #37 links; adopt #38's preconditions and add a stale-precondition feature test.
+  - Jiwoo:
+    - merge decisions on #36, #38, then #37 and #39;
+    - open the Code Layer preview and report any "Blocked request" host;
+    - formal r1 approval;
+    - live AI and hosting.
+  - Agent 3 (#9): the release pass after #39 merges.
+
+
+## Cloud session: merges and ReRoute status (2026-11-02, later)
+
+- **Merged with Jiwoo's approval**, each pinned to its tested head SHA, after one combined check of all four on main `d7b0fd1`: typecheck; 145 passed / 1 skipped / 2 todo; build; e2e 18 passed / 2 skipped. main's tree after the four merges is byte-identical to the tested combination.
+  - #38 preconditions: head `42950fc`, merge `6924b84`.
+  - #41 root font fix: head `9d8122c`, merge `0a3332b`.
+  - #40 Agent 2 notice order: head `4508cd4`, merge `d036cf5`.
+  - #36 Wayfinder/intake e2e: head `dbfa3bc`, merge `87ad471`.
+- **#41:** `html` stays at 100% (16px); only `body` gets `--wf-text-md`. A new e2e check asserts root 16px, body 15px, H1 26px and 1200px content at 1440px. It fails without the fix. This was Agent 2's finding (#4 comment 6587211156).
+- **#37 (Kelvin):** unchanged at `b69d02e`. Coordination posted on #6 (comment 6589626202): merge main with a merge commit; add `relative="path"` to the three ReRoute links and click "Open TripWallet" in `browser.test.ts`; pass `preconditions` in `approveRecovery` and map `details.precondition` to `stale`; add a race test that moves the clock between the last read and the write. #37 merges cleanly with main `87ad471`.
+- **#39:** main merged in (`812f5a6`). Results: typecheck; **172 passed, 0 skipped, 0 todo**; build; **e2e 20 passed, 0 skipped**. That covers the full journey (approval → claim sync → TripWallet/dashboard, the cutoff case, reload/idempotency), the type scale and the Wayfinder/intake states. **Not merged:** it carries #37's broken links and no precondition use yet. After Kelvin pushes: merge his head into #39, re-run everything, and add a shared e2e click on ReRoute's "Open TripWallet" link.
+- **Figma preview, actual error not obtainable from the cloud.** No Figma MCP tool reports Code Layer runtime status or logs. `get_screenshot` is a static render (empty frame). `send_code_to_figma` itself states that importing does not verify preview. The sandbox proxy blocks figma.com. Known locally: `install`/`dev` work; Vite returns 403 "Blocked request. This host (…) is not allowed" for non-localhost Host headers. **External input needed from a signed-in human** (Jiwoo): open https://www.figma.com/design/ZZS9jEmANeCrjGxWxxCofK?node-id=24-1182&autoplay-code-preview=24-1182, wait for install and start, and copy exactly what the preview shows:
+  - (a) a "Blocked request. This host ("X") is not allowed" page: send X. Fix: add `export __VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS="X"` to `.figma/make/dev` only.
+  - (b) an install/setup error or log text: send it verbatim.
+  - (c) the WayFare dashboard: preview verified.
+  
+  Also note that layer `24:1182` was imported from source `5249cb7`, which predates #32 through #41. Previewing current main needs a fresh `send_code_to_figma` import, which adds a new layer, so it needs Jiwoo's go-ahead.
+- **Open, owner:**
+  - Kelvin: the #37 fixes above.
+  - Jiwoo: open the Code Layer preview and report its exact output; approve a fresh import if current code should be previewed; r1 approval; live AI; hosting; merge of #37 and #39 once refreshed.
+  - Agent 3 (#9): the release pass after #39.
+
+
+## ReRoute integrated (2026-11-03)
+
+- Kelvin's #37 head `30f2dbb`, which merged main 87ad471 via `84a184e`:
+  - `relative="path"` on all three ReRoute links; his browser test clicks "Open TripWallet".
+  - `approveRecovery` passes `preconditions` (policy id and revision, the tier's exclusive `endsBefore`, `expectedClock`, replacement quote) and maps `details.precondition` to `stale`.
+  - Two race tests change the deadline or policy after the final read.
+- #39 merged `30f2dbb`. The shared journey now clicks ReRoute's own "Open TripWallet" and asserts the trip wallet URL and heading. Restoring the old route-relative link fails it with `/#/`.
+- Checks on #39: typecheck; **174 passed, 0 skipped, 0 todo**; build; **e2e 20 passed, 0 skipped**; ReRoute journeys 3/3 runs green with retries=0.
+- Remaining: Jiwoo's r1 visual approval; the Code Layer preview output; live AI; hosting; Agent 3's release pass (#9).
+
