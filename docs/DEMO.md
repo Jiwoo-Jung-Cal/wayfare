@@ -6,11 +6,13 @@ What is real and what is simulated:
 
 | Part | Status in this demo |
 | --- | --- |
-| Data | **Sample.** A fictional San Francisco → New York trip (Nov 20–23, 2026), one traveler, USD. It's stored only in this browser (labelled "Sample data: saved in this browser"). |
-| Booking extraction | **Simulated.** It recognizes the bundled sample confirmations only (labelled "Simulated: AI extraction"). Other pasted text returns "Live AI extraction is not configured". Live AI has never been run. |
-| Disruption, cancellations, refunds | **Simulated.** No provider is contacted and no money moves (labelled "Simulated: provider actions"). |
-| Clock | **Demo clock**, set from the demo controls, so deadlines can be shown exactly. |
-| Visual design | Interim r1 draft. Formal design approval is **pending**. |
+| Data | **Sample.** A fictional San Francisco → New York trip, "NY Trip" (Nov 20–23, 2026), one traveler, USD. It's stored only in this browser. The page footer says so on every screen. |
+| Booking extraction | **Simulated.** It recognizes the bundled sample confirmations only ("AI extraction is simulated" in the footer). Other pasted text returns "Live AI extraction is not configured". Live AI has never been run. |
+| Disruption, cancellations, refunds | **Simulated.** No provider is contacted and no money moves ("every provider action is simulated"). |
+| Ask WayFare | **Scripted demo replies** written from this trip's stored data and ReRoute's comparison. No AI model is used, and the panel says so. |
+| Google sign-in / Calendar sync | **Designed demo states.** The dialog has no credential fields and states that no Google account is contacted. "Add to Google Calendar" in the Itinerary is Google's public template link. |
+| Clock | **Demo clock** (shown in the footer; set it under **Demo controls**), so deadlines can be shown exactly. |
+| Visual design | **r2-final** (Jiwoo, 2026-11-03), matching `design/exports/prototype/r2/index.html`. Plan cards use the reference's illustrations because the photo licence is not confirmed. |
 
 The demo journey in this guide is automated in `e2e/demo.spec.ts`. That test runs it against the production build served under `/wayfare/`, so the steps below are checked on every CI run.
 
@@ -41,27 +43,22 @@ npx vite preview --port 4173        # open http://localhost:4173/
 
 ## Walkthrough (about 5 minutes)
 
-Use a fresh browser profile, or **Clear workspace** in the demo controls, to start over. Amounts are for the canonical sample trip.
+A **first visit** opens like the design reference: NY Trip is booked and Bayline Air has cancelled flight BL 214 (simulated). To start before any booking instead, open **Demo controls** at the bottom of the page and press **Load sample trip**; **Clear workspace** removes everything. Amounts are for the canonical sample trip.
 
-1. **Dashboard** (`#/`): open the trip *San Francisco to New York*. The header shows the sample-data and simulated-capability labels. The **Demo clock** bar shows the active sample time (`2026-11-18T17:00:00Z` at start).
-2. **Plan** (`Plan` in the main navigation): press **Generate options**. Three sample plans appear: red-eye $815, nonstop $900, and a flexible plan whose price is **Unknown** and can't be selected. **Select plan** on *Nonstop + Midtown hotel*. The status says "Plan saved. No reservation was made." A plan is not a booking.
-3. **Import bookings**: choose the sample *Harbor Line Hotel HLH-48213 confirmation*, then **Use sample document** and **Extract booking**. Review the facts next to the original text: $450 paid, and a $400 refund before `2026-11-19T23:00:00Z` (exclusive), $200 after. Tick **I reviewed the facts and confirm**, then **Save reviewed booking**. Saving again reports "Already imported", so no duplicate is created.
-4. **Back on the dashboard**: **Import sample bookings** adds the flight, activity and transfer: four bookings, $900 paid. The selected plan is shown separately from the bookings.
-5. **Disruption**: **Trigger flight cancellation** records the simulated Bayline Air BL 214 cancellation. Press **Open ReRoute**.
-6. **ReRoute comparison**:
-   - **Continue the trip:** $360 extra, $320 expected refund, $940 forecast.
-   - **Cancel the trip:** **$820** expected refunds, $80 unrecovered.
-   - **Optional, cutoff case:** in the demo controls, press **At hotel deadline** (`2026-11-19T23:00:00Z`) before approving. The hotel drops to the $200 tier and cancel shows **$620**. A deadline is met only while *now < deadline*. **1 s before hotel deadline** restores the $400 tier.
-7. **Approve**:
-   - Press **Review cancel-trip actions**. **Approve actions** stays disabled until you tick **I understand these are simulated actions**.
-   - Approving records four simulated actions ("4 recorded; 0 unfinished."). The shell then syncs refund claims ("Refund claims up to date …"). ReRoute never creates claims itself.
-   - If the clock or policy changes after the preview, the approval is rejected as stale and nothing is written.
-8. **TripWallet** (**Open TripWallet**): four expected cash claims totaling $820; the hotel claim is **$400**. Expected, provider-confirmed and received amounts are kept separate. Points and vouchers are listed apart from cash.
-9. **Receipt reconciliation** on the hotel claim:
-   1. **Load sample refund confirmation**, choose the HLH-48213 claim, then **Confirm reviewed evidence**. The claim shows *provider confirmed*.
-   2. **Load sample $250 receipt**, then **Confirm reviewed evidence**, choose the hotel claim, then **Match receipt HLH-RF-0001**. Outstanding is $150.00. **Prepare follow-up draft for HLH-48213** gives an editable draft; nothing is sent.
-   3. **Load sample $150 receipt**, then **Confirm reviewed evidence**, choose the hotel claim, then **Match receipt HLH-RF-0002**. Outstanding is $0.00 and the claim is *received*.
-10. **Reload** the page. All of it persists: bookings, actions, claims, receipts and the clock. Importing the same receipt again doesn't create a second one. The dashboard's *Refund claims* card shows the four claims.
+1. **Overview**: the boarding pass is stamped *Cancelled by airline*, the stub shows the +$320 refund owed, and **Decide within** counts down to Thursday 6:00 PM ET, when the hotel refund drops. Money tiles: **+$820** back if you cancel, **−$80** you can't get back, **$900** paid for 4 bookings. **Your passes** opens each booking.
+2. **Plan**: three sample plans appear (red-eye $815, nonstop $900 *Your current trip*, and a flexible plan at **$1,010 + ?** whose price is incomplete and can't be chosen). Change **What matters most** or **Saturday morning** and the plans re-rank at once. Before any booking, **Choose this plan** saves a plan ("Plan saved. No reservation was made."); a plan is not a booking. The attach button opens **Import**.
+3. **Import** (attach button, or `#/trips/trip-demo-nyc/import`): choose *Harbor Line Hotel HLH-48213 confirmation*, **Use sample document**, **Extract booking**, review the facts next to the original text ($400 refund before `2026-11-19T23:00:00Z`, exclusive; $200 after), tick **I reviewed the facts and confirm**, **Save reviewed booking**. Saving again reports "Already imported".
+4. **Itinerary**: one calendar with the bookings and red refund deadlines, and the whole trip listed by day. Each row carries its own deadline line (for example "Refund deadline Thu, 6:00 PM EST · +$400 → +$200 · 30h 00m left"). Tap a day to highlight it; open a booking for details and **Add to Google Calendar**.
+5. **ReRoute** ("See what to do" on the Overview): *Cancel the whole trip* **+$820** back (−$80 lost) or *Keep the trip* **−$360** for a new flight. The chart shows the money back over the next 72 hours, stepping down at each refund deadline.
+   - **Cutoff case:** under **Demo controls**, **At hotel deadline** (`2026-11-19T23:00:00Z`) drops the hotel to the $200 tier, so cancelling gives **+$620**. A deadline is met only while *now < deadline*. **1 s before hotel deadline** restores the $400 tier.
+6. **Approve**: **Review and confirm** opens *Cancel the trip?*; its button stays disabled until you tick **I understand these are simulated actions**. Confirming records four simulated actions ("4 cancellations recorded."), then the shell syncs refund claims ("Refund claims up to date …"). If the clock or a policy changed after the preview, the approval is refused as stale and nothing is written.
+7. **TripWallet**: Coming back **+$820**, Received +$0, Lost to fees −$80; refunds grouped by flights, stays, activities and rides; the $75 voucher and 8,000 points listed separately from cash. Open the hotel refund for its tracker, **Write a reminder** (an editable draft; nothing is sent) and the evidence history.
+8. **Receipts**, under **Add a refund confirmation or receipt**:
+   1. **Load sample refund confirmation**, choose the HLH-48213 claim, **Confirm reviewed evidence**: the hotel refund shows *Company confirmed*.
+   2. **Load sample $250 receipt**, **Confirm reviewed evidence**: *Is this your hotel refund?* appears. **Yes, that's it** (or pick the claim and **Match receipt HLH-RF-0001**): "Received $250.00 · $150.00 outstanding".
+   3. Repeat with the **$150 receipt** (HLH-RF-0002): "Received $400.00", 100%.
+9. **Ask WayFare** (bottom right): try *How much will I get back?* or *What's my next deadline?*; answers come from the stored trip and link to the right screen.
+10. **Reload**: bookings, actions, claims, receipts and the clock persist in this browser. Importing the same receipt again doesn't create a second one.
 
 ## Hosting status
 

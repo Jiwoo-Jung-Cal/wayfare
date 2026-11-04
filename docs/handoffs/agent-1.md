@@ -1,8 +1,21 @@
 # Agent 1 handoff
 
-Status (2026-11-03): main `17623fc` has the complete integrated sample-mode journey (Wayfinder/intake, ReRoute, TripWallet). PR #44 adds the demo guide (`docs/DEMO.md`), build provenance (`version.json`) and a CI check of the walkthrough on the production build. No hosted URL yet. Figma Code Layer `24:1182` is an older snapshot (`5249cb7`) with an unverified preview. The dated sections below keep their historical checks; the latest section supersedes their status.
+Status (2026-11-04): the demo implements design **r2-final** and matches the App Design session's reference (`design/exports/prototype/r2/index.html`, byte-identical to the "WayFare Trip" artifact). Hosted at https://jiwoo-jung-cal.github.io/wayfare/ (GitHub Pages, sample mode); `version.json` there names the commit it serves. The dated sections below keep their historical checks; this section supersedes their status.
 Task Issue: https://github.com/Jiwoo-Jung-Cal/wayfare/issues/3 (foundation, closed). Integration is tracked on #8.
-Branch / commit / PR: main `17623fc`. Open: #44 (demo baseline, `agent-1/demo-baseline`). Work goes on short-lived `agent-1/<slug>` branches cut from main.
+Work goes on short-lived `agent-1/<slug>` branches cut from main.
+
+## 2026-11-04: r2-final design implementation and parity
+
+Merged (each green in CI and locally: typecheck, `npm test` 174, build, `CI=1 npx playwright test` 29):
+- #48 foundations (tokens, fonts, light/dark) · #49 shell (top bar, trip menu, tabs, bottom bar) · #50 Overview hero · #51 Itinerary.
+- Parity with the reference: #53 shell chrome (footer labels, collapsible demo controls, toasts, bell, **Ask WayFare** scripted demo assistant, simulated Google sign-in/calendar, sample trips, first-visit scenario) · #54 Overview copy, passes and tiles · #55 ReRoute visual layer · #56 TripWallet visual layer · #57 Plan visual layer.
+- Feature screens: visual layer only, under Jiwoo's scope; feature logic files are untouched (reroute `model.ts`/`actions.ts`, tripwallet `ledger.ts`/`evidence.ts`, wayfinder `handler.ts`/`selection.ts`). Owner reviews requested on #4, #6, #7.
+
+Honest deviations from the reference: plan cards use the reference's illustrations (photo licence unconfirmed); sign-in, calendar sync and assistant replies are labelled demo states; the boarding pass shows only what the stored confirmation says (no "Economy"); the composer prompt is not parsed (route and dates come from the chips).
+
+Test notes: suites start from the old empty workspace with demo controls open through storage preferences in `playwright.config.ts` (`wayfare:v1:first-stage=planning`, `wayfare:v1:demo-controls=open`); `e2e/parity.spec.ts` covers the fresh-visitor scenario. Agent 2's `src/features/wayfinder/verify-browser.mjs` and Agent 5's `verify-browser.mjs` (manual, not in CI) still use old labels.
+
+Remaining: owner reviews of #55–#57; Figma Code Layer `24:1182` is an old snapshot (re-import of current main needs Jiwoo's go-ahead).
 
 ## For Agent 3 (CI)
 
