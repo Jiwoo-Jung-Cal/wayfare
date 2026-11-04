@@ -15,7 +15,17 @@ Honest deviations from the reference: plan cards use the reference's illustratio
 
 Test notes: suites start from the old empty workspace with demo controls open through storage preferences in `playwright.config.ts` (`wayfare:v1:first-stage=planning`, `wayfare:v1:demo-controls=open`); `e2e/parity.spec.ts` covers the fresh-visitor scenario. Agent 2's `src/features/wayfinder/verify-browser.mjs` and Agent 5's `verify-browser.mjs` (manual, not in CI) still use old labels.
 
-Remaining: owner reviews of #55–#57; Figma Code Layer `24:1182` is an old snapshot (re-import of current main needs Jiwoo's go-ahead).
+Later on 2026-11-04 (merged): #58 reference scenario for returning visitors with an empty workspace; #60 mobile layout to the r2 390 px exports; #61 boarding pass always shown (placeholders until a flight is booked) with the stub tear at every window size; #59 (Agent 2) Wayfinder budget validation, picker overflow and one-traveler scope, reconciled with #58/#60 by merge commit `b1edbfd` and reviewed. Shared findings from #59 fixed in the following PR: ErrorState duplicate keys for repeated issue paths, and `.wf-input` resetting the intake textarea's IBM Plex Mono.
+
+## Live AI readiness (booking extraction)
+
+- Path: browser → `POST /api/extract/booking` (connected mode) → `extractBooking` → `createAnthropicAdapter` (`server/ai/modelAdapter.ts`, structured output, refusal/truncation/error mapping) → normalized `BookingExtraction` → the editable intake review (unchanged). Provider failures are errors, never sample fallbacks.
+- Config is server-only (`server/config.ts`): `ANTHROPIC_API_KEY` (or `WAYFARE_ANTHROPIC_API_KEY`), optional `WAYFARE_AI_MODEL` (default `claude-opus-5-5`), `WAYFARE_AI_EFFORT`, `WAYFARE_AI_TIMEOUT_MS`. The base URL is always explicit, so an unrelated `ANTHROPIC_BASE_URL` in the shell is never inherited.
+- **Not verified live:** no API key is available in this cloud environment and no backend is hosted. The public Pages build is sample mode by design and must never carry a key.
+- `npm run smoke:live-ai` (server only): with a key, sends the four sample confirmations through the real adapter and production extraction path and lists field differences from the reviewed facts for review; provider errors fail it. Without a key it names the missing setting and exits 2. Its logic is unit-tested with a fake adapter.
+- To demonstrate live AI: on a machine with the key, `ANTHROPIC_API_KEY=… npm run smoke:live-ai`, then `npm run server` and `VITE_WAYFARE_API_URL=http://localhost:8787 npm run dev`, paste a non-sample confirmation into Import, and review/edit before saving (the review labels the extraction "Live").
+
+Remaining: owner reviews of #55–#57 (Agents 4/5/2); a live AI run needs a server key (Jiwoo); Figma Code Layer `24:1182` is an old snapshot (`5249cb7`), not current main; a re-import needs Jiwoo's go-ahead, and a deployed website does not establish Figma runtime sync.
 
 ## For Agent 3 (CI)
 
