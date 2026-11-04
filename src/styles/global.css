@@ -9,6 +9,7 @@
 @import './shell.css';
 @import './overview.css';
 @import './itinerary.css';
+@import './chrome.css';
 
 *,
 *::before,
@@ -107,33 +108,6 @@ a:hover {
   max-width: calc(var(--wf-content-max) + 2 * var(--wf-space-5));
   margin: 0 auto;
   padding-inline: var(--wf-space-5);
-}
-.wf-capabilities {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--wf-space-2);
-  align-items: center;
-  justify-content: flex-end;
-}
-.wf-clockbar {
-  background: var(--wf-color-simulated-bg);
-  color: var(--wf-color-simulated);
-}
-.wf-clockbar-inner {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--wf-space-2) var(--wf-space-3);
-  align-items: center;
-  width: 100%;
-  max-width: calc(var(--wf-content-max) + 2 * var(--wf-space-5));
-  margin: 0 auto;
-  padding: var(--wf-space-2) var(--wf-space-5);
-  font-size: var(--wf-text-sm);
-}
-.wf-clockbar-time {
-  flex: 1;
-  min-width: 0;
-  font-family: var(--wf-font-mono);
 }
 .wf-main {
   flex: 1;
@@ -537,10 +511,7 @@ blockquote {
   background: var(--wf-color-surface-muted);
   font-size: var(--wf-text-sm);
 }
-.wf-demo-panel {
-  border-top: 1px solid var(--wf-color-border);
-  background: var(--wf-color-surface-muted);
-}
+
 
 /* ---- Responsive ------------------------------------------------------- */
 @media (max-width: 74.99rem) {
@@ -549,8 +520,7 @@ blockquote {
   }
 }
 @media (max-width: 47.99rem) {
-  .wf-main,
-  .wf-clockbar-inner {
+  .wf-main {
     padding-inline: var(--wf-space-4);
   }
   .wf-hide-narrow {

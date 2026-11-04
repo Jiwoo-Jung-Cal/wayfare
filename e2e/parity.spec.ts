@@ -1,0 +1,68 @@
+// Design-reference parity (design/exports/prototype/r2/index.html): what a first-time
+// visitor sees, and the reference's shell behaviours (Ask WayFare, sign-in demo, bell,
+// sample trips, toasts). Starts from an empty browser profile, like a real visitor.
+import { expect, test } from '@playwright/test';
+
+test.use({ storageState: { cookies: [], origins: [] } });
+
+test('a first visit opens on the reference scenario: NY Trip, booked, flight cancelled by the airline @mobile', async ({ page }) => {
+  await page.goto('/');
+  await expect(page).toHaveURL(/#\/trips\/trip-demo-nyc$/);
+  await expect(page.getByRole('heading', { level: 1, name: 'NY Trip' })).toBeVisible();
+  await expect(page.getByText('CANCELLED', { exact: false }).first()).toBeVisible();
+  await expect(page.getByText('Decide within')).toBeVisible();
+  // The footer carries the honest capability labels; demo controls start collapsed.
+  await expect(page.locator('footer.wf-footer')).toContainText('every provider action is simulated');
+  await expect(page.getByRole('button', { name: 'Import sample bookings' })).toBeHidden();
+  await page.locator('summary', { hasText: 'Demo controls' }).click();
+  await expect(page.getByRole('button', { name: 'Import sample bookings' })).toBeVisible();
+});
+
+test('Ask WayFare answers from this trip’s stored data and says its replies are scripted', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Ask WayFare' }).click();
+  const panel = page.getByRole('region', { name: 'WayFare assistant' });
+  await expect(panel).toContainText('I know your NY Trip');
+  await expect(panel).toContainText('Demo replies, written from this trip’s data. No AI model is used.');
+  await panel.getByRole('button', { name: 'How much will I get back?' }).click();
+  await expect(panel).toContainText('That’s +$820 back and −$80 you can’t recover.');
+  await panel.getByRole('textbox', { name: 'Message' }).fill('when is my next deadline');
+  await panel.getByRole('button', { name: 'Send' }).click();
+  await expect(panel).toContainText('Your next deadline is Thursday');
+  await panel.getByRole('link', { name: 'Open the calendar' }).click();
+  await expect(page.getByRole('heading', { level: 1, name: 'Itinerary' })).toBeVisible();
+  await panel.getByRole('button', { name: 'Minimize' }).click();
+  await expect(page.getByRole('button', { name: 'Ask WayFare' })).toBeVisible();
+});
+
+test('sign-in and calendar sync are simulated demo states that say nothing is sent to Google', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Sign in' }).click();
+  const dialog = page.getByRole('dialog', { name: 'Sign in to WayFare' });
+  await expect(dialog).toContainText('no Google account is contacted');
+  await expect(dialog.locator('input')).toHaveCount(0);
+  await dialog.getByRole('button', { name: 'Continue with Google' }).click();
+  await expect(page.getByRole('button', { name: /Account: Sample Traveler \(demo\)/ })).toBeVisible();
+  await expect(page.getByRole('status').filter({ hasText: 'Signed in' })).toBeVisible();
+  await page.goto('/#/trips/trip-demo-nyc/itinerary');
+  await page.getByRole('button', { name: 'Connect Google Calendar' }).click();
+  await page.getByRole('dialog', { name: 'Connect Google Calendar' }).getByRole('button', { name: 'Continue with Google' }).click();
+  await expect(page.getByRole('button', { name: 'Synced with Google Calendar (demo)' })).toBeVisible();
+});
+
+test('bell lists the cancellation and the next decision; the trip menu offers the reference’s sample trips', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: /^Notifications/ }).click();
+  const inbox = page.getByRole('region', { name: 'Notifications' });
+  await expect(inbox).toContainText('Flight BL 214 cancelled');
+  await expect(inbox).toContainText('Decide by Thursday 6:00 PM');
+  await expect(inbox).toContainText('the hotel refunds $200 instead of $400');
+  await page.keyboard.press('Escape');
+
+  await page.getByRole('button', { name: 'Trip: NY Trip' }).click();
+  await page.getByRole('menuitemradio', { name: /Chicago Weekend/ }).click();
+  await expect(page.getByRole('heading', { level: 1, name: 'Chicago Weekend' })).toBeVisible();
+  await expect(page.getByText('This is a short sample.')).toBeVisible();
+  await page.getByRole('link', { name: 'Back to NY Trip' }).click();
+  await expect(page.getByRole('heading', { level: 1, name: 'NY Trip' })).toBeVisible();
+});

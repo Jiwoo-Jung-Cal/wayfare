@@ -14,9 +14,12 @@ const statusMessage = (page: Page) => page.locator('[aria-live="polite"]').filte
 test.describe('demo journey: shell steps', () => {
   test('load, import (no duplicates), disrupt, deadline boundary, reload, reset', async ({ page }) => {
     await page.goto(TRIP);
-    await expect(page.getByRole('heading', { level: 1, name: 'San Francisco to New York' })).toBeVisible();
-    await expect(page.getByText('Sample data: saved in this browser')).toBeVisible();
-    await expect(page.getByText('Simulated: AI extraction')).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1, name: 'NY Trip' })).toBeVisible();
+    // Capability labels live in the footer, as in the design reference.
+    const footer = page.locator('footer.wf-footer');
+    await expect(footer).toContainText('sample trip with fictional providers, saved in this browser');
+    await expect(footer).toContainText('every provider action is simulated');
+    await expect(footer).toContainText('AI extraction is simulated');
     await expect(page.getByText(/No confirmed bookings yet/)).toBeVisible();
 
     // Import the four reviewed sample bookings; a repeat import must not duplicate.
@@ -75,7 +78,7 @@ test.describe('demo journey: shell steps', () => {
     // Every token is in rem; a non-default root font size silently rescales all of them (#4 comment 6587211156).
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto(TRIP);
-    const h1 = page.getByRole('heading', { level: 1, name: 'San Francisco to New York' });
+    const h1 = page.getByRole('heading', { level: 1, name: 'NY Trip' });
     await expect(h1).toBeVisible();
     const style = (selector: string, prop: 'fontSize' | 'fontFamily') => page.locator(selector).first().evaluate((el, p) => getComputedStyle(el)[p], prop);
     expect(await style('html', 'fontSize')).toBe('16px');
@@ -325,7 +328,7 @@ test.describe('TripWallet integration', () => {
     const errors: string[] = [];
     page.on('pageerror', error => errors.push(error.message));
     await page.goto(TRIP);
-    await expect(page.getByRole('heading', { level: 1, name: 'San Francisco to New York' })).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1, name: 'NY Trip' })).toBeVisible();
     // ReRoute's UI is not delivered. Seed only its canonical durable output;
     // wallet-load sync, evidence review and every receipt operation use real UI.
     await page.evaluate(async () => {

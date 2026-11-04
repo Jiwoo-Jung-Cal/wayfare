@@ -21,6 +21,8 @@ import {
 import { EmptyState, MoneyText, StatusBadge, type Tone } from '../ui/index.tsx';
 import { GoogleG, Icon } from '../ui/icons.tsx';
 import { useAppServices } from './AppServices.tsx';
+import { useAccount } from './account.tsx';
+import { useToast } from './toasts.tsx';
 import { CAT, tileMoney } from './Overview.tsx';
 
 type Filter = 'flight' | 'hotel' | 'activity' | 'transfer';
@@ -136,36 +138,25 @@ function NoDeadlineLine({ b, s, now }: { b: Booking; s: WorkspaceSnapshot; now: 
   return <span className="wf-dlx" data-tone="muted">No refund deadline in the policy</span>;
 }
 
-function DemoCalendarButton() {
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDialogElement>(null);
-  useEffect(() => {
-    const d = ref.current;
-    if (!d) return;
-    if (open && !d.open) d.showModal();
-    if (!open && d.open) d.close();
-  }, [open]);
+function CalendarButton() {
+  const { calendarOn, openAuth } = useAccount();
+  const toast = useToast();
+  const label = calendarOn ? 'Synced with Google Calendar (demo)' : 'Connect Google Calendar';
   return (
-    <>
-      <button type="button" className="wf-gsign" onClick={() => setOpen(true)} aria-haspopup="dialog" aria-label="Connect Google Calendar" title="Connect Google Calendar">
-        <GoogleG />
-        <span>Connect Google Calendar</span>
-      </button>
-      <dialog ref={ref} className="wf-dialog" aria-labelledby="wf-gcal-title" onClose={() => setOpen(false)}>
-        <h2 id="wf-gcal-title">
-          <GoogleG /> Connect Google Calendar
-        </h2>
-        <p>
-          <strong>Demo only.</strong> Calendar sync is not connected in this build, so nothing is shared with Google. To add a booking yourself, open
-          it below and use <em>Add to Google Calendar</em>; that opens Google's own page and needs no sign-in here.
-        </p>
-        <div className="wf-row" style={{ justifyContent: 'flex-end' }}>
-          <button type="button" className="wf-button" onClick={() => setOpen(false)}>
-            Close
-          </button>
-        </div>
-      </dialog>
-    </>
+    <button
+      type="button"
+      className="wf-gsign"
+      data-on={calendarOn || undefined}
+      aria-haspopup={calendarOn ? undefined : 'dialog'}
+      aria-label={label}
+      title={label}
+      onClick={() =>
+        calendarOn ? toast('Already synced (demo)', 'In the real app, changes to this trip update in Google Calendar automatically.', 'gain') : openAuth('cal')
+      }
+    >
+      <GoogleG />
+      <span>{label}</span>
+    </button>
   );
 }
 
@@ -393,7 +384,7 @@ export function Itinerary({ tripId }: { tripId: string }) {
               Refund deadline
             </span>
           </span>
-          <DemoCalendarButton />
+          <CalendarButton />
         </div>
         <div className="wf-filters" role="group" aria-label="Show categories">
           {FILTERS.map((f) => (

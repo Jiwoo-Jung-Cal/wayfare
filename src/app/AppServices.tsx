@@ -61,13 +61,33 @@ export function useAppServices(): AppServices {
 const MODE_OVERRIDE_KEY = 'wayfare:v1:mode-override';
 const API_URL = (import.meta.env.VITE_WAYFARE_API_URL as string | undefined)?.replace(/\/+$/, '') || null;
 
-type Backend = { repo: WorkspaceRepository; extraction: (now: () => Instant) => ExtractionService; walletEvidence?: WalletEvidenceService };
+type Backend = {
+  repo: WorkspaceRepository;
+  extraction: (now: () => Instant) => ExtractionService;
+  walletEvidence?: WalletEvidenceService;
+  /** Sample mode only: a brand-new browser workspace opens like the design reference (booked + simulated cancellation). */
+  firstVisit?: boolean;
+};
 type BootState = { status: 'loading' } | { status: 'error'; error: AppError } | { status: 'ready'; backend: Backend };
 
+/** Test/QA override for a new workspace's seed: "planning" starts before any booking (the old default). */
+const FIRST_STAGE_KEY = 'wayfare:v1:first-stage';
+
+// Created once per page: React StrictMode runs effects twice in development, and a second
+// call would already see the new workspace id and lose the first-visit flag.
+let sampleBackendOnce: Backend | null = null;
 function sampleBackend(): Backend {
+  sampleBackendOnce ??= createSampleBackend();
+  return sampleBackendOnce;
+}
+
+function createSampleBackend(): Backend {
   const storage = window.localStorage;
+  const firstVisit = !storage.getItem('wayfare:v1:active-workspace') && storage.getItem(FIRST_STAGE_KEY) !== 'planning';
+  const initialStage = storage.getItem(FIRST_STAGE_KEY) === 'planning' ? 'planning' : 'booked';
   return {
-    repo: createLocalRepository({ storage, workspaceId: getOrCreateLocalWorkspaceId(storage) }),
+    firstVisit,
+    repo: createLocalRepository({ storage, workspaceId: getOrCreateLocalWorkspaceId(storage), initialStage }),
     extraction: (now) => createSampleExtractionService(now),
     walletEvidence: createUnavailableWalletEvidenceService(),
   };
@@ -195,6 +215,17 @@ function ServicesInner({ children, backend }: { children: ReactNode; backend: Ba
     [repo, clock, extraction, walletEvidence, refresh, runClaimSync],
   );
   ctxRef.current = featureContext;
+
+  // A first visit opens on the reference scenario: the simulated airline cancellation is
+  // recorded through ReRoute's own demo trigger, once, for this new workspace only.
+  const seeded = useRef(false);
+  useEffect(() => {
+    if (!backend.firstVisit || seeded.current || load.status !== 'ready') return;
+    seeded.current = true;
+    const trip = load.snapshot.trips[0];
+    if (!trip || load.snapshot.disruptions.length || !FEATURES.reroute?.triggerDemoDisruption) return;
+    void FEATURES.reroute.triggerDemoDisruption({ tripId: trip.id }, featureContext).then(() => refresh());
+  }, [backend.firstVisit, load, featureContext, refresh]);
 
   const value = useMemo(
     () => ({ repo, extraction, load, clock, refresh, claimSync, runClaimSync, featureContext }),
