@@ -65,7 +65,11 @@ Use a fresh browser profile, or **Clear workspace** in the demo controls, to sta
 
 ## Hosting status
 
-- **Hosted URL:** none yet. Once one exists, this section will record its URL with the `version.json` source SHA it serves.
+- **Hosted URL:** https://jiwoo-jung-cal.github.io/wayfare/ (GitHub Pages, sample mode, public).
+  - Every push to `main` redeploys it through `.github/workflows/demo-pages.yml`. The deploy job fails unless the live `version.json` reports the commit it just built.
+  - To see which commit you are looking at, open https://jiwoo-jung-cal.github.io/wayfare/version.json or read the page's `<meta name="wayfare-source">`.
+  - First verified deployment: run #9 on 2026-11-04 served `66b23b670e4012db76f7ef82511e3d1334db1829` (`dirty: false`, `mode: sample`), per the deploy job's live check. Later pushes redeploy the same way, so `version.json` is the authority for what is live now.
+  - The cloud agent container cannot reach `github.io` (blocked by its network policy). The live check is the workflow's own, and the walkthrough is verified on the identical `--base /wayfare/` production build by the `demo` Playwright project.
 - **Figma Code Layer `24:1182`:** an older snapshot (source `5249cb7`, from before ReRoute and the r1 font fix). It is **not** current main, and its preview inside Figma has not been verified.
 
 ## Limitations
