@@ -17,6 +17,7 @@ export function shellTabs(tripId: string | null): ShellTab[] {
   return [
     { to: base, label: 'Overview', icon: 'home', end: true },
     { to: `${base}/plan`, label: 'Plan', icon: 'compass' },
+    { to: `${base}/itinerary`, label: 'Itinerary', icon: 'cal' },
     { to: `${base}/reroute`, label: 'ReRoute', icon: 'route' },
     { to: `${base}/wallet`, label: 'TripWallet', icon: 'wallet' },
   ];
@@ -128,7 +129,7 @@ function SignInDemo() {
   }, [open]);
   return (
     <>
-      <button type="button" className="wf-gsign" onClick={() => setOpen(true)} aria-haspopup="dialog">
+      <button type="button" className="wf-gsign" onClick={() => setOpen(true)} aria-haspopup="dialog" aria-label="Sign in" title="Sign in">
         <GoogleG />
         <span>Sign in</span>
       </button>

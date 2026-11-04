@@ -22,7 +22,7 @@ import {
 import { Icon, type IconName } from '../ui/icons.tsx';
 import { MoneyText } from '../ui/index.tsx';
 
-const CAT: Record<BookingKind, { color: string; icon: IconName; label: string }> = {
+export const CAT: Record<BookingKind, { color: string; icon: IconName; label: string }> = {
   flight: { color: 'var(--wf-color-cat-flight)', icon: 'plane', label: 'Flight' },
   hotel: { color: 'var(--wf-color-cat-stay)', icon: 'bed', label: 'Stay' },
   activity: { color: 'var(--wf-color-cat-activity)', icon: 'ticket', label: 'Activity' },
@@ -36,7 +36,7 @@ const time = (at: Instant, tz: string) => fmt(at, tz, { hour: 'numeric', minute:
 const isMoney = (m: MaybeMoney): m is Money => !isUnknown(m);
 
 /** Money tile figure: whole amounts without cents ("$820"), otherwise two decimals. */
-function tileMoney(m: Money) {
+export function tileMoney(m: Money) {
   const whole = m.amountMinor % 100 === 0;
   return new Intl.NumberFormat('en-US', { style: 'currency', currency: m.currency, minimumFractionDigits: whole ? 0 : 2, maximumFractionDigits: whole ? 0 : 2 }).format(m.amountMinor / 100);
 }
