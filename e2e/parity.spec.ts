@@ -66,3 +66,31 @@ test('bell lists the cancellation and the next decision; the trip menu offers th
   await page.getByRole('link', { name: 'Back to NY Trip' }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'NY Trip' })).toBeVisible();
 });
+
+test('a browser that kept an empty workspace from an earlier visit also opens on the reference scenario, once', async ({ page }) => {
+  // Earlier builds started new workspaces before any booking: recreate that browser state.
+  await page.addInitScript(() => {
+    if (!sessionStorage.getItem('wf-test-setup')) {
+      sessionStorage.setItem('wf-test-setup', '1');
+      localStorage.setItem('wayfare:v1:first-stage', 'planning');
+    }
+  });
+  await page.goto('/');
+  await expect(page.getByText(/No confirmed bookings yet/)).toBeVisible();
+  await page.evaluate(() => localStorage.removeItem('wayfare:v1:first-stage'));
+  await page.reload();
+  await expect(page.getByLabel(/^Boarding pass for Bayline Air flight BL 214, cancelled by the airline/)).toBeVisible();
+  await expect(page.locator('.wf-money-tiles')).toContainText('+$820');
+
+  // Afterwards the workspace is the visitor's own: clearing it is not undone on reload.
+  await page.locator('summary', { hasText: 'Demo controls' }).click();
+  page.once('dialog', (d) => d.accept());
+  await page.getByRole('button', { name: 'Clear workspace' }).click();
+  await page.goto('/');
+  await page.reload();
+  await expect(page.getByText('No trips yet')).toBeVisible();
+  // The demo control brings the reference scenario back on demand.
+  await page.getByRole('button', { name: 'Show the reference scenario' }).click();
+  await page.goto('/');
+  await expect(page.getByLabel(/^Boarding pass for Bayline Air flight BL 214/)).toBeVisible();
+});
