@@ -29,6 +29,8 @@ test('demo walkthrough on the production build: plan, intake, disruption, approv
   const nonstop = page.getByRole('region', { name: 'Plan comparison' }).getByRole('article').filter({ hasText: 'Nonstop + Midtown hotel' });
   await nonstop.getByRole('button', { name: 'Select plan' }).click();
   await expect(page.getByRole('status').filter({ hasText: 'Plan saved. No reservation was made.' })).toBeVisible();
+  await page.goto(`./${TRIP}`);
+  await expect(card(page, 'Selected plan')).toContainText('Nonstop + Midtown hotel');
 
   // 2. Intake: review and save the hotel confirmation (simulated extraction), then import the rest.
   await page.goto(`./${TRIP}/import`);
@@ -40,15 +42,15 @@ test('demo walkthrough on the production build: plan, intake, disruption, approv
   await review.getByLabel(/I reviewed the facts and confirm/).check();
   await button(page, 'Save reviewed booking').click();
   await expect(page.getByRole('status').filter({ hasText: 'Saved reviewed booking: Harbor Line Hotel Midtown HLH-48213.' })).toBeVisible();
-  await page.goto(`./${TRIP}`);
+  await page.goto(`./${TRIP}/itinerary`);
   await button(page, 'Import sample bookings').click();
-  await expect(page.getByRole('table').getByRole('row').filter({ hasNot: page.getByRole('columnheader') })).toHaveCount(4);
-  await expect(card(page, 'Selected plan')).toContainText('Nonstop + Midtown hotel');
+  await expect(page.locator('.wf-row-b')).toHaveCount(4);
 
-  // 3. Disruption (simulated) -> ReRoute comparison.
+  // 3. Disruption (simulated) -> Overview -> ReRoute comparison.
   await button(page, 'Trigger flight cancellation').click();
-  await expect(page.getByText(/Disruption:.*Bayline Air cancelled BL 214/)).toBeVisible();
-  await page.getByRole('link', { name: 'Open ReRoute' }).click();
+  await page.goto(`./${TRIP}`);
+  await expect(page.getByText('Bayline Air cancelled your flight. You don’t need to call anyone.')).toBeVisible();
+  await page.getByRole('link', { name: 'See what to do' }).click();
   await expect(card(page, 'Continue the trip')).toContainText('$940.00');
   await expect(card(page, 'Cancel the trip')).toContainText('$820.00');
 
@@ -83,6 +85,6 @@ test('demo walkthrough on the production build: plan, intake, disruption, approv
   await expect(hotel).toContainText('Received $400.00');
   await expect(hotel).toContainText('Outstanding $0.00');
   await page.goto(`./${TRIP}`);
-  await expect(card(page, 'Refund claims').getByRole('listitem')).toHaveCount(4);
+  await expect(page.getByText('You chose to cancel. We recorded 4 cancellations.')).toBeVisible();
   expect(errors).toEqual([]);
 });
