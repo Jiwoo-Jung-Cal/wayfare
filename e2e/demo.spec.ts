@@ -64,26 +64,27 @@ test('demo walkthrough on the production build: plan, intake, disruption, approv
   // 5. TripWallet: hotel claim $400; provider confirmation; two receipts reconcile it to $0.
   await page.getByRole('main').getByRole('link', { name: 'Open TripWallet' }).click();
   await expect(page).toHaveURL(/#\/trips\/trip-demo-nyc\/wallet$/);
-  const hotel = card(page, 'Harbor Line Hotel Midtown');
+  const hotel = page.locator('.wf-wal-item').filter({ hasText: 'HLH-48213' });
   await expect(hotel).toContainText('$400.00');
+  await page.locator('details.wf-wal-add summary').click();
   await button(page, 'Load sample refund confirmation').click();
   const claimSelect = page.getByRole('combobox', { name: /^Claim to confirm/ });
   const hotelId = await claimSelect.locator('option').filter({ hasText: 'HLH-48213' }).getAttribute('value');
   await claimSelect.selectOption(hotelId!);
   await button(page, 'Confirm reviewed evidence').click();
-  await expect(hotel).toContainText('provider confirmed');
-  for (const [amount, reference, outstanding] of [['250', 'HLH-RF-0001', '150'], ['150', 'HLH-RF-0002', '0']]) {
+  await expect(hotel).toContainText('Company confirmed · not received yet');
+  for (const [amount, reference, after] of [['250', 'HLH-RF-0001', 'Received $250.00 · $150.00 outstanding'], ['150', 'HLH-RF-0002', 'Received $400.00']]) {
     await button(page, `Load sample $${amount} receipt`).click();
     await button(page, 'Confirm reviewed evidence').click();
     await page.getByRole('combobox', { name: new RegExp(`^Claim for receipt ${reference}\\b`) }).selectOption(hotelId!);
     await button(page, `Match receipt ${reference}`).click();
-    await expect(hotel).toContainText(`Outstanding $${outstanding}.00`);
+    await expect(hotel).toContainText(after!);
   }
 
   // 6. Reload: everything persists in this browser's workspace.
   await page.reload();
   await expect(hotel).toContainText('Received $400.00');
-  await expect(hotel).toContainText('Outstanding $0.00');
+  await expect(hotel).toContainText('100%');
   await page.goto(`./${TRIP}`);
   await expect(page.getByText('You chose to cancel. We recorded 4 cancellations.')).toBeVisible();
   expect(errors).toEqual([]);

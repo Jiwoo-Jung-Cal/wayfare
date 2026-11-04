@@ -107,7 +107,7 @@ test.describe('demo journey: shell steps', () => {
     const bg = () => page.evaluate(() => getComputedStyle(document.body).backgroundColor);
     const mode = page.getByRole('group', { name: 'Colour mode' });
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
-    expect(await bg()).toBe('rgb(255, 255, 255)');
+    await expect.poll(bg).toBe('rgb(255, 255, 255)'); // body fades between modes; wait for the settled colour
     await mode.getByRole('button', { name: 'Dark mode' }).click();
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
     await expect(mode.getByRole('button', { name: 'Dark mode' })).toHaveAttribute('aria-pressed', 'true');
@@ -143,6 +143,12 @@ async function expectNoOverflow(page: Page, routes: string[]) {
 const card = (page: Page, heading: string) => page.locator('.wf-card').filter({ has: page.getByRole('heading', { name: heading, exact: true }) });
 const planCard = (page: Page, label: string) =>
   page.getByRole('region', { name: 'Plan comparison' }).getByRole('article').filter({ has: page.getByRole('heading', { name: new RegExp(`\\d\\. ${label.replace(/[+]/g, '\\+')}$`) }) });
+// TripWallet (design r2-final): claims are list items; evidence import sits in a collapsible panel.
+const walletItem = (page: Page, reference: string) => page.locator('.wf-wal-item').filter({ hasText: reference });
+async function openEvidence(page: Page) {
+  const panel = page.locator('details.wf-wal-add');
+  if ((await panel.getAttribute('open')) === null) await panel.locator('summary').click();
+}
 const status = (page: Page, text: string) => page.getByRole('status').filter({ hasText: text });
 const sampleSelect = (page: Page) => page.locator('label', { hasText: 'Sample document' }).locator('select');
 
@@ -290,7 +296,7 @@ test.describe('demo journey: ReRoute approval to TripWallet (Agents 4 and 5, #6/
     await page.getByRole('main').getByRole('link', { name: 'Open TripWallet' }).click();
     await expect(page).toHaveURL(/#\/trips\/trip-demo-nyc\/wallet$/);
     await expect(page.getByRole('heading', { level: 1, name: 'TripWallet', exact: true })).toBeVisible();
-    await expect(card(page, 'Harbor Line Hotel Midtown')).toContainText('$400.00');
+    await expect(walletItem(page, 'HLH-48213')).toContainText('$400.00');
 
     // The Overview reports the recorded choice; the Itinerary shows every booking cancelled.
     await page.goto(TRIP);
@@ -326,6 +332,7 @@ test.describe('demo journey: ReRoute approval to TripWallet (Agents 4 and 5, #6/
     // Wallet load re-runs claim sync (idempotent); importing the same receipt twice stores it once.
     await page.goto(`${TRIP}/wallet`);
     await expect(page.getByRole('status').filter({ hasText: '0 created, 4 already tracked' })).toBeVisible();
+    await openEvidence(page);
     for (let i = 0; i < 2; i++) {
       await control(page, 'Load sample $150 receipt').click();
       await control(page, 'Confirm reviewed evidence').click();
@@ -359,40 +366,43 @@ test.describe('TripWallet integration', () => {
       for (const action of core.demoCancelTripActions(fx)) core.unwrap(await repo.recordBookingAction({ action, expectedBookingRevision: 1 }));
     });
     await page.goto(`${TRIP}/wallet`);
-    const hotel = card(page, 'Harbor Line Hotel Midtown');
+    const hotel = walletItem(page, 'HLH-48213');
     await expect(hotel).toContainText('$400.00');
+    await openEvidence(page);
     await control(page, 'Load sample refund confirmation').click();
     const claimSelect = page.getByRole('combobox', { name: /^Claim to confirm/ });
     const hotelId = await claimSelect.locator('option').filter({ hasText: 'HLH-48213' }).getAttribute('value');
     expect(hotelId).toBeTruthy();
     await claimSelect.selectOption(hotelId!);
     await control(page, 'Confirm reviewed evidence').click();
-    await expect(hotel).toContainText('provider confirmed');
-    for (const [amount, reference, state] of [['250', 'HLH-RF-0001', 'partially received'], ['150', 'HLH-RF-0002', 'received']]) {
+    await expect(hotel).toContainText('Company confirmed · not received yet');
+    for (const [amount, reference, state] of [['250', 'HLH-RF-0001', 'Received $250.00 · $150.00 outstanding'], ['150', 'HLH-RF-0002', 'Received $400.00']]) {
       await control(page, `Load sample $${amount} receipt`).click();
       await control(page, 'Confirm reviewed evidence').click();
       await page.getByRole('combobox', { name: new RegExp(`^Claim for receipt ${reference}\\b`) }).selectOption(hotelId!);
       await control(page, `Match receipt ${reference}`).click();
       await expect(hotel).toContainText(state!);
       if (amount === '250') {
-        await expect(hotel).toContainText('Outstanding $150.00');
-        await control(page, 'Prepare follow-up draft for HLH-48213').click();
+        await hotel.locator('.wf-wal-head').click();
+        await control(page, 'Write a reminder').click();
         await expect(page.getByLabel('Editable follow-up draft')).toHaveValue(/Outstanding: \$150.00/);
+        await page.keyboard.press('Escape');
       }
     }
-    await expect(hotel).toContainText('Outstanding $0.00');
+    await expect(hotel).toContainText('100%');
     await control(page, 'Load sample $250 receipt').click();
     await control(page, 'Confirm reviewed evidence').click();
     await page.reload();
     await expect(hotel).toContainText('Received $400.00');
-    await expect(hotel).toContainText('Outstanding $0.00');
-    await expect(page.getByText('8,000 points (Harbor Line Rewards)')).toBeVisible();
+    await expect(hotel).toContainText('100%');
+    await expect(walletItem(page, 'Harbor Line Rewards')).toContainText('8,000 pts');
     // A populated wallet exercises long claim IDs, capability labels and evidence.
     for (const width of [390, 360, 320]) {
       await page.setViewportSize({ width, height: 844 });
       await expect(page.getByRole('heading', { level: 1, name: 'TripWallet', exact: true })).toBeVisible();
       expect(await horizontalOverflow(page), `reconciled wallet at ${width}px`).toBeLessThanOrEqual(0);
     }
+    await hotel.locator('.wf-wal-head').click();
     await hotel.getByText('Action, evidence and allocation history', { exact: true }).click();
     await expect(hotel.locator('details').first()).toHaveAttribute('open', '');
     expect(await horizontalOverflow(page), 'expanded evidence at 320px').toBeLessThanOrEqual(0);
