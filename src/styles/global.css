@@ -8,6 +8,7 @@
 @import './tokens.css';
 @import './shell.css';
 @import './overview.css';
+@import './itinerary.css';
 
 *,
 *::before,

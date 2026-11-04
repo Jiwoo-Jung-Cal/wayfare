@@ -12,6 +12,7 @@ import { BottomTabs, TopBar } from './TopBar.tsx';
 import { ClaimSyncNotice } from './ClaimSyncNotice.tsx';
 import { TripDashboard, TripList } from './Dashboard.tsx';
 import { FEATURES, ROUTE_TABLE } from './featureRegistry.ts';
+import { Itinerary } from './Itinerary.tsx';
 
 class RouteErrorBoundary extends Component<{ children: ReactNode }, { error: AppError | null }> {
   state = { error: null as AppError | null };
@@ -106,6 +107,11 @@ function TripHome() {
   return <TripDashboard tripId={tripId} />;
 }
 
+function ItineraryRoute() {
+  const { tripId = '' } = useParams();
+  return <Itinerary tripId={tripId} />;
+}
+
 function FeatureRoute({ path }: { path: (typeof ROUTE_TABLE)[number]['path'] }) {
   const { tripId = '' } = useParams();
   const { load, featureContext, runClaimSync } = useAppServices();
@@ -144,6 +150,7 @@ const router = createHashRouter([
     children: [
       { index: true, element: <Home /> },
       { path: 'trips/:tripId', element: <TripHome /> },
+      { path: 'trips/:tripId/itinerary', element: <ItineraryRoute /> },
       ...ROUTE_TABLE.map((r) => ({ path: `trips/:tripId/${r.path}`, element: <FeatureRoute path={r.path} /> })),
       { path: '*', element: <Navigate to="/" replace /> },
     ],
