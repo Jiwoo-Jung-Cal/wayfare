@@ -67,51 +67,46 @@ function Signed({ value, sign }: { value: MaybeMoney; sign: '+' | '−' }) {
   );
 }
 
-/** Windowed mode (r2-final §2): decorative motion that needs room is off when not maximised or < 1200 px. */
-function useWindowed() {
-  useEffect(() => {
-    const check = () => {
-      const notMax = window.outerWidth > 0 && screen.availWidth > 0 && window.outerWidth < screen.availWidth - 24;
-      document.documentElement.classList.toggle('wf-windowed', notMax || window.innerWidth < 1200);
-    };
-    check();
-    window.addEventListener('resize', check);
-    return () => window.removeEventListener('resize', check);
-  }, []);
-}
-
 function refundTierNow(policy: PolicyEvidence | undefined, now: Instant, condition?: string) {
   if (!policy) return undefined;
   const tiers = condition ? policy.refundTiers.filter((t) => t.condition === condition) : policy.refundTiers;
   return findInWindow(tiers, now);
 }
 
-function BoardingPass({ s, flight, now }: { s: WorkspaceSnapshot; flight: Booking; now: Instant }) {
-  useWindowed();
-  const trip = s.trips.find((t) => t.id === flight.tripId)!;
-  const tz = flight.localTimezone;
-  const disrupted = s.disruptions.some((d) => d.bookingId === flight.id && d.status === 'active' && d.type === 'cancellation');
-  const policy = s.policies.find((p) => p.id === flight.policyId);
-  const owed = disrupted ? refundTierNow(policy, now, 'provider_cancels')?.refund : undefined;
-  const flightNo = /^[A-Z0-9]{2}\s?\d+/.exec(flight.title)?.[0] ?? flight.title;
-  const from = trip.origin.code ?? trip.origin.name;
-  const to = trip.destination.code ?? trip.destination.name;
-  const fromName = AIRPORT[from] ?? [trip.origin.name, ''];
-  const toName = AIRPORT[to] ?? [trip.destination.name, ''];
-  const fare = docField(s, flight, 'Fare');
-  const passenger = docField(s, flight, 'Passenger');
-  const label = `Boarding pass for ${flight.provider} flight ${flightNo}${disrupted ? ', cancelled by the airline' : ''}`;
+const NA = 'Not set';
+
+/**
+ * The boarding pass is always drawn. With no flight booked yet (a trip still being planned,
+ * or no trip at all) every booking-derived detail is a placeholder; nothing is invented.
+ */
+export function BoardingPass({ s, flight, now }: { s?: WorkspaceSnapshot; flight?: Booking | null; now?: Instant }) {
+  const booked = !!(s && flight && now);
+  const trip = booked ? s!.trips.find((t) => t.id === flight!.tripId) : undefined;
+  const tz = flight?.localTimezone ?? 'UTC';
+  const disrupted = booked && s!.disruptions.some((d) => d.bookingId === flight!.id && d.status === 'active' && d.type === 'cancellation');
+  const policy = booked ? s!.policies.find((p) => p.id === flight!.policyId) : undefined;
+  const owed = disrupted ? refundTierNow(policy, now!, 'provider_cancels')?.refund : undefined;
+  const flightNo = flight ? (/^[A-Z0-9]{2}\s?\d+/.exec(flight.title)?.[0] ?? flight.title) : null;
+  const from = trip ? (trip.origin.code ?? trip.origin.name) : '———';
+  const to = trip ? (trip.destination.code ?? trip.destination.name) : '———';
+  const fromName = trip ? (AIRPORT[from] ?? [trip.origin.name, '']) : [NA, ''];
+  const toName = trip ? (AIRPORT[to] ?? [trip.destination.name, '']) : [NA, ''];
+  const fare = booked ? docField(s!, flight!, 'Fare') : null;
+  const passenger = booked ? docField(s!, flight!, 'Passenger') : null;
+  const label = booked
+    ? `Boarding pass for ${flight!.provider} flight ${flightNo}${disrupted ? ', cancelled by the airline' : ''}`
+    : 'Boarding pass placeholder: no flight booked yet';
   return (
-    <div className="wf-bp" tabIndex={0} aria-label={label}>
+    <div className="wf-bp" data-empty={booked ? undefined : 'true'} tabIndex={0} aria-label={label}>
       <div className="wf-bp-main">
         <div className="wf-bp-band">
-          <b>{flight.provider.toUpperCase()}</b>
+          <b>{booked ? flight!.provider.toUpperCase() : 'WAYFARE'}</b>
           <span className="wf-label-mono">Boarding pass{fare ? ` · ${fare}` : ''}</span>
         </div>
         <div className="wf-bp-body">
           <div>
             <div className="wf-bp-code">{from}</div>
-            <div className="wf-bp-city">
+            <div className={`wf-bp-city${trip ? '' : ' wf-bp-na'}`}>
               {fromName[0]}
               {fromName[1] && (
                 <>
@@ -133,7 +128,7 @@ function BoardingPass({ s, flight, now }: { s: WorkspaceSnapshot; flight: Bookin
           </div>
           <div style={{ textAlign: 'right' }}>
             <div className="wf-bp-code">{to}</div>
-            <div className="wf-bp-city">
+            <div className={`wf-bp-city${trip ? '' : ' wf-bp-na'}`}>
               {toName[0]}
               {toName[1] && (
                 <>
@@ -145,28 +140,28 @@ function BoardingPass({ s, flight, now }: { s: WorkspaceSnapshot; flight: Bookin
           </div>
         </div>
         <div className="wf-bp-grid">
-          <Field k="Passenger" v={passenger ?? 'Not set'} muted={!passenger} />
-          <Field k="Flight" v={flightNo} />
-          <Field k="Date" v={fmt(flight.startsAt, tz, { weekday: 'short', day: 'numeric', month: 'short' }).replace(/(\w+), (\w+) (\d+)/, '$1, $3 $2')} />
-          <Field k="Departs" v={fmt(flight.startsAt, tz, { hour: 'numeric', minute: '2-digit' })} />
-          <Field k="Gate" v="Not set" muted />
-          <Field k="Seat" v="Not set" muted />
+          <Field k="Passenger" v={passenger ?? NA} muted={!passenger} />
+          <Field k="Flight" v={flightNo ?? NA} muted={!flightNo} />
+          <Field k="Date" v={booked ? fmt(flight!.startsAt, tz, { weekday: 'short', day: 'numeric', month: 'short' }).replace(/(\w+), (\w+) (\d+)/, '$1, $3 $2') : NA} muted={!booked} />
+          <Field k="Departs" v={booked ? fmt(flight!.startsAt, tz, { hour: 'numeric', minute: '2-digit' }) : NA} muted={!booked} />
+          <Field k="Gate" v={NA} muted />
+          <Field k="Seat" v={NA} muted />
         </div>
       </div>
       <span className="wf-bp-hit" aria-hidden="true" />
       <div className="wf-bp-stub">
         <div className="wf-bp-band">
-          <b>{flightNo}</b>
-          <span className="wf-label-mono">{flight.reference}</span>
+          <b>{flightNo ?? '———'}</b>
+          <span className="wf-label-mono">{flight?.reference ?? ''}</span>
         </div>
         <div className="wf-bp-stub-b">
           <div className="wf-bp-row2">
-            <Field k="From" v={from} />
-            <Field k="To" v={to} />
+            <Field k="From" v={trip ? from : '—'} muted={!trip} />
+            <Field k="To" v={trip ? to : '—'} muted={!trip} />
           </div>
           <div className="wf-bp-row2">
-            <Field k="Date" v={fmt(flight.startsAt, tz, { day: 'numeric', month: 'short' }).replace(/(\w+) (\d+)/, '$2 $1')} />
-            <Field k="Refund" v={owed ? <span className="wf-gain"><Signed value={owed} sign="+" /></span> : '—'} />
+            <Field k="Date" v={booked ? fmt(flight!.startsAt, tz, { day: 'numeric', month: 'short' }).replace(/(\w+) (\d+)/, '$2 $1') : '—'} muted={!booked} />
+            <Field k="Refund" v={owed ? <span className="wf-gain"><Signed value={owed} sign="+" /></span> : '—'} muted={!owed} />
           </div>
           <div className="wf-bp-barcode" aria-hidden="true" />
           <span className="wf-label-mono wf-bp-tear-hint">Hover to tear off the stub</span>
@@ -202,7 +197,8 @@ export function OverviewHero({ s, tripId, now }: { s: WorkspaceSnapshot; tripId:
   useTick(30_000);
   const f = tripFacts(s, tripId, now);
   const bookings = f.bookings;
-  if (bookings.length === 0) return null;
+  // Before anything is booked the pass is still shown, with placeholder details.
+  if (bookings.length === 0) return <section className="wf-ov" aria-label="Trip overview"><BoardingPass /></section>;
   const flight = bookings.find((b) => b.kind === 'flight');
   const disruption = s.disruptions.find((d) => d.tripId === tripId && d.status === 'active');
   const actions = s.actions.filter((a) => a.tripId === tripId && (!disruption || a.disruptionId === disruption.id));
@@ -247,7 +243,7 @@ export function OverviewHero({ s, tripId, now }: { s: WorkspaceSnapshot; tripId:
 
   return (
     <section className="wf-ov" aria-label="Trip overview">
-      {flight && <BoardingPass s={s} flight={flight} now={now} />}
+      <BoardingPass s={s} flight={flight ?? null} now={now} />
 
       {disruption && open && !approved && (
         <div className="wf-ov-cta">

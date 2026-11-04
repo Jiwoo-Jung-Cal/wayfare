@@ -18,6 +18,7 @@ import { ClaimSyncNotice } from './ClaimSyncNotice.tsx';
 import { TripDashboard, TripList } from './Dashboard.tsx';
 import { FEATURES, ROUTE_TABLE } from './featureRegistry.ts';
 import { Itinerary } from './Itinerary.tsx';
+import { BoardingPass } from './Overview.tsx';
 
 class RouteErrorBoundary extends Component<{ children: ReactNode }, { error: AppError | null }> {
   state = { error: null as AppError | null };
@@ -124,7 +125,12 @@ function Home() {
   const trip = load.snapshot.trips.find((t) => t.id === DEMO_TRIP_ID) ?? load.snapshot.trips[0];
   // The design has no separate home: the trip's Overview is the start page.
   if (trip) return <Navigate to={`/trips/${trip.id}`} replace />;
-  return <TripList snapshot={load.snapshot} />;
+  return (
+    <div className="wf-stack-lg">
+      <BoardingPass />
+      <TripList snapshot={load.snapshot} />
+    </div>
+  );
 }
 
 function TripHome() {
