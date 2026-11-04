@@ -22,55 +22,58 @@ function collectPageErrors(page: Page) {
 }
 
 test.describe('Wayfinder and intake states (Agent 2, #4)', () => {
-  test('Wayfinder: preference changes re-rank; stale, over-budget, invalid and unsupported inputs block selection', async ({ page }) => {
+  test('Wayfinder: preference changes re-rank; over-budget, unknown-price, invalid-date and unsupported inputs block selection', async ({ page }) => {
     const errors = collectPageErrors(page);
     await page.setViewportSize({ width: 1440, height: 1000 });
     await page.goto(`${TRIP}/plan`);
-    await button(page, 'Generate options').click();
+    // The comparison for the trip's sample route is shown on arrival, as in the design reference.
     await expect(cards(page)).toHaveCount(3);
-    await expect(cards(page).last()).toContainText('Known subtotal: $1,010.00');
-    expect(await columns(page, '.wf-plan-route-fields')).toBe(4);
-    expect(await columns(page, '.wf-plan-choice-fields')).toBe(3);
+    await expect(cards(page).last()).toContainText('$1,010 + ?');
+    await expect(cards(page).last()).toContainText('A price is still unknown');
+    await expect(cards(page).last().getByRole('button', { name: 'Choose this plan' })).toBeDisabled();
     expect(await columns(page, '.wf-plan-options')).toBe(3);
 
-    // Changed preferences make the shown results stale until regenerated.
-    await page.getByLabel(/^Prioritize/).selectOption('convenience');
-    await expect(page.getByText(/Preferences changed/)).toBeVisible();
-    await expect(cards(page).first().getByRole('button')).toBeDisabled();
-    await button(page, 'Regenerate options').click();
+    // "What matters most" re-ranks through the same generator.
+    await page.getByRole('group', { name: 'What matters most' }).getByRole('button', { name: 'Convenience' }).click();
     await expect(cards(page).first()).toContainText('Nonstop + Midtown hotel');
+    await expect(cards(page).first()).toContainText('Most convenient');
 
     // Dropping the paid activity changes totals; over-budget plans cannot be selected.
-    await page.getByLabel(/^Prioritize/).selectOption('price');
-    await page.getByLabel(/^Interest/).selectOption('free_time');
-    await page.getByLabel(/^Budget for listed components/).fill('800');
-    await button(page, 'Regenerate options').click();
-    await expect(cards(page).first()).toContainText('$735.00');
-    await expect(cards(page).first().getByRole('button')).toBeEnabled();
-    await expect(cards(page).nth(1)).toContainText('Over component budget');
-    await expect(cards(page).nth(1).getByRole('button')).toBeDisabled();
+    await page.getByRole('group', { name: 'What matters most' }).getByRole('button', { name: 'Price' }).click();
+    await page.getByRole('group', { name: 'Saturday morning' }).getByRole('button', { name: 'Free time' }).click();
+    await page.getByLabel('Budget').fill('800');
+    await expect(cards(page).first()).toContainText('$735');
+    await expect(cards(page).first().getByRole('button', { name: 'Choose this plan' })).toBeEnabled();
+    await expect(cards(page).nth(1)).toContainText('over budget');
+    await expect(cards(page).nth(1).getByRole('button', { name: 'Choose this plan' })).toBeDisabled();
 
-    // Invalid dates keep the previous results visible but not selectable.
-    await page.getByLabel(/^End date/).fill('2026-11-19');
-    await button(page, 'Regenerate options').click();
-    await expect(page.getByLabel(/^End date/)).toHaveAttribute('aria-invalid', 'true');
-    await expect(cards(page).first()).toContainText('$735.00');
-    await expect(cards(page).first().getByRole('button')).toBeDisabled();
+    // Invalid dates are refused in the picker; the shown results stay.
+    await page.getByRole('button', { name: /Nov 20 – 23/ }).click();
+    const dates = page.getByRole('dialog', { name: 'Dates' });
+    await dates.getByLabel('Return').fill('2026-11-19');
+    await dates.getByRole('button', { name: 'Done' }).click();
+    await expect(dates.getByRole('alert')).toContainText('The return date must be after the leave date.');
+    await page.keyboard.press('Escape');
+    await expect(cards(page).first()).toContainText('$735');
 
     // Unsupported destination is an explicit error, not invented candidates.
-    await button(page, 'Use supported sample').click();
-    await page.getByLabel(/^Destination/).fill('Paris');
-    await button(page, 'Regenerate options').click();
+    await page.getByRole('button', { name: /San Francisco → New York/ }).click();
+    const route = page.getByRole('dialog', { name: 'Route' });
+    await route.getByLabel('Destination').fill('Paris');
+    await route.getByRole('button', { name: 'Done' }).click();
     await expect(page.getByRole('alert')).toContainText('No sample candidates match');
-    await expect(page.getByLabel(/^Destination/)).toHaveAttribute('aria-invalid', 'true');
+    await page.getByRole('button', { name: /San Francisco → Paris/ }).click();
+    await expect(route.getByLabel('Destination')).toHaveAttribute('aria-invalid', 'true');
+    await route.getByRole('button', { name: 'Use supported sample' }).click();
+    await route.getByRole('button', { name: 'Done' }).click();
+    await expect(cards(page)).toHaveCount(3);
 
     // Selection state is visible on the chosen card.
-    await button(page, 'Use supported sample').click();
-    await button(page, 'Regenerate options').click();
-    const nonstop = cards(page).nth(1);
-    await nonstop.getByRole('button').click();
+    const nonstop = cards(page).filter({ hasText: 'Nonstop + Midtown hotel' });
+    await nonstop.getByRole('button', { name: 'Choose this plan' }).click();
     await expect(nonstop).toHaveAttribute('data-selected', 'true');
-    await expect(nonstop.getByRole('button')).toHaveAttribute('data-variant', 'secondary');
+    await expect(nonstop.getByRole('button', { name: 'Selected plan' })).toHaveAttribute('data-variant', 'secondary');
+    await expect(nonstop).toContainText('Saved to your trip. Nothing is booked or paid until you confirm.');
     expect(errors).toEqual([]);
   });
 
@@ -157,14 +160,14 @@ test.describe('Wayfinder and intake states (Agent 2, #4)', () => {
     }
 
     await page.goto(`${TRIP}/plan`);
-    await button(page, 'Generate options').click();
     await expect(cards(page)).toHaveCount(3);
-    for (const width of [1440, 1023, 768, 767, 390, 360, 320]) {
+    // r2-final: 3-up at full width, 2-up below 1000 px, 1-up below 760 px.
+    for (const width of [1440, 1023, 999, 768, 759, 390, 360, 320]) {
       await page.setViewportSize({ width, height: 900 });
       expect(await overflow(page), `plan overflow at ${width}px`).toBeLessThanOrEqual(0);
-      expect(await columns(page, '.wf-plan-options'), `plan columns at ${width}px`).toBe(width < 768 ? 1 : 3);
+      expect(await columns(page, '.wf-plan-options'), `plan columns at ${width}px`).toBe(width < 760 ? 1 : width < 1000 ? 2 : 3);
     }
-    await page.locator('.wf-plan-breakdowns details').first().evaluate((el) => { (el as HTMLDetailsElement).open = true; });
+    await page.locator('.wf-plan-options details').first().evaluate((el) => { (el as HTMLDetailsElement).open = true; });
     expect(await overflow(page), 'expanded cost sources at 320px').toBeLessThanOrEqual(0);
     expect(errors).toEqual([]);
   });

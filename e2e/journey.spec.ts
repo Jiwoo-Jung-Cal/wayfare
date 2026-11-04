@@ -142,7 +142,7 @@ async function expectNoOverflow(page: Page, routes: string[]) {
 }
 const card = (page: Page, heading: string) => page.locator('.wf-card').filter({ has: page.getByRole('heading', { name: heading, exact: true }) });
 const planCard = (page: Page, label: string) =>
-  page.getByRole('region', { name: 'Plan comparison' }).getByRole('article').filter({ has: page.getByRole('heading', { name: new RegExp(`\\d\\. ${label.replace(/[+]/g, '\\+')}$`) }) });
+  page.getByRole('region', { name: 'Plan comparison' }).getByRole('article').filter({ has: page.getByRole('heading', { name: label, exact: true }) });
 // TripWallet (design r2-final): claims are list items; evidence import sits in a collapsible panel.
 const walletItem = (page: Page, reference: string) => page.locator('.wf-wal-item').filter({ hasText: reference });
 async function openEvidence(page: Page) {
@@ -155,16 +155,15 @@ const sampleSelect = (page: Page) => page.locator('label', { hasText: 'Sample do
 test.describe('demo journey: Wayfinder and intake (Agent 2, #4)', () => {
   test('compare plans, select the nonstop plan; dashboard shows it after reload; reselect is a no-op', async ({ page }) => {
     await page.goto(`${TRIP}/plan`);
-    await control(page, 'Generate options').click();
     await expect(page.getByRole('region', { name: 'Plan comparison' }).getByRole('article')).toHaveCount(3);
-    await expect(planCard(page, 'Red-eye + Brooklyn hotel')).toContainText('$815.00');
-    await expect(planCard(page, 'Nonstop + Midtown hotel')).toContainText('$900.00');
+    await expect(planCard(page, 'Red-eye + Brooklyn hotel')).toContainText('$815');
+    await expect(planCard(page, 'Nonstop + Midtown hotel')).toContainText('$900');
     // Unknown price is not free: the flexible plan cannot be selected.
     const flex = planCard(page, 'Refundable fare + flexible hotel');
-    await expect(flex).toContainText('Unknown');
-    await expect(flex.getByRole('button', { name: 'Select plan' })).toBeDisabled();
+    await expect(flex).toContainText('$1,010 + ?');
+    await expect(flex.getByRole('button', { name: 'Choose this plan' })).toBeDisabled();
 
-    await planCard(page, 'Nonstop + Midtown hotel').getByRole('button', { name: 'Select plan' }).click();
+    await planCard(page, 'Nonstop + Midtown hotel').getByRole('button', { name: 'Choose this plan' }).click();
     await expect(status(page, 'Plan saved. No reservation was made.')).toBeVisible();
 
     await page.goto(TRIP);
@@ -176,8 +175,7 @@ test.describe('demo journey: Wayfinder and intake (Agent 2, #4)', () => {
     await page.reload();
     await expect(card(page, 'Selected plan')).toContainText('Nonstop + Midtown hotel');
     await page.goto(`${TRIP}/plan`);
-    await expect(card(page, 'Saved selected plan')).toContainText('Nonstop + Midtown hotel');
-    await control(page, 'Generate options').click();
+    await expect(planCard(page, 'Nonstop + Midtown hotel')).toContainText('Your selected plan');
     await planCard(page, 'Nonstop + Midtown hotel').getByRole('button', { name: 'Selected plan' }).click();
     await expect(status(page, 'This plan is already selected.')).toBeVisible();
   });
