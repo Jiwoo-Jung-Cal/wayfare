@@ -16,6 +16,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "server": "node server/node.ts",
+    "smoke:live-ai": "node server/liveSmoke.ts",
     "e2e": "playwright test"
   },
   "dependencies": {

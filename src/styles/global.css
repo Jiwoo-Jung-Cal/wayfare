@@ -490,6 +490,11 @@ label.wf-stack {
   background: var(--wf-color-surface);
   color: var(--wf-color-text);
 }
+/* .wf-input resets font with `font: inherit`; a monospace input (e.g. the intake evidence
+   textarea, "wf-input wf-mono") keeps IBM Plex Mono at the input's size. */
+.wf-input.wf-mono {
+  font-family: var(--wf-font-mono);
+}
 .wf-input:focus-visible {
   outline: 0;
   border-color: var(--wf-color-focus);

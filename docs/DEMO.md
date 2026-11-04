@@ -71,6 +71,6 @@ A **first visit** opens like the design reference: NY Trip is booked and Bayline
 
 ## Limitations
 
-- Sample mode only. The connected API (`npm run server`, `VITE_WAYFARE_API_URL`) works locally and in CI but is not hosted. Live AI extraction is unverified because no key has ever been configured.
+- Sample mode only. The connected API (`npm run server`, `VITE_WAYFARE_API_URL`) works locally and in CI but is not hosted. Live AI extraction is unverified because no key has ever been configured; `npm run smoke:live-ai` checks it on a machine that has one (see the Agent 1 handoff, "Live AI readiness").
 - Single traveler, USD, fictional providers. Real bookings, payments, OCR and email are out of scope.
 - Data is per browser profile. Another browser or device starts its own empty workspace.
