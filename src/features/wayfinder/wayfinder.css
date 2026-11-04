@@ -23,9 +23,9 @@
 .wf-ctr { display: flex; align-items: center; gap: 12px; }
 .wf-ctr button { width: 32px; height: 32px; border: 1px solid var(--wf-color-border); border-radius: 50%; background: var(--wf-color-surface); color: var(--wf-color-text); font-size: 1.1rem; line-height: 1; cursor: pointer; }
 .wf-ctr button:disabled { opacity: 0.35; cursor: not-allowed; }
-.wf-dates { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-.wf-dates label { display: flex; flex-direction: column; gap: 4px; color: var(--wf-color-text-muted); font-size: 0.8rem; }
-.wf-dates input { padding: 8px 10px; border: 1px solid var(--wf-color-border); border-radius: 10px; background: var(--wf-color-surface); color: var(--wf-color-text); font: inherit; font-size: 0.92rem; }
+.wf-dates { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.wf-dates label { display: flex; flex-direction: column; gap: 4px; min-width: 0; color: var(--wf-color-text-muted); font-size: 0.8rem; }
+.wf-dates input { width: 100%; min-width: 0; padding: 8px 10px; border: 1px solid var(--wf-color-border); border-radius: 10px; background: var(--wf-color-surface); color: var(--wf-color-text); font: inherit; font-size: 0.92rem; }
 .wf-dates input[aria-invalid='true'] { border-color: var(--wf-color-danger); }
 .wf-pf { display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px; }
 .wf-pop-err { margin: 8px 0 0; color: var(--wf-color-danger); font-size: 0.82rem; }

@@ -26,7 +26,7 @@ const ART: Record<string, ArtKey> = { 'plan-demo-nonstop': 'hotel', 'plan-demo-s
 const baseId = (id: string) => id.replace(/-free-time$/, '');
 const m0 = (m: MaybeMoney | undefined | null) => {
   if (!m || isUnknown(m)) return '?';
-  return new Intl.NumberFormat('en-US', { style: 'currency', currency: m.currency, maximumFractionDigits: 0 }).format(Math.round(Math.abs(m.amountMinor) / 100));
+  return new Intl.NumberFormat('en-US', { style: 'currency', currency: m.currency, maximumFractionDigits: m.amountMinor % 100 === 0 ? 0 : 2 }).format(Math.abs(m.amountMinor) / 100);
 };
 const fmtD = (v: string) => new Date(`${v}T12:00:00Z`).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
 const dateLabel = (a: string, b: string) => {
@@ -147,8 +147,9 @@ export function WayfinderPage({ tripId, ctx }: FeaturePageProps) {
   const fieldError = (key: keyof Preferences) => error?.issues?.find((entry) => entry.path === key)?.message
     ?? (error?.code === 'unsupported' && (key === 'destination' || key === 'origin') ? 'Use the supported SFO–New York route and November 20–23 dates.' : undefined);
   const travelers = trav.a + trav.c;
-  const nights = nightsBetween(preferences.startDate, preferences.endDate);
-  const budgetNum = parseFloat(preferences.budget);
+  const shownPreferences = result?.preferences ?? preferences;
+  const nights = nightsBetween(shownPreferences.startDate, shownPreferences.endDate);
+  const budgetNum = parseFloat(shownPreferences.budget);
 
   const card = ({ plan, knownSubtotal, budgetStatus }: ComparedPlan, index: number, list: ComparedPlan[]) => {
     const isSaved = saved ? baseId(saved.id) === baseId(plan.id) && saved.id === plan.id : false;
@@ -276,17 +277,17 @@ export function WayfinderPage({ tripId, ctx }: FeaturePageProps) {
       {loading && !result && <><div className="wf-ah"><span className="wf-spark"><Icon name="spark" /></span><p className="wf-muted">Wayfinder is comparing flights, stays and activities…</p></div><div className="wf-plan-options">{[0, 1, 2].map((i) => <div key={i} className="wf-shimmer" />)}</div></>}
       {result && <section aria-label="Plan comparison">
         <div className="wf-ah"><span className="wf-spark"><Icon name="spark" /></span><div>
-          <b>I found {result.options.length} plans for {result.preferences.destination}, {dateLabel(result.preferences.startDate, result.preferences.endDate)} · {travelers} traveler{travelers > 1 ? 's' : ''}.</b>
-          <p className="wf-muted">Sample quotes for {nights} night{nights === 1 ? '' : 's'} and the listed parts only{travelers > 1 ? ', priced for 1 traveler (the final price updates for your group)' : ''}. Change what matters to you and Wayfinder re-ranks them.{asked && !/new york|nyc|jfk/i.test(asked) ? ' This demo only has sample candidates for San Francisco → New York, Nov 20–23.' : ''}</p>
+          <b>I found {result.options.length} plans for {result.preferences.destination}, {dateLabel(result.preferences.startDate, result.preferences.endDate)} · {result.preferences.travelers} traveler.</b>
+          <p className="wf-muted">Sample quotes for {nights} night{nights === 1 ? '' : 's'}, one traveler and the listed parts only.{travelers > 1 ? ` You chose ${travelers} travelers; group pricing is not supported.` : ''} Change what matters to you and Wayfinder re-ranks them.{asked && !/new york|nyc|jfk/i.test(asked) ? ' This demo only has sample candidates for San Francisco → New York, Nov 20–23.' : ''}</p>
         </div></div>
         <div className="wf-wfbox">
           <div className="wf-wfk"><Icon name="compass" />Wayfinder<span className="wf-label-mono">Compare your options</span></div>
           <div><span className="wf-lbl" id="wf-bl">Budget</span>
-            <label className="wf-money-in"><span>$</span><input aria-labelledby="wf-bl" inputMode="decimal" value={budgetText ?? preferences.budget} aria-invalid={!!fieldError('budget')} onChange={(e) => {
-              const v = e.target.value.replace(/[^0-9.]/g, ''); setBudgetText(v);
-              if (/^\d+(\.\d{1,2})?$/.test(v) && +v > 0) change({ budget: v });
+            <label className="wf-money-in"><span>$</span><input aria-labelledby="wf-bl" aria-describedby={fieldError('budget') ? 'wf-budget-error' : undefined} inputMode="decimal" value={budgetText ?? preferences.budget} aria-invalid={!!fieldError('budget')} onChange={(e) => {
+              const v = e.target.value; setBudgetText(v);
+              change({ budget: v });
             }} /></label>
-            {budgetText !== null && !(/^\d+(\.\d{1,2})?$/.test(budgetText) && +budgetText > 0) && <p className="wf-pop-err">Enter an amount above $0.</p>}
+            {fieldError('budget') && <p className="wf-pop-err" id="wf-budget-error">{fieldError('budget')}</p>}
           </div>
           <div><span className="wf-lbl">What matters most</span><div className="wf-seg" role="group" aria-label="What matters most">
             {(['price', 'convenience', 'flexibility'] as const).map((k) => <button key={k} type="button" aria-pressed={preferences.priority === k} onClick={() => change({ priority: k })}>{k[0]!.toUpperCase() + k.slice(1)}</button>)}
