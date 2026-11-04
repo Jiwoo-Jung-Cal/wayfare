@@ -1,34 +1,67 @@
+// Plan (Wayfinder), design r2-final (Figma 61:196; reference design/exports/prototype/r2 "plan").
+// Visual layer by Agent 1 under Jiwoo's design-implementation scope. Logic is Agent 2's and
+// unchanged: createPlanGenerator / generatePlans (validation, unsupported inputs, ranking,
+// budget fit, unknown price never free) and selectPlanningOption (idempotent selection).
+// The composer's free text is not interpreted in this sample build; the trip's route and
+// dates come from the route and date chips, and the answer says so.
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Link } from 'react-router';
-import { appError, isUnknown, type AppError, type FeatureModule, type FeaturePageProps, type PlanOption } from '../../core/index.ts';
-import { Button, Card, ErrorState, InstantText, KeyValue, LoadingState, MoneyStat, MoneyText, Notice, StatusBadge } from '../../ui/index.tsx';
-import { SAMPLE_SCOPE, budgetForDisplay, createPlanGenerator, defaultPreferences, type PlanningResult, type Preferences } from './handler.ts';
+import { Link, useNavigate } from 'react-router';
+import { appError, isUnknown, type AppError, type FeatureModule, type FeaturePageProps, type MaybeMoney, type PlanOption } from '../../core/index.ts';
+import { ErrorState, Notice } from '../../ui/index.tsx';
+import { Icon, LogoMark } from '../../ui/icons.tsx';
+import { SAMPLE_SCOPE, createPlanGenerator, defaultPreferences, type ComparedPlan, type PlanningResult, type Preferences } from './handler.ts';
 import { selectPlanningOption } from './selection.ts';
+import { planArt, type ArtKey } from './planArt.ts';
 import './wayfinder.css';
 
-function PlanDetails({ plan }: { plan: PlanOption }) {
-  return <details><summary>Itinerary and cost sources</summary><div className="wf-stack">
-    {plan.lineItems.map((item) => <div key={item.id}>
-      <strong>{item.description}</strong> — <MoneyText value={item.price} />
-      {isUnknown(item.price) && <p>{item.price.reason}</p>}
-      <p className="wf-muted">{item.provenance.kind}: {item.provenance.source} · recorded <InstantText value={item.provenance.recordedAt} />
-        {item.expiresAt && <> · expires <InstantText value={item.expiresAt} /></>}</p>
-    </div>)}
-    <ul>{plan.assumptions.map((text) => <li key={text}>{text}</li>)}</ul>
-  </div></details>;
-}
+const CAT: Record<string, [string, string]> = {
+  flight: ['Flight', 'var(--wf-color-cat-flight)'],
+  hotel: ['Hotel', 'var(--wf-color-cat-stay)'],
+  activity: ['Activity', 'var(--wf-color-cat-activity)'],
+  transfer: ['Airport ride', 'var(--wf-color-cat-ride)'],
+  other: ['Other', 'var(--wf-color-text-muted)'],
+};
+const LEVEL = { low: 0, medium: 1, high: 2 } as const;
+const ART: Record<string, ArtKey> = { 'plan-demo-nonstop': 'hotel', 'plan-demo-saver': 'brooklyn', 'plan-demo-flex': 'walk' };
+const baseId = (id: string) => id.replace(/-free-time$/, '');
+const m0 = (m: MaybeMoney | undefined | null) => {
+  if (!m || isUnknown(m)) return '?';
+  return new Intl.NumberFormat('en-US', { style: 'currency', currency: m.currency, maximumFractionDigits: m.amountMinor % 100 === 0 ? 0 : 2 }).format(Math.abs(m.amountMinor) / 100);
+};
+const fmtD = (v: string) => new Date(`${v}T12:00:00Z`).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
+const dateLabel = (a: string, b: string) => {
+  const x = fmtD(a), y = fmtD(b);
+  return x.split(' ')[0] === y.split(' ')[0] ? `${x} – ${y.split(' ')[1]}` : `${x} – ${y}`;
+};
+const nightsBetween = (a: string, b: string) => Math.round((Date.parse(b) - Date.parse(a)) / 86_400_000);
 
-function PlanCosts({ plan }: { plan: PlanOption }) {
-  return <Card title={`${plan.label} — itemized`} actions={<StatusBadge tone="simulated">Sample quotes</StatusBadge>}>
-    <div>{plan.lineItems.map((item) => <KeyValue key={item.id} label={item.description} value={<MoneyText value={item.price} />} />)}</div>
-    <KeyValue label="Listed total" value={<MoneyText value={plan.total} />} emphasis="total" />
-    <PlanDetails plan={plan} />
-  </Card>;
+const Dots = ({ n, label }: { n: number; label: string }) => (
+  <span className="wf-dots" aria-hidden="false">
+    {[0, 1, 2].map((i) => <i key={i} data-on={i <= n || undefined} aria-hidden="true" />)}
+    <span className="wf-visually-hidden">{label}</span>
+  </span>
+);
+
+function Pop({ open, label, onClose, children, left }: { open: boolean; label: string; onClose: () => void; children: React.ReactNode; left: number }) {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    ref.current?.querySelector<HTMLElement>('button,input')?.focus();
+    const out = (e: MouseEvent) => { if (!(e.target as HTMLElement).closest('.wf-pop,.wf-chipb')) onClose(); };
+    const esc = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
+    document.addEventListener('mousedown', out); document.addEventListener('keydown', esc);
+    return () => { document.removeEventListener('mousedown', out); document.removeEventListener('keydown', esc); };
+  }, [open, onClose]);
+  if (!open) return null;
+  return <div ref={ref} className="wf-pop" role="dialog" aria-label={label} style={{ left }}>{children}</div>;
 }
 
 export function WayfinderPage({ tripId, ctx }: FeaturePageProps) {
+  const navigate = useNavigate();
   const [preferences, setPreferences] = useState<Preferences>(() => defaultPreferences({ workspaceId: 'pending', now: ctx.clock.now() }));
   const [workspaceId, setWorkspaceId] = useState<string | null>(null);
+  const [tripTitle, setTripTitle] = useState('your trip');
+  const [booked, setBooked] = useState(false);
   const [saved, setSaved] = useState<PlanOption | null>(null);
   const [result, setResult] = useState<PlanningResult | null>(null);
   const [error, setError] = useState<AppError | null>(null);
@@ -39,37 +72,59 @@ export function WayfinderPage({ tripId, ctx }: FeaturePageProps) {
   const [message, setMessage] = useState('');
   const [replayed, setReplayed] = useState(false);
   const [loadAttempt, setLoadAttempt] = useState(0);
+  const [prompt, setPrompt] = useState('');
+  const [asked, setAsked] = useState('');
+  const [pop, setPop] = useState<null | 'trav' | 'date' | 'route'>(null);
+  const [trav, setTrav] = useState({ a: 1, c: 0 });
+  const [draftDates, setDraftDates] = useState({ from: '', to: '' });
+  const [dateErr, setDateErr] = useState(false);
+  const [budgetText, setBudgetText] = useState<string | null>(null);
   const busy = useRef(false);
   const retry = useRef<() => void>(() => {});
+  const answerRef = useRef<HTMLDivElement>(null);
   const generator = useMemo(() => createPlanGenerator(), [tripId]);
   useEffect(() => {
     let active = true;
     setInitializing(true); setError(null);
     retry.current = () => setLoadAttempt((n) => n + 1);
-    Promise.all([ctx.repo.getTrip(tripId), ctx.repo.listPlans(tripId)]).then(([trip, plans]) => {
+    Promise.all([ctx.repo.getTrip(tripId), ctx.repo.listPlans(tripId), ctx.repo.snapshot()]).then(([trip, plans, snap]) => {
       if (!active) return;
       setInitializing(false);
       if (!trip.ok) { setError(trip.error); return; }
       if (!plans.ok) { setError(plans.error); return; }
       setWorkspaceId(trip.value.workspaceId);
+      setTripTitle(trip.value.title);
+      setBooked(snap.ok && snap.value.bookings.some((b) => b.tripId === tripId));
       setSaved(plans.value.find((p) => p.id === trip.value.selectedPlanId) ?? null);
     }).catch(() => { if (active) { setInitializing(false); setError(appError('unavailable', 'Could not load the saved trip')); } });
     return () => { active = false; generator.invalidate(); };
   }, [ctx.repo, tripId, generator, loadAttempt]);
 
-  function change<K extends keyof Preferences>(key: K, value: Preferences[K]) {
-    generator.invalidate(); setLoading(false); setDirty(true); setError(null); setMessage('');
-    setPreferences((p) => ({ ...p, [key]: value }));
-  }
-  async function generate() {
+  // Like the reference, the comparison for the trip's sample route is shown on arrival.
+  const autoRan = useRef(false);
+  useEffect(() => {
+    if (!workspaceId || autoRan.current) return;
+    autoRan.current = true;
+    void generate();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [workspaceId]);
+  async function generate(next: Preferences = preferences) {
     if (!workspaceId) return;
-    retry.current = () => { void generate(); };
+    retry.current = () => { void generate(next); };
     setLoading(true); setError(null); setMessage('');
-    const response = await generator.generate(preferences, { tripId, workspaceId, now: ctx.clock.now() });
+    const response = await generator.generate(next, { tripId, workspaceId, now: ctx.clock.now() });
     if (!response) return;
     setLoading(false);
     if (response.ok) { setResult(response.value); setDirty(false); }
     else setError(response.error);
+  }
+  /** Changing what matters re-ranks at once through the same generator (stale results can't be chosen meanwhile). */
+  function change(patch: Partial<Preferences>, regenerate = true) {
+    generator.invalidate(); setLoading(false); setDirty(true); setError(null); setMessage('');
+    const next = { ...preferences, ...patch };
+    setPreferences(next);
+    if (regenerate && result) void generate(next);
+    return next;
   }
   async function select(plan: PlanOption) {
     if (busy.current) return;
@@ -85,63 +140,176 @@ export function WayfinderPage({ tripId, ctx }: FeaturePageProps) {
     } catch { setError(appError('unavailable', 'Could not select the plan. Your options are preserved.')); }
     finally { busy.current = false; setSaving(null); }
   }
-  function fieldError(key: keyof Preferences) {
-    return error?.issues?.find((entry) => entry.path === key)?.message
-      ?? (error?.code === 'unsupported' && key === 'destination' ? 'Use the supported SFO–New York route and November 20–23 dates.' : undefined);
+  function ask(q: string) {
+    setAsked(q || 'the sample trip');
+    void generate().then(() => answerRef.current?.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' }));
   }
-  function fieldProps(key: keyof Preferences) {
-    const descriptions = [fieldError(key) && `wf-plan-${key}-error`, ['budget', 'interest', 'priority'].includes(key) && `wf-plan-${key}-help`].filter(Boolean).join(' ');
-    return { 'aria-labelledby': `wf-plan-${key}-label`, 'aria-invalid': !!fieldError(key), 'aria-describedby': descriptions || undefined };
-  }
-  const issue = (key: keyof Preferences) => fieldError(key) && <span className="wf-plan-field-error" id={`wf-plan-${key}-error`}>{fieldError(key)}</span>;
-  return <div className="wf-stack-lg wf-wayfinder">
-    <header className="wf-page-header"><h1>Wayfinder</h1>
-      <p>Compare proposed plans for San Francisco → New York, November 20–23, 2026. Selecting a plan does not buy or confirm anything.</p>
-    </header>
-    {initializing && <LoadingState label="Loading your saved plan…" />}
-    {saved && <Card title="Saved selected plan" actions={<StatusBadge tone="accent" wrap>Selected · no reservation made</StatusBadge>}><strong>{saved.label}</strong>
-      <MoneyStat label="Listed total" value={saved.total} caption="Planned components; no confirmed booking" />
-      <PlanDetails plan={saved} />
-      <Link to={`/trips/${tripId}/import`}>Import confirmed bookings</Link>
-    </Card>}
-    <Card title="Trip preferences" actions={<StatusBadge>One traveler · USD</StatusBadge>}><form className="wf-stack" noValidate onSubmit={(e) => { e.preventDefault(); void generate(); }}>
-      <fieldset disabled={saving !== null || initializing} className="wf-stack-lg"><legend className="wf-visually-hidden">Trip preferences for one traveler in USD</legend>
-        <div className="wf-plan-route-fields">
-          <label className="wf-stack"><span id="wf-plan-origin-label">Origin</span><input {...fieldProps('origin')} className="wf-input" value={preferences.origin} onChange={(e) => change('origin', e.target.value)} />{issue('origin')}</label>
-          <label className="wf-stack"><span id="wf-plan-destination-label">Destination</span><input {...fieldProps('destination')} className="wf-input" value={preferences.destination} onChange={(e) => change('destination', e.target.value)} />{issue('destination')}</label>
-          <label className="wf-stack"><span id="wf-plan-startDate-label">Start date</span><input {...fieldProps('startDate')} className="wf-input" type="date" value={preferences.startDate} onChange={(e) => change('startDate', e.target.value)} />{issue('startDate')}</label>
-          <label className="wf-stack"><span id="wf-plan-endDate-label">End date</span><input {...fieldProps('endDate')} className="wf-input" type="date" value={preferences.endDate} onChange={(e) => change('endDate', e.target.value)} />{issue('endDate')}</label>
+  const fieldError = (key: keyof Preferences) => error?.issues?.find((entry) => entry.path === key)?.message
+    ?? (error?.code === 'unsupported' && (key === 'destination' || key === 'origin') ? 'Use the supported SFO–New York route and November 20–23 dates.' : undefined);
+  const travelers = trav.a + trav.c;
+  const shownPreferences = result?.preferences ?? preferences;
+  const nights = nightsBetween(shownPreferences.startDate, shownPreferences.endDate);
+  const budgetNum = parseFloat(shownPreferences.budget);
+
+  const card = ({ plan, knownSubtotal, budgetStatus }: ComparedPlan, index: number, list: ComparedPlan[]) => {
+    const isSaved = saved ? baseId(saved.id) === baseId(plan.id) && saved.id === plan.id : false;
+    const isCurrent = isSaved && booked;
+    const total = plan.total;
+    const known = !isUnknown(knownSubtotal) ? knownSubtotal.amountMinor / 100 : 0;
+    const left = !isUnknown(total) ? budgetNum - total.amountMinor / 100 : null;
+    const stat = budgetStatus === 'within' ? <span className="wf-gain">{m0({ amountMinor: Math.round((left ?? 0) * 100), currency: 'USD' })} under budget</span>
+      : budgetStatus === 'over' ? <span className="wf-loss">{m0({ amountMinor: Math.round(-(left ?? 0) * 100), currency: 'USD' })} over budget</span>
+      : known > budgetNum ? <span className="wf-loss">{m0({ amountMinor: Math.round((known - budgetNum) * 100), currency: 'USD' })}+ over budget</span>
+      : <span className="wf-muted">Can’t check budget yet</span>;
+    const badge = index === 0 ? { tone: 'ok', icon: 'check' as const, text: { price: 'Best price', convenience: 'Most convenient', flexibility: 'Most flexible' }[result!.preferences.priority] }
+      : isSaved ? { tone: 'info', icon: 'spark' as const, text: booked ? 'Your current trip' : 'Your selected plan' } : null;
+    const block = budgetStatus === 'unknown' ? 'A price is still unknown. You can choose this once every part is quoted.' : budgetStatus === 'over' ? 'This is over your budget. Raise the budget or pick “Free time” to choose it.' : '';
+    const disabled = dirty || loading || saving !== null || budgetStatus !== 'within';
+    return <article key={plan.id} className="wf-pcard" data-selected={isSaved || undefined} aria-labelledby={`wf-pc-${plan.id}`} style={{ animationDelay: `${index * 70}ms` }}>
+      <div className="wf-ph" role="img" aria-label={`Illustration: ${plan.label}`}>
+        <span dangerouslySetInnerHTML={{ __html: planArt(ART[baseId(plan.id)] ?? 'hotel') }} />
+        {badge && <span className="wf-tag wf-ph-badge" data-tone={badge.tone}><Icon name={badge.icon} />{badge.text}</span>}
+      </div>
+      <span className="wf-rank">OPTION {index + 1}{isCurrent ? ' · BOOKED' : ''}</span>
+      <h3 className="wf-pc-t" id={`wf-pc-${plan.id}`}>{plan.label}</h3>
+      <p className="wf-pc-s">{plan.summary}</p>
+      <div className="wf-pc-tot">{isUnknown(total) ? <b>{m0(knownSubtotal)} + ?</b> : <b>{m0(total)}</b>}<span>{stat}</span></div>
+      <div className="wf-cbar" role="img" aria-label={`Cost split: ${plan.lineItems.map((it) => `${CAT[it.kind]![0]} ${isUnknown(it.price) ? 'not quoted' : m0(it.price)}`).join(', ')}`}>
+        {plan.lineItems.map((it) => <i key={it.id} data-unk={isUnknown(it.price) || undefined} style={{ flexGrow: isUnknown(it.price) ? 60 : it.price.amountMinor / 100, background: isUnknown(it.price) ? undefined : CAT[it.kind]![1] }} title={`${CAT[it.kind]![0]}: ${isUnknown(it.price) ? 'not quoted' : m0(it.price)}`} />)}
+      </div>
+      <div className="wf-rates"><span>Convenience<Dots n={LEVEL[plan.convenience]} label={plan.convenience} /></span><span>Flexibility<Dots n={LEVEL[plan.flexibility]} label={plan.flexibility} /></span></div>
+      <details>
+        <summary><Icon name="chev" />Where the money goes</summary>
+        {plan.lineItems.map((it) => <div className="wf-li" key={it.id}><i style={{ background: CAT[it.kind]![1] }} /><span>{it.description}<small>{isUnknown(it.price) ? 'No quote received yet' : `Sample quote · ${it.provenance.source}`}</small></span><span className="wf-num">{isUnknown(it.price) ? 'Not quoted' : m0(it.price)}</span></div>)}
+        <div className="wf-li wf-li-sum"><i /><span>{isUnknown(total) ? 'Known so far' : 'Total for the listed parts'}</span><span className="wf-num">{m0(knownSubtotal)}{isUnknown(total) ? ' + ?' : ''}</span></div>
+        <ul className="wf-assume">{plan.assumptions.map((a) => <li key={a}>{a}</li>)}</ul>
+      </details>
+      <div>
+        {isCurrent ? <Link className="wf-button" data-size="sm" to={`/trips/${tripId}`}>View your trip</Link>
+          : <button type="button" className="wf-button" data-size="sm" data-variant={isSaved ? 'secondary' : 'dark'} disabled={disabled} onClick={() => void select(plan)}>{saving === plan.id ? 'Saving plan…' : isSaved ? 'Selected plan' : 'Choose this plan'}</button>}
+      </div>
+      {!isCurrent && block && <p className="wf-why-no">{block}</p>}
+      {isSaved && !isCurrent && <p className="wf-why-no">Saved to your trip. Nothing is booked or paid until you confirm.</p>}
+      {list.length === 0 && null}
+    </article>;
+  };
+
+  const rows = result ? (['flight', 'hotel', 'activity', 'transfer'] as const).filter((k) => result.options.some((o) => o.plan.lineItems.some((i) => i.kind === k))) : [];
+  const cell = (o: ComparedPlan, k: string) => {
+    const it = o.plan.lineItems.find((i) => i.kind === k);
+    if (!it) return '—';
+    if (isUnknown(it.price)) return <span className="wf-muted">Not quoted</span>;
+    const min = Math.min(...result!.options.map((q) => q.plan.lineItems.find((i) => i.kind === k)).filter((i): i is NonNullable<typeof i> => !!i && !isUnknown(i.price)).map((i) => (i.price as { amountMinor: number }).amountMinor));
+    return <span className={it.price.amountMinor === min ? 'wf-lo' : ''}>{m0(it.price)}</span>;
+  };
+
+  return <div className="wf-wayfinder">
+    <div className="wf-plan-hero">
+      <LogoMark className="wf-plan-wm" />
+      <h1>Where to next?</h1>
+      <p>Describe the trip you want. WayFare compares options, shows every cost, and books it for you.</p>
+      <form className="wf-composer" onSubmit={(e) => { e.preventDefault(); ask(prompt.trim()); }}>
+        <label htmlFor="wf-prompt" className="wf-visually-hidden">Describe your trip</label>
+        <textarea id="wf-prompt" rows={2} placeholder="3 nights in New York from San Francisco, under $1,000, with a skyline walk" value={prompt} onChange={(e) => setPrompt(e.target.value)}
+          onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); ask(prompt.trim()); } }} />
+        <div className="wf-cb">
+          <button type="button" className="wf-ib" aria-label="Attach a booking confirmation" title="Attach a booking confirmation" onClick={() => void navigate(`/trips/${tripId}/import`)}><Icon name="clip" /></button>
+          <button type="button" className="wf-chipb wf-chip-route" aria-haspopup="dialog" aria-expanded={pop === 'route'} aria-label={`Route: ${preferences.origin} → ${preferences.destination}`} title={`${preferences.origin} → ${preferences.destination}`} onClick={() => setPop(pop === 'route' ? null : 'route')}><Icon name="route" /><span>{preferences.origin} → {preferences.destination}</span></button>
+          <button type="button" className="wf-chipb" aria-haspopup="dialog" aria-expanded={pop === 'trav'} onClick={() => setPop(pop === 'trav' ? null : 'trav')}><Icon name="user" /><span>{travelers} traveler{travelers > 1 ? 's' : ''}</span></button>
+          <button type="button" className="wf-chipb" aria-haspopup="dialog" aria-expanded={pop === 'date'} onClick={() => { setDraftDates({ from: preferences.startDate, to: preferences.endDate }); setDateErr(false); setPop(pop === 'date' ? null : 'date'); }}><Icon name="cal" /><span>{dateLabel(preferences.startDate, preferences.endDate)}</span></button>
+          <button type="submit" className="wf-send" aria-label="Plan it" disabled={!workspaceId || loading || initializing}><Icon name="send" /></button>
+          <Pop open={pop === 'route'} label="Route" left={52} onClose={() => setPop(null)}>
+            <h4>Where from and to?</h4>
+            <div className="wf-dates">
+              <label>Origin<input value={preferences.origin} aria-invalid={!!fieldError('origin')} onChange={(e) => change({ origin: e.target.value }, false)} /></label>
+              <label>Destination<input value={preferences.destination} aria-invalid={!!fieldError('destination')} onChange={(e) => change({ destination: e.target.value }, false)} /></label>
+            </div>
+            <p className="wf-muted wf-pop-note">{SAMPLE_SCOPE}</p>
+            <div className="wf-pf">
+              <button type="button" className="wf-button" data-size="sm" onClick={() => { setBudgetText(null); change(defaultPreferences({ workspaceId: workspaceId ?? 'pending', now: ctx.clock.now() }), false); }}>Use supported sample</button>
+              <button type="button" className="wf-button" data-variant="dark" data-size="sm" onClick={() => { setPop(null); if (result) void generate(); }}>Done</button>
+            </div>
+          </Pop>
+          <Pop open={pop === 'trav'} label="Travelers" left={210} onClose={() => setPop(null)}>
+            <h4>Who’s going?</h4>
+            {(['a', 'c'] as const).map((k) => <div className="wf-stepper" key={k}>
+              <div>{k === 'a' ? 'Adults' : 'Children'}<small>{k === 'a' ? 'Age 13 or older' : 'Ages 2–12'}</small></div>
+              <div className="wf-ctr">
+                <button type="button" aria-label={k === 'a' ? 'Fewer adults' : 'Fewer children'} disabled={k === 'a' ? trav.a <= 1 : trav.c <= 0} onClick={() => setTrav((t) => ({ ...t, [k]: t[k] - 1 }))}>−</button>
+                <b className="wf-num">{trav[k]}</b>
+                <button type="button" aria-label={k === 'a' ? 'More adults' : 'More children'} disabled={travelers >= 9} onClick={() => setTrav((t) => ({ ...t, [k]: t[k] + 1 }))}>+</button>
+              </div>
+            </div>)}
+            <p className="wf-muted wf-pop-note">Sample quotes are priced for one traveler.</p>
+            <div className="wf-pf"><button type="button" className="wf-button" data-variant="dark" data-size="sm" onClick={() => setPop(null)}>Done</button></div>
+          </Pop>
+          <Pop open={pop === 'date'} label="Dates" left={330} onClose={() => setPop(null)}>
+            <h4>When are you going?</h4>
+            <div className="wf-dates">
+              <label>Leave<input type="date" value={draftDates.from} onChange={(e) => setDraftDates((d) => ({ ...d, from: e.target.value }))} /></label>
+              <label>Return<input type="date" value={draftDates.to} onChange={(e) => setDraftDates((d) => ({ ...d, to: e.target.value }))} /></label>
+            </div>
+            {dateErr && <p className="wf-pop-err" role="alert">The return date must be after the leave date.</p>}
+            <div className="wf-pf"><button type="button" className="wf-button" data-variant="dark" data-size="sm" onClick={() => {
+              const bad = !draftDates.from || !draftDates.to || draftDates.to <= draftDates.from;
+              setDateErr(bad);
+              if (!bad) { setPop(null); change({ startDate: draftDates.from, endDate: draftDates.to }); }
+            }}>Done</button></div>
+          </Pop>
         </div>
-        <div className="wf-plan-choice-fields">
-          <label className="wf-stack"><span id="wf-plan-budget-label">Budget for listed components (USD)</span><input {...fieldProps('budget')} className="wf-input" inputMode="decimal" value={preferences.budget} onChange={(e) => change('budget', e.target.value)} />{issue('budget')}<span className="wf-muted" id="wf-plan-budget-help">Excludes return travel, meals, taxes/fees not itemized</span></label>
-          <label className="wf-stack"><span id="wf-plan-interest-label">Interest</span><select {...fieldProps('interest')} className="wf-input" value={preferences.interest} onChange={(e) => change('interest', e.target.value as Preferences['interest'])}><option value="skyline">Skyline walk</option><option value="free_time">Free time · omit paid activity</option></select><span className="wf-muted" id="wf-plan-interest-help">Free time omits the $80 sample activity</span></label>
-          <label className="wf-stack"><span id="wf-plan-priority-label">Prioritize</span><select {...fieldProps('priority')} className="wf-input" value={preferences.priority} onChange={(e) => change('priority', e.target.value as Preferences['priority'])}><option value="price">Price</option><option value="convenience">Convenience</option><option value="flexibility">Flexibility</option></select><span className="wf-muted" id="wf-plan-priority-help">Price · Convenience · Flexibility</span></label>
+      </form>
+      <div className="wf-examples">
+        <div className="wf-eh">Or start from an example</div>
+        <div className="wf-ex-grid">
+          {([['compass', 'Plan a weekend away', 'Flights, a stay and one thing to do', 'A long weekend in New York, Nov 20–23, under $1,000'],
+            ['shield', 'Keep it refundable', 'Only options you can cancel for free', 'Only fully refundable flights and hotels for New York, Nov 20–23'],
+            ['search', 'Find a cheaper flight', 'Same dates, lower fare', 'Find a cheaper flight from San Francisco to New York on Nov 20']] as const).map(([icon, t, s, q]) => (
+            <button key={t} type="button" className="wf-ex" onClick={() => { setPrompt(q); ask(q); }}><Icon name={icon} /><div><b>{t}</b><span>{s}</span></div></button>
+          ))}
         </div>
-        <div className="wf-row"><Button type="submit" variant="primary" disabled={!workspaceId || loading}>{result ? 'Regenerate options' : 'Generate options'}</Button>
-          <Button variant="ghost" onClick={() => { generator.invalidate(); setPreferences(defaultPreferences({ workspaceId: workspaceId ?? 'pending', now: ctx.clock.now() })); setDirty(true); setLoading(false); setError(null); setMessage(''); }}>Use supported sample</Button></div>
-      </fieldset>
-    </form></Card>
-    <Notice tone="simulated"><strong>Sample planning candidates</strong><p>{SAMPLE_SCOPE}</p>
-      Providers and prices are fictional, not live availability. Totals cover the listed components; return travel, meals, and separately itemized taxes or fees are not quoted.
-    </Notice>
-    {loading && <LoadingState label="Comparing sample candidates; previous results remain below…" />}
-    {error && <ErrorState error={error} onRetry={() => retry.current()} />}
-    {message && <div role="status"><Notice tone={replayed ? 'info' : 'success'}>{message}</Notice></div>}
-    {dirty && result && <Notice tone="warning">Preferences changed. These are previous results; regenerate before selecting.</Notice>}
-    {result && <section aria-label="Plan comparison" className="wf-stack">
-      <h2>Compare proposed plans</h2><p>Ordered by {result.preferences.priority} · budget <MoneyText value={budgetForDisplay(result.preferences.budget)} /> for listed components</p><p className="wf-muted">{result.options[0]?.explanation}</p>
-      <p>Results: {result.preferences.origin} → {result.preferences.destination}, {result.preferences.startDate}–{result.preferences.endDate}; {result.preferences.interest === 'skyline' ? 'skyline walk' : 'free time'}.</p>
-      <div className="wf-plan-options">{result.options.map(({ plan, knownSubtotal, budgetStatus }, index) => <article className="wf-card wf-stack wf-plan-card" key={plan.id} data-selected={saved?.id === plan.id || undefined}>
-        <div className="wf-plan-card-title"><h3>{`${index + 1}. ${plan.label}`}</h3><StatusBadge tone="simulated" wrap>Sample quote</StatusBadge></div><p className="wf-muted">{plan.summary}</p>
-        <MoneyStat label="Listed total" value={plan.total} size="hero" tone={isUnknown(plan.total) ? 'muted' : 'default'} caption={isUnknown(plan.total) ? <>Known subtotal: <MoneyText value={knownSubtotal} /> plus an unknown price.</> : 'Covers listed components only'} />
-        {saved?.id === plan.id && <StatusBadge tone="accent" wrap>Selected · no reservation made</StatusBadge>}
-        <div><StatusBadge tone={budgetStatus === 'within' ? 'positive' : 'warning'} wrap>{budgetStatus === 'within' ? 'Within component budget' : budgetStatus === 'over' ? 'Over component budget' : 'Budget fit unknown'}</StatusBadge></div>
-        <p className="wf-muted">Convenience: {plan.convenience} · Flexibility: {plan.flexibility}</p>
-        <Button variant={saved?.id === plan.id ? 'secondary' : 'primary'} disabled={dirty || loading || saving !== null || budgetStatus !== 'within'} onClick={() => void select(plan)}>{saving === plan.id ? 'Saving plan…' : saved?.id === plan.id ? 'Selected plan' : 'Select plan'}</Button>
-        {budgetStatus !== 'within' && <p className="wf-muted">{budgetStatus === 'over' ? 'Raise the budget or change interests before selecting.' : 'Choose a fully priced option; an unknown price is not free.'}</p>}
-      </article>)}</div>
-      <div className="wf-plan-breakdowns" aria-label="Itemized plan costs">{result.options.map(({ plan }) => <PlanCosts key={plan.id} plan={plan} />)}</div>
-    </section>}
+      </div>
+      {saved && <div className="wf-recent"><span>{tripTitle} · {booked ? 'booked from this plan' : 'plan selected, nothing booked yet'}</span><span>{saved.label}</span></div>}
+    </div>
+
+    <div className="wf-answer" ref={answerRef}>
+      {error && <ErrorState error={error} onRetry={() => retry.current()} />}
+      {message && <div role="status"><Notice tone={replayed ? 'info' : 'success'}>{message}</Notice></div>}
+      {loading && !result && <><div className="wf-ah"><span className="wf-spark"><Icon name="spark" /></span><p className="wf-muted">Wayfinder is comparing flights, stays and activities…</p></div><div className="wf-plan-options">{[0, 1, 2].map((i) => <div key={i} className="wf-shimmer" />)}</div></>}
+      {result && <section aria-label="Plan comparison">
+        <div className="wf-ah"><span className="wf-spark"><Icon name="spark" /></span><div>
+          <b>I found {result.options.length} plans for {result.preferences.destination}, {dateLabel(result.preferences.startDate, result.preferences.endDate)} · {result.preferences.travelers} traveler.</b>
+          <p className="wf-muted">Sample quotes for {nights} night{nights === 1 ? '' : 's'}, one traveler and the listed parts only.{travelers > 1 ? ` You chose ${travelers} travelers; group pricing is not supported.` : ''} Change what matters to you and Wayfinder re-ranks them.{asked && !/new york|nyc|jfk/i.test(asked) ? ' This demo only has sample candidates for San Francisco → New York, Nov 20–23.' : ''}</p>
+        </div></div>
+        <div className="wf-wfbox">
+          <div className="wf-wfk"><Icon name="compass" />Wayfinder<span className="wf-label-mono">Compare your options</span></div>
+          <div><span className="wf-lbl" id="wf-bl">Budget</span>
+            <label className="wf-money-in"><span>$</span><input aria-labelledby="wf-bl" aria-describedby={fieldError('budget') ? 'wf-budget-error' : undefined} inputMode="decimal" value={budgetText ?? preferences.budget} aria-invalid={!!fieldError('budget')} onChange={(e) => {
+              const v = e.target.value; setBudgetText(v);
+              change({ budget: v });
+            }} /></label>
+            {fieldError('budget') && <p className="wf-pop-err" id="wf-budget-error">{fieldError('budget')}</p>}
+          </div>
+          <div><span className="wf-lbl">What matters most</span><div className="wf-seg" role="group" aria-label="What matters most">
+            {(['price', 'convenience', 'flexibility'] as const).map((k) => <button key={k} type="button" aria-pressed={preferences.priority === k} onClick={() => change({ priority: k })}>{k[0]!.toUpperCase() + k.slice(1)}</button>)}
+          </div></div>
+          <div><span className="wf-lbl">Saturday morning</span><div className="wf-seg" role="group" aria-label="Saturday morning">
+            {([['skyline', 'Skyline walk · $80'], ['free_time', 'Free time']] as const).map(([k, l]) => <button key={k} type="button" aria-pressed={preferences.interest === k} onClick={() => change({ interest: k })}>{l}</button>)}
+          </div></div>
+          <p className="wf-why"><Icon name="info" />{result.preferences.priority === 'price' ? 'Ordered by listed cost. A plan with a missing price goes last.' : `Ordered by ${result.preferences.priority}, then by price. Budget checks stay the same.`}</p>
+        </div>
+        {dirty && <Notice tone="warning">Preferences changed. These are previous results; they update when the new comparison is ready.</Notice>}
+        <div className="wf-plan-options">{result.options.map((o, i, l) => card(o, i, l))}</div>
+        <div className="wf-cmp">
+          <h3>Side by side</h3>
+          <p>Every listed cost, in one place. The lowest price in each row is green. Return travel, meals and unlisted fees aren’t included.</p>
+          <div className="wf-cmp-wrap"><table className="wf-cmp-t">
+            <thead><tr><th scope="col">Cost</th>{result.options.map((o) => <th scope="col" key={o.plan.id}>{o.plan.label}</th>)}</tr></thead>
+            <tbody>{rows.map((k) => <tr key={k}><td><i style={{ background: CAT[k]![1] }} />{CAT[k]![0]}</td>{result.options.map((o) => <td key={o.plan.id}>{cell(o, k)}</td>)}</tr>)}</tbody>
+            <tfoot><tr><td>Total</td>{result.options.map((o) => <td key={o.plan.id}>{isUnknown(o.plan.total) ? `${m0(o.knownSubtotal)} + ?` : m0(o.plan.total)}</td>)}</tr></tfoot>
+          </table></div>
+        </div>
+      </section>}
+    </div>
   </div>;
 }
 

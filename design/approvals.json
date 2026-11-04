@@ -2,9 +2,36 @@
   "designOwner": "Jiwoo",
   "figmaUrl": "https://www.figma.com/design/ZZS9jEmANeCrjGxWxxCofK",
   "features": {
-    "foundation": {"status":"pending","revision":null,"handoff":"design/handoffs/foundation.md"},
-    "wayfinder-intake": {"status":"pending","revision":null,"handoff":"design/handoffs/wayfinder-intake.md"},
-    "reroute": {"status":"pending","revision":null,"handoff":"design/handoffs/reroute.md"},
-    "tripwallet": {"status":"pending","revision":null,"handoff":"design/handoffs/tripwallet.md"}
-  }
+    "foundation": {
+      "status": "approved",
+      "revision": "r2-final",
+      "handoff": "design/handoffs/foundation.md",
+      "approvedOn": "2026-11-03",
+      "specification": "design/handoffs/r2-final.md"
+    },
+    "wayfinder-intake": {
+      "status": "approved",
+      "revision": "r2-final",
+      "handoff": "design/handoffs/wayfinder-intake.md",
+      "approvedOn": "2026-11-03",
+      "specification": "design/handoffs/r2-final.md",
+      "note": "Wayfinder screen is new in r2; booking intake keeps the r1 layout restyled with r2 foundations."
+    },
+    "reroute": {
+      "status": "approved",
+      "revision": "r2-final",
+      "handoff": "design/handoffs/reroute.md",
+      "approvedOn": "2026-11-03",
+      "specification": "design/handoffs/r2-final.md"
+    },
+    "tripwallet": {
+      "status": "approved",
+      "revision": "r2-final",
+      "handoff": "design/handoffs/tripwallet.md",
+      "approvedOn": "2026-11-03",
+      "specification": "design/handoffs/r2-final.md"
+    }
+  },
+  "figmaPage": "09 — WayFare final (55:3)",
+  "referencePrototype": "design/exports/prototype/r2/index.html"
 }

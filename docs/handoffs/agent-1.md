@@ -1,8 +1,31 @@
 # Agent 1 handoff
 
-Status (2026-11-02, cloud session, later): main `87ad471` has foundation, Wayfinder/intake (#21, #40), TripWallet, interim design r1 (approval pending), the r1 root-font fix (#41), Figma Code Layer scripts, vendor chunk splitting, atomic action preconditions (#38) and the Wayfinder/intake e2e coverage (#36). ReRoute (#37, Kelvin) is integrated **on branch** in draft PR #39, which is green on current main and waits on Kelvin's link fix and precondition adoption in #37. The dated sections below keep their historical checks; the latest section supersedes their status.
+Status (2026-11-04): the demo implements design **r2-final** and matches the App Design session's reference (`design/exports/prototype/r2/index.html`, byte-identical to the "WayFare Trip" artifact). Hosted at https://jiwoo-jung-cal.github.io/wayfare/ (GitHub Pages, sample mode); `version.json` there names the commit it serves. The dated sections below keep their historical checks; this section supersedes their status.
 Task Issue: https://github.com/Jiwoo-Jung-Cal/wayfare/issues/3 (foundation, closed). Integration is tracked on #8.
-Branch / commit / PR: main `87ad471` (after #36). Open: #37 (Kelvin, draft), #39 (Agent 1 ReRoute integration, draft, head `812f5a6`). Work goes on short-lived `agent-1/<slug>` branches cut from main.
+Work goes on short-lived `agent-1/<slug>` branches cut from main.
+
+## 2026-11-04: r2-final design implementation and parity
+
+Merged (each green in CI and locally: typecheck, `npm test` 174, build, `CI=1 npx playwright test` 29):
+- #48 foundations (tokens, fonts, light/dark) · #49 shell (top bar, trip menu, tabs, bottom bar) · #50 Overview hero · #51 Itinerary.
+- Parity with the reference: #53 shell chrome (footer labels, collapsible demo controls, toasts, bell, **Ask WayFare** scripted demo assistant, simulated Google sign-in/calendar, sample trips, first-visit scenario) · #54 Overview copy, passes and tiles · #55 ReRoute visual layer · #56 TripWallet visual layer · #57 Plan visual layer.
+- Feature screens: visual layer only, under Jiwoo's scope; feature logic files are untouched (reroute `model.ts`/`actions.ts`, tripwallet `ledger.ts`/`evidence.ts`, wayfinder `handler.ts`/`selection.ts`). Owner reviews requested on #4, #6, #7.
+
+Honest deviations from the reference: plan cards use the reference's illustrations (photo licence unconfirmed); sign-in, calendar sync and assistant replies are labelled demo states; the boarding pass shows only what the stored confirmation says (no "Economy"); the composer prompt is not parsed (route and dates come from the chips).
+
+Test notes: suites start from the old empty workspace with demo controls open through storage preferences in `playwright.config.ts` (`wayfare:v1:first-stage=planning`, `wayfare:v1:demo-controls=open`); `e2e/parity.spec.ts` covers the fresh-visitor scenario. Agent 2's `src/features/wayfinder/verify-browser.mjs` and Agent 5's `verify-browser.mjs` (manual, not in CI) still use old labels.
+
+Later on 2026-11-04 (merged): #58 reference scenario for returning visitors with an empty workspace; #60 mobile layout to the r2 390 px exports; #61 boarding pass always shown (placeholders until a flight is booked) with the stub tear at every window size; #59 (Agent 2) Wayfinder budget validation, picker overflow and one-traveler scope, reconciled with #58/#60 by merge commit `b1edbfd` and reviewed. Shared findings from #59 fixed in the following PR: ErrorState duplicate keys for repeated issue paths, and `.wf-input` resetting the intake textarea's IBM Plex Mono.
+
+## Live AI readiness (booking extraction)
+
+- Path: browser → `POST /api/extract/booking` (connected mode) → `extractBooking` → `createAnthropicAdapter` (`server/ai/modelAdapter.ts`, structured output, refusal/truncation/error mapping) → normalized `BookingExtraction` → the editable intake review (unchanged). Provider failures are errors, never sample fallbacks.
+- Config is server-only (`server/config.ts`): `ANTHROPIC_API_KEY` (or `WAYFARE_ANTHROPIC_API_KEY`), optional `WAYFARE_AI_MODEL` (default `claude-opus-5-5`), `WAYFARE_AI_EFFORT`, `WAYFARE_AI_TIMEOUT_MS`. The base URL is always explicit, so an unrelated `ANTHROPIC_BASE_URL` in the shell is never inherited.
+- **Not verified live:** no API key is available in this cloud environment and no backend is hosted. The public Pages build is sample mode by design and must never carry a key.
+- `npm run smoke:live-ai` (server only): with a key, sends the four sample confirmations through the real adapter and production extraction path and lists field differences from the reviewed facts for review; provider errors fail it. Without a key it names the missing setting and exits 2. Its logic is unit-tested with a fake adapter.
+- To demonstrate live AI: on a machine with the key, `ANTHROPIC_API_KEY=… npm run smoke:live-ai`, then `npm run server` and `VITE_WAYFARE_API_URL=http://localhost:8787 npm run dev`, paste a non-sample confirmation into Import, and review/edit before saving (the review labels the extraction "Live").
+
+Remaining: owner reviews of #55–#57 (Agents 4/5/2); a live AI run needs a server key (Jiwoo); Figma Code Layer `24:1182` is an old snapshot (`5249cb7`), not current main; a re-import needs Jiwoo's go-ahead, and a deployed website does not establish Figma runtime sync.
 
 ## For Agent 3 (CI)
 
@@ -259,4 +282,19 @@ The wallet browser flow also checks the populated/reconciled wallet at 390/360/3
 - #39 merged `30f2dbb`. The shared journey now clicks ReRoute's own "Open TripWallet" and asserts the trip wallet URL and heading. Restoring the old route-relative link fails it with `/#/`.
 - Checks on #39: typecheck; **174 passed, 0 skipped, 0 todo**; build; **e2e 20 passed, 0 skipped**; ReRoute journeys 3/3 runs green with retries=0.
 - Remaining: Jiwoo's r1 visual approval; the Code Layer preview output; live AI; hosting; Agent 3's release pass (#9).
+
+
+## Demo baseline and hosting (2026-11-03)
+
+- **Baseline: main `17623fc` in sample mode.** The guide is `docs/DEMO.md`: launch, what's simulated, a 10-step walkthrough (plan → intake → disruption → ReRoute comparison/approval → TripWallet → receipts → reload), and limitations.
+- **Provenance:** every production build writes `version.json` and `<meta name="wayfare-source" content="<SHA>[-dirty]; mode=…">`. `WAYFARE_SOURCE_SHA` overrides git.
+- **Executable check:** `e2e/demo.spec.ts` (Playwright project `demo`) runs the walkthrough with real controls against a fresh production build served by `vite preview` under `/wayfare/`. PR #44 CI (run 41621290545, job 125867364487): 21 e2e passed, including `[demo]`. Locally: typecheck; 174 tests; build; e2e 21 passed / 0 skipped; demo 3/3 runs with retries=0.
+- **Hosting: no URL yet.** GitHub Pages is the established path (`docs/ARCHITECTURE.md`: static `dist/`, relative base, hash routing). Two inputs are missing:
+  - Jiwoo: Settings → Pages → Source **GitHub Actions**. The repo is private, so this needs a plan that allows Pages there, and the site will be public.
+  - Agent 3: a `.github/workflows/demo-pages.yml`. The exact YAML was requested on #9 (comment 6601462179).
+
+  Once a run deploys: verify the live URL with the walkthrough, and record the URL and the `version.json` SHA on #8.
+- **Figma:** re-checked 2026-11-03. Page `1:8` still has a single code layer (`24:1182`, source `5249cb7`, not current main); the native prototype frames are untouched. The static render is still an empty frame, and the preview output can only be read by a signed-in human. No re-import was done, since Jiwoo is preparing an updated design.
+- **Reviews:** #43 (Agent 4 handoff) is technically accurate (comment 6601335309); its merge is Jiwoo's call. #42 (Agent 3) is 14 commits behind, so a refresh was requested before the technical review.
+- **Brian (#7):** no new PR or shared-contract request. The evidence-handler seam is on main already (#26). His follow-up gets integrated when it's reviewed.
 

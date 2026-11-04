@@ -1,11 +1,44 @@
-import { defineConfig } from 'vitest/config';
+import { execSync } from 'node:child_process';
+import { defineConfig, type Plugin } from 'vitest/config';
 import react from '@vitejs/plugin-react';
+
+/**
+ * Build provenance (#8): which source commit and mode a build came from, so a hosted
+ * or Figma-embedded demo can be mapped to an exact commit. Non-visual: a <meta> tag in
+ * index.html and a version.json next to it. WAYFARE_SOURCE_SHA overrides git (CI, or an
+ * import without .git); Vercel builds have no .git, so its VERCEL_GIT_COMMIT_SHA is used
+ * next; a checkout with uncommitted changes is marked "-dirty".
+ */
+function buildProvenance(): Plugin {
+  const git = (cmd: string) => {
+    try { return execSync(cmd, { stdio: ['ignore', 'pipe', 'ignore'] }).toString().trim(); } catch { return ''; }
+  };
+  let info: { source: string; dirty: boolean; mode: 'sample' | 'connected'; builtAt: string };
+  return {
+    name: 'wayfare-build-provenance',
+    apply: 'build',
+    configResolved(config) {
+      const explicit = process.env.WAYFARE_SOURCE_SHA?.trim() || process.env.VERCEL_GIT_COMMIT_SHA?.trim();
+      const sha = explicit || git('git rev-parse HEAD') || 'unknown';
+      const dirty = !explicit && sha !== 'unknown' && git('git status --porcelain --untracked-files=no') !== '';
+      const apiUrl = config.env.VITE_WAYFARE_API_URL ?? process.env.VITE_WAYFARE_API_URL ?? '';
+      info = { source: sha, dirty, mode: apiUrl ? 'connected' : 'sample', builtAt: new Date().toISOString() };
+    },
+    transformIndexHtml() {
+      const content = `${info.source}${info.dirty ? '-dirty' : ''}; mode=${info.mode}`;
+      return [{ tag: 'meta', attrs: { name: 'wayfare-source', content }, injectTo: 'head' }];
+    },
+    generateBundle() {
+      this.emitFile({ type: 'asset', fileName: 'version.json', source: `${JSON.stringify(info, null, 2)}\n` });
+    },
+  };
+}
 
 // Relative base so the production build can be served from any path
 // (static host, Figma Code Layer preview, GitHub Pages) without rewrites.
 export default defineConfig({
   base: './',
-  plugins: [react()],
+  plugins: [react(), buildProvenance()],
   build: {
     rolldownOptions: {
       output: {

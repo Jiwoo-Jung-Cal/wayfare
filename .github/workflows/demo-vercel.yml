@@ -1,0 +1,92 @@
+name: Demo (Vercel, sample mode)
+
+# Deploys the sample-mode production build (docs/DEMO.md) to Vercel with the
+# Vercel CLI, then checks that the live version.json names this commit.
+# Needs one repository secret, VERCEL_TOKEN (Vercel → Account Settings → Tokens).
+# Without it the job skips with a notice. The first run creates the Vercel project
+# "wayfare" in the token's default scope; set the repository variable VERCEL_SCOPE
+# to deploy into a specific team. Sample mode only: no API URL, no AI key.
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: wayfare-demo-vercel
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_SCOPE: ${{ vars.VERCEL_SCOPE }}
+      VERCEL_CLI: vercel@64.7.0
+      VERCEL_TELEMETRY_DISABLED: '1'
+    steps:
+      - name: Check for the Vercel token
+        id: token
+        run: |
+          if [ -z "$VERCEL_TOKEN" ]; then
+            echo "::notice::VERCEL_TOKEN is not set; skipping the Vercel deploy. Add it under Settings → Secrets and variables → Actions."
+            echo "present=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/checkout@v6
+        if: steps.token.outputs.present == 'true'
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@v7
+        if: steps.token.outputs.present == 'true'
+        with:
+          node-version: '24'
+
+      - name: Deploy to Vercel (production, remote build)
+        id: deploy
+        if: steps.token.outputs.present == 'true'
+        run: |
+          scope=()
+          if [ -n "$VERCEL_SCOPE" ]; then scope=(--scope "$VERCEL_SCOPE"); fi
+          # Vercel builds with vercel.json (npm ci, npm run build, dist/). The source SHA is passed
+          # explicitly for version.json; an empty API URL keeps the public build in sample mode.
+          url=$(npx --yes "$VERCEL_CLI" deploy --prod --yes --token "$VERCEL_TOKEN" "${scope[@]}" \
+            --build-env WAYFARE_SOURCE_SHA="$GITHUB_SHA" \
+            --build-env VITE_WAYFARE_API_URL= \
+            --meta githubCommitSha="$GITHUB_SHA")
+          echo "Deployment: $url"
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+
+      - name: Verify the live build matches this commit
+        if: steps.token.outputs.present == 'true'
+        env:
+          DEPLOY_URL: ${{ steps.deploy.outputs.url }}
+        run: |
+          # The production domain (e.g. https://wayfare.vercel.app) is public; deployment-specific
+          # URLs may sit behind Vercel's deployment protection, so check the production domain.
+          project_json=$(cat .vercel/project.json)
+          project_id=$(node -p "JSON.parse(process.argv[1]).projectId" "$project_json")
+          team_id=$(node -p "JSON.parse(process.argv[1]).orgId" "$project_json")
+          domains=$(curl -fsS -H "Authorization: Bearer $VERCEL_TOKEN" "https://api.vercel.com/v9/projects/$project_id/domains?teamId=$team_id")
+          domain=$(node -p "(JSON.parse(process.argv[1]).domains||[]).map(d=>d.name).find(n=>n.endsWith('.vercel.app'))||''" "$domains")
+          base=${domain:+https://$domain}
+          base=${base:-$DEPLOY_URL}
+          echo "Checking $base/version.json"
+          for i in 1 2 3 4 5 6; do
+            if curl -fsS "$base/version.json" -o version.json && grep -q "\"source\": \"${GITHUB_SHA}\"" version.json && grep -q '"mode": "sample"' version.json; then
+              cat version.json
+              echo "Live: $base serves ${GITHUB_SHA} in sample mode"
+              echo "### Vercel demo: $base (source \`${GITHUB_SHA}\`, sample mode)" >> "$GITHUB_STEP_SUMMARY"
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "Live version.json at $base does not match ${GITHUB_SHA} in sample mode"
+          cat version.json 2>/dev/null || true
+          exit 1

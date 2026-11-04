@@ -1,10 +1,15 @@
-/* Global base styles — design draft r1. Values come from tokens.css.
+/* Global base styles: design r2-final (design/handoffs/r2-final.md). Values come from tokens.css.
    Class names are a stable API used by feature modules; keep them. */
-@import '@fontsource/inter/400.css';
-@import '@fontsource/inter/500.css';
-@import '@fontsource/inter/600.css';
-@import '@fontsource/roboto-mono/400.css';
+@import '@fontsource/figtree/400.css';
+@import '@fontsource/figtree/500.css';
+@import '@fontsource/figtree/600.css';
+@import '@fontsource/ibm-plex-mono/400.css';
+@import '@fontsource/ibm-plex-mono/500.css';
 @import './tokens.css';
+@import './shell.css';
+@import './overview.css';
+@import './itinerary.css';
+@import './chrome.css';
 
 *,
 *::before,
@@ -20,6 +25,7 @@ body {
   font-family: var(--wf-font-sans);
   line-height: var(--wf-line-height);
   -webkit-font-smoothing: antialiased;
+  transition: background-color var(--wf-duration) ease, color var(--wf-duration) ease;
 }
 
 /* The root must stay at the browser default (16px) because every r1 token is in rem.
@@ -39,18 +45,22 @@ h3 {
   font-weight: var(--wf-weight-strong);
 }
 h1 {
+  /* WF/Display 35/1.1, −2% */
   font-size: var(--wf-text-xl);
-  line-height: 2rem;
-  letter-spacing: -0.3px;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
 }
 h2 {
+  /* WF/Heading 22/1.2 */
   font-size: var(--wf-text-lg);
-  line-height: 1.75rem;
-  letter-spacing: -0.2px;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
 }
 h3 {
+  /* WF/Title 16/1.4 */
   font-size: var(--wf-text-h3);
-  line-height: 1.5rem;
+  font-weight: var(--wf-weight-medium);
+  line-height: 1.4;
 }
 p {
   margin: 0 0 var(--wf-space-3);
@@ -92,79 +102,12 @@ a:hover {
   display: flex;
   flex-direction: column;
 }
-.wf-header {
-  background: var(--wf-color-surface);
-  border-bottom: 1px solid var(--wf-color-border);
-}
-.wf-header-inner,
+/* Content column (1140) */
 .wf-main {
   width: 100%;
   max-width: calc(var(--wf-content-max) + 2 * var(--wf-space-5));
   margin: 0 auto;
   padding-inline: var(--wf-space-5);
-}
-.wf-header-inner {
-  display: flex;
-  gap: var(--wf-space-5);
-  align-items: stretch;
-  min-height: 4rem;
-}
-.wf-brand {
-  align-self: center;
-  font-weight: var(--wf-weight-strong);
-  font-size: var(--wf-text-h3);
-  color: var(--wf-color-accent);
-  text-decoration: none;
-}
-.wf-nav {
-  display: flex;
-  gap: var(--wf-space-4);
-  flex: 1;
-  align-items: stretch;
-}
-.wf-nav a {
-  display: flex;
-  align-items: center;
-  padding: 0 var(--wf-space-1);
-  border-bottom: 2px solid transparent;
-  color: var(--wf-color-text-muted);
-  text-decoration: none;
-  white-space: nowrap;
-}
-.wf-nav a:hover {
-  color: var(--wf-color-text);
-}
-.wf-nav a[aria-current='page'] {
-  color: var(--wf-color-text);
-  font-weight: var(--wf-weight-strong);
-  border-bottom-color: var(--wf-color-accent);
-}
-.wf-capabilities {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--wf-space-2);
-  align-items: center;
-  justify-content: flex-end;
-}
-.wf-clockbar {
-  background: var(--wf-color-simulated-bg);
-  color: var(--wf-color-simulated);
-}
-.wf-clockbar-inner {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--wf-space-2) var(--wf-space-3);
-  align-items: center;
-  width: 100%;
-  max-width: calc(var(--wf-content-max) + 2 * var(--wf-space-5));
-  margin: 0 auto;
-  padding: var(--wf-space-2) var(--wf-space-5);
-  font-size: var(--wf-text-sm);
-}
-.wf-clockbar-time {
-  flex: 1;
-  min-width: 0;
-  font-family: var(--wf-font-mono);
 }
 .wf-main {
   flex: 1;
@@ -179,7 +122,6 @@ a:hover {
   margin: 0;
   color: var(--wf-color-text-muted);
 }
-.wf-tabbar,
 .wf-show-narrow {
   display: none;
 }
@@ -272,6 +214,20 @@ a:hover {
 }
 .wf-button[data-variant='primary']:hover:not(:disabled) {
   background: var(--wf-color-accent-hover);
+}
+.wf-button[data-variant='dark'] {
+  /* r2 Button style=dark: primary call to action on Overview */
+  background: var(--wf-color-text);
+  border-color: var(--wf-color-text);
+  color: var(--wf-color-bg);
+  gap: var(--wf-space-2);
+}
+.wf-button[data-variant='dark']:hover:not(:disabled) {
+  opacity: 0.88;
+}
+.wf-button[data-size='sm'] {
+  padding: 8px 13px;
+  font-size: 0.88rem;
 }
 .wf-button[data-variant='danger'] {
   background: var(--wf-color-danger);
@@ -534,6 +490,11 @@ label.wf-stack {
   background: var(--wf-color-surface);
   color: var(--wf-color-text);
 }
+/* .wf-input resets font with `font: inherit`; a monospace input (e.g. the intake evidence
+   textarea, "wf-input wf-mono") keeps IBM Plex Mono at the input's size. */
+.wf-input.wf-mono {
+  font-family: var(--wf-font-mono);
+}
 .wf-input:focus-visible {
   outline: 0;
   border-color: var(--wf-color-focus);
@@ -555,10 +516,7 @@ blockquote {
   background: var(--wf-color-surface-muted);
   font-size: var(--wf-text-sm);
 }
-.wf-demo-panel {
-  border-top: 1px solid var(--wf-color-border);
-  background: var(--wf-color-surface-muted);
-}
+
 
 /* ---- Responsive ------------------------------------------------------- */
 @media (max-width: 74.99rem) {
@@ -567,15 +525,9 @@ blockquote {
   }
 }
 @media (max-width: 47.99rem) {
-  .wf-header-inner,
-  .wf-main,
-  .wf-clockbar-inner {
-    padding-inline: var(--wf-space-4);
+  .wf-main {
+    padding-inline: 20px; /* r2 narrow exports */
   }
-  .wf-header-inner {
-    min-height: 3.5rem;
-  }
-  .wf-header .wf-nav,
   .wf-hide-narrow {
     display: none;
   }
@@ -583,44 +535,74 @@ blockquote {
     display: block;
   }
   .wf-main {
-    padding-block: var(--wf-space-4) var(--wf-space-6);
+    padding-top: 28px;
   }
   .wf-card {
     padding: var(--wf-space-4);
   }
-  .wf-tabbar {
-    display: flex;
-    position: sticky;
-    bottom: 0;
-    z-index: 5;
-    justify-content: space-between;
-    padding: 0 var(--wf-space-2);
-    background: var(--wf-color-surface);
-    border-top: 1px solid var(--wf-color-border);
-  }
-  .wf-tabbar a {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: var(--wf-space-1);
-    padding: var(--wf-space-2) 0 var(--wf-space-3);
-    font-size: var(--wf-text-xs);
-    color: var(--wf-color-text-muted);
-    text-decoration: none;
-  }
-  .wf-tabbar a::before {
-    content: '';
-    width: 1.25rem;
-    height: 3px;
-    border-radius: 2px;
-    background: transparent;
-  }
-  .wf-tabbar a[aria-current='page'] {
-    color: var(--wf-color-accent);
-    font-weight: var(--wf-weight-strong);
-  }
-  .wf-tabbar a[aria-current='page']::before {
-    background: var(--wf-color-accent);
+}
+
+/* r2 helpers */
+.wf-num {
+  font-variant-numeric: tabular-nums;
+}
+.wf-label-mono {
+  font-family: var(--wf-font-mono);
+  font-size: var(--wf-text-xs);
+  font-weight: var(--wf-weight-medium);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--wf-color-text-muted);
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }
+
+/* Icons: 24 px grid, 1.6 stroke, round caps (r2 Foundations 55:39). */
+.wf-icon {
+  width: 20px;
+  height: 20px;
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* Colour mode toggle (56:72) */
+.wf-mode {
+  display: inline-flex;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--wf-color-border-soft);
+  border-radius: var(--wf-radius-full);
+  background: var(--wf-color-surface-muted);
+}
+.wf-mode button {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 30px;
+  border: 0;
+  border-radius: var(--wf-radius-full);
+  background: transparent;
+  color: var(--wf-color-text-muted);
+  cursor: pointer;
+}
+.wf-mode button[aria-pressed='true'] {
+  background: var(--wf-color-surface);
+  color: var(--wf-color-text);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.1);
+}
+.wf-mode button:focus-visible {
+  outline: 2px solid var(--wf-color-focus);
+  outline-offset: 2px;
+}
+

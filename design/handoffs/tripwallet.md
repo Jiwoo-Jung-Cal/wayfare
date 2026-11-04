@@ -1,5 +1,19 @@
 # TripWallet engineering handoff — native draft
 
+## r2-final — approved 2026-11-03 (current)
+
+Shared foundations and shell: [`r2-final.md`](r2-final.md). Figma: `Screen · TripWallet` (`68:579`). Exports: `design/exports/tripwallet/r2-tripwallet-desktop.png`, `r2-tripwallet-narrow-390.png`.
+
+1. "TripWallet" and "Money you’re owed, money that arrived, and credits you still have, grouped by type."
+2. Three-tile totals card: COMING BACK (+, jade, "Expected"), RECEIVED (+, jade, "In your account"), LOST TO FEES (−, coral, "Can’t be recovered"). Values come from the wallet ledger; before any cancellation they read +$0 / +$0 / −$0.
+3. Underline tabs: All · Refunds · Credits & points.
+4. Groups with an icon header (Refunds, Credits & points). Each item is a hairline card: a 40 px rounded **company badge in the provider's category colour** with its icon, title, value on the right (cash in text colour, credits and points in violet `--wf-color-simulated`), restrictions line ("Bayline Air · For Bayline Air flights · code BLA-GW-75"), expiry and "N months left" with a thin time-left bar.
+5. Refund items (after approval) use the same card with status tags (Expected, Provider confirmed, Received, Overdue) and the evidence-backed follow-up draft from the existing implementation.
+
+Below 760 px the totals stack vertically. Money rules (cash vs noncash, unknown never $0, mixed currencies rejected) are unchanged.
+
+---
+
 Design owner: Jiwoo. Code owner: Brian / Agent 5. Brian does not need Figma access.
 
 **Visual approval: pending. Approved revision: none.** Export bundle: `draft-tripwallet-2026-11-01-a`, inspected November 1, 2026. This is an engineering reference for existing native drafts, not approval to replace shared styles or claim final visual acceptance. `design/approvals.json` remains authoritative. Report `design_revision: null` until Jiwoo approves a revision.

@@ -86,8 +86,9 @@ export function ErrorState({ error, onRetry, title = 'Something went wrong' }: {
       <span>{error.message}</span>
       {error.issues && (
         <ul>
-          {error.issues.map((i) => (
-            <li key={i.path}>
+          {/* Several valid issues can share one path (e.g. two budget rules), so the position is part of the key. */}
+          {error.issues.map((i, n) => (
+            <li key={`${n}:${i.path}`}>
               <span className="wf-mono">{i.path}</span>: {i.message}
             </li>
           ))}

@@ -1,0 +1,450 @@
+/* App shell, design r2-final §2. Figma: Top bar 56:234, Nav tab 56:59, Trip button 56:60,
+   Google sign-in 56:65, Colour mode toggle 56:72, Notifications bell 56:80. */
+
+/* ---- Top bar: blends in at rest, floats after ~12 px of scroll ---- */
+.wf-bar {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+}
+.wf-bar::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: var(--wf-color-bg);
+  border: 1px solid transparent;
+  border-radius: 0;
+  transition: inset 0.35s var(--wf-ease), border-radius 0.35s var(--wf-ease), background-color 0.35s, border-color 0.35s, box-shadow 0.35s;
+}
+.wf-bar-scrolled::before {
+  inset: 6px 10px;
+  border-radius: var(--wf-radius-bar);
+  background: color-mix(in srgb, var(--wf-color-surface) 86%, transparent);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+  border-color: var(--wf-color-border);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.04), 0 10px 30px rgb(0 0 0 / 0.08);
+}
+.wf-bar-in {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: var(--wf-space-3);
+  min-height: 68px;
+  padding-inline: 20px;
+  transition: padding 0.35s var(--wf-ease);
+}
+.wf-bar-scrolled .wf-bar-in {
+  padding-inline: 24px;
+}
+.wf-bar-left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+/* Logo lockup (55:276): no hover effect */
+.wf-brand {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--wf-color-text);
+  font-weight: var(--wf-weight-strong);
+  font-size: 1.0625rem;
+  letter-spacing: -0.01em;
+  text-decoration: none;
+}
+.wf-logo-mark {
+  width: 30px;
+  height: 30px;
+  flex: none;
+}
+
+/* Trip button + menu */
+.wf-tripw {
+  position: relative;
+}
+.wf-trip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: 10px;
+  padding: 5px 11px;
+  border: 1px solid var(--wf-color-border);
+  border-radius: var(--wf-radius-full);
+  background: var(--wf-color-surface);
+  color: var(--wf-color-text);
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: var(--wf-weight-medium);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+.wf-trip:hover,
+.wf-trip[aria-expanded='true'] {
+  border-color: var(--wf-color-text);
+}
+.wf-trip-dot {
+  width: 8px;
+  height: 8px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--wf-color-accent); /* the trip's colour: New York trip = brand blue */
+}
+.wf-trip-chev {
+  width: 14px;
+  height: 14px;
+  color: var(--wf-color-text-muted);
+  transform: rotate(90deg);
+  transition: transform 0.15s;
+}
+.wf-trip[aria-expanded='true'] .wf-trip-chev {
+  transform: rotate(-90deg);
+}
+.wf-tmenu {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 10px;
+  z-index: 80;
+  width: 300px;
+  max-width: calc(100vw - 32px);
+  padding: 6px;
+  background: var(--wf-color-surface);
+  border: 1px solid var(--wf-color-border);
+  border-radius: 14px;
+  box-shadow: var(--wf-shadow-lift);
+}
+.wf-tmenu-h {
+  padding: 8px 10px 4px;
+  font-family: var(--wf-font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--wf-color-text-faint);
+}
+.wf-tmenu button {
+  display: grid;
+  grid-template-columns: 10px 1fr auto;
+  gap: 10px;
+  align-items: center;
+  width: 100%;
+  padding: 9px 10px;
+  border: 0;
+  border-radius: 10px;
+  background: none;
+  color: var(--wf-color-text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.wf-tmenu button:hover,
+.wf-tmenu button:focus-visible {
+  background: var(--wf-color-surface-muted);
+  outline: none;
+}
+.wf-tmenu b {
+  display: block;
+  font-weight: var(--wf-weight-medium);
+}
+.wf-tmenu small {
+  color: var(--wf-color-text-muted);
+  font-size: 0.8rem;
+}
+.wf-tmenu-ck {
+  width: 16px;
+  height: 16px;
+  color: var(--wf-color-accent);
+}
+.wf-tmenu hr {
+  margin: 4px 6px;
+  border: 0;
+  border-top: 1px solid var(--wf-color-border-soft);
+}
+.wf-tmenu .wf-tmenu-new {
+  grid-template-columns: 18px 1fr;
+  color: var(--wf-color-accent);
+  font-weight: var(--wf-weight-medium);
+}
+.wf-tmenu-new .wf-icon {
+  width: 16px;
+  height: 16px;
+}
+
+/* Tabs: centred pill */
+.wf-tabs {
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--wf-color-border-soft);
+  border-radius: var(--wf-radius-full);
+  background: var(--wf-color-surface-muted);
+}
+.wf-tabs a {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 13px;
+  border-radius: var(--wf-radius-full);
+  color: var(--wf-color-text-muted);
+  font-weight: var(--wf-weight-medium);
+  text-decoration: none;
+  white-space: nowrap;
+  transition: color 0.15s, background-color 0.15s;
+}
+.wf-tabs a:hover {
+  color: var(--wf-color-text);
+}
+.wf-tabs a[aria-current='page'] {
+  background: var(--wf-color-surface);
+  color: var(--wf-color-text);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.08), 0 0 0 1px var(--wf-color-border-soft);
+}
+.wf-tabs .wf-icon {
+  width: 17px;
+  height: 17px;
+}
+
+/* Tools */
+.wf-tools {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 6px;
+}
+.wf-ib {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border: 0;
+  border-radius: var(--wf-radius-full);
+  background: transparent;
+  color: var(--wf-color-text);
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+.wf-ib:hover {
+  background: var(--wf-color-surface-muted);
+}
+.wf-ib-dot {
+  position: absolute;
+  top: 7px;
+  right: 7px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--wf-color-danger);
+  box-shadow: 0 0 0 2px var(--wf-color-bg);
+}
+.wf-gsign {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 36px;
+  padding: 0 14px 0 10px;
+  border: 1px solid var(--wf-color-border);
+  border-radius: var(--wf-radius-full);
+  background: var(--wf-color-surface);
+  color: var(--wf-color-text);
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: var(--wf-weight-medium);
+  white-space: nowrap;
+  cursor: pointer;
+}
+.wf-gsign:hover {
+  border-color: var(--wf-color-text);
+}
+.wf-google-g {
+  width: 18px;
+  height: 18px;
+  flex: none;
+}
+
+/* Notifications */
+.wf-bellw {
+  position: relative;
+}
+.wf-inbox {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 80;
+  width: min(360px, calc(100vw - 32px));
+  overflow: hidden;
+  background: var(--wf-color-surface);
+  border: 1px solid var(--wf-color-border);
+  border-radius: var(--wf-radius-lg);
+  box-shadow: var(--wf-shadow-lift);
+}
+.wf-inbox h3 {
+  margin: 0;
+  padding: 14px 16px;
+  font-size: 1rem;
+  border-bottom: 1px solid var(--wf-color-border-soft);
+}
+.wf-inbox p {
+  margin: 0;
+  padding: 14px 16px;
+}
+.wf-inbox ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.wf-inbox li {
+  display: flex;
+  gap: 12px;
+  padding: 12px 16px;
+}
+.wf-inbox li b {
+  display: block;
+  font-weight: var(--wf-weight-medium);
+}
+.wf-inbox li small {
+  display: block;
+  color: var(--wf-color-text-muted);
+}
+.wf-dotk {
+  width: 8px;
+  height: 8px;
+  margin-top: 7px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--wf-color-danger);
+}
+
+/* Dialog (demo sign-in) */
+.wf-dialog {
+  width: min(520px, calc(100vw - 32px));
+  padding: 24px;
+  border: 0;
+  border-radius: var(--wf-radius-lg);
+  background: var(--wf-color-surface);
+  color: var(--wf-color-text);
+  box-shadow: var(--wf-shadow-lift);
+}
+.wf-dialog::backdrop {
+  background: rgb(0 0 0 / 0.4);
+}
+.wf-dialog h2 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 1.25rem;
+}
+.wf-dialog p {
+  color: var(--wf-color-text-muted);
+}
+
+/* Bottom tab bar (< 760 px) */
+.wf-tabbar {
+  display: none;
+}
+
+/* ---- Responsive (r2-final §2) ---- */
+@media (max-width: 71.24rem) {
+  /* < 1140: icons only, the active tab keeps its label */
+  .wf-tabs a:not([aria-current='page']) span {
+    display: none;
+  }
+  .wf-tabs a {
+    padding: 7px 11px;
+  }
+  .wf-bar-in {
+    grid-template-columns: auto 1fr auto;
+  }
+  .wf-tabs {
+    justify-self: center;
+  }
+}
+@media (max-width: 57.49rem) {
+  /* < 920: "Sign in" shows the Google logo only */
+  .wf-gsign span {
+    display: none;
+  }
+  .wf-gsign {
+    padding: 0 9px;
+  }
+}
+@media (max-width: 47.49rem) {
+  /* < 760: tabs move to a floating bar at the bottom; page gets 90 px bottom padding */
+  .wf-bar-in {
+    grid-template-columns: 1fr auto;
+    padding-inline: 12px;
+  }
+  .wf-bar .wf-tabs {
+    display: none;
+  }
+  .wf-shell .wf-main {
+    padding-bottom: 90px;
+  }
+  .wf-tabbar {
+    position: fixed;
+    left: 50%;
+    bottom: 12px;
+    z-index: 40;
+    display: flex;
+    gap: 2px;
+    max-width: calc(100vw - 24px);
+    padding: 4px;
+    transform: translateX(-50%);
+    background: var(--wf-color-surface);
+    border: 1px solid var(--wf-color-border);
+    border-radius: var(--wf-radius-full);
+    box-shadow: var(--wf-shadow-lift);
+  }
+  /* r2 narrow export: an icon-only floating pill; each tab keeps its name for assistive tech. */
+  .wf-tabbar a {
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 36px;
+    border-radius: var(--wf-radius-full);
+    color: var(--wf-color-text-muted);
+    text-decoration: none;
+  }
+  .wf-tabbar a span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+  .wf-tabbar a[aria-current='page'] {
+    background: var(--wf-color-surface);
+    color: var(--wf-color-text);
+    box-shadow: 0 1px 2px rgb(0 0 0 / 0.08), 0 0 0 1px var(--wf-color-border-soft);
+  }
+  .wf-tabbar .wf-icon {
+    width: 18px;
+    height: 18px;
+  }
+}
+@media (max-width: 29.99rem) {
+  /* < 480: trip button shows its dot and arrow only */
+  .wf-trip-name {
+    display: none;
+  }
+  .wf-trip {
+    margin-left: 4px;
+    padding: 6px 9px;
+  }
+  .wf-tools {
+    gap: 2px;
+  }
+}
+
+/* Mode toggle icons as in the reference: yellow sun, blue moon. */
+.wf-mode .wf-sun {
+  color: #f2a007;
+}
+.wf-mode .wf-moon {
+  color: #5b7bff;
+}
+

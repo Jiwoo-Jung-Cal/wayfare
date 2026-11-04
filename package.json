@@ -16,12 +16,13 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "server": "node server/node.ts",
+    "smoke:live-ai": "node server/liveSmoke.ts",
     "e2e": "playwright test"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "1.2.0",
-    "@fontsource/inter": "5.3.0",
-    "@fontsource/roboto-mono": "5.3.0",
+    "@fontsource/figtree": "5.3.0",
+    "@fontsource/ibm-plex-mono": "5.3.0",
     "react": "19.3.1",
     "react-dom": "19.3.1",
     "react-router": "7.18.4",

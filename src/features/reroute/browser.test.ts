@@ -10,8 +10,15 @@ import { DEMO_EXPECTED as E } from '../../core/index.ts';
 const executablePath = process.env.PW_EXECUTABLE_PATH;
 const available = !!executablePath || existsSync('/opt/google/chrome/chrome') || existsSync('/usr/bin/google-chrome');
 const button = (p: Page, name: string) => p.getByRole('button', { name, exact: true });
-const card = (p: Page, name: string) => p.locator('.wf-card').filter({ has: p.getByRole('heading', { name, exact: true }) });
 const trip = '#/trips/trip-demo-nyc';
+const option = (p: Page, name: string) => p.getByRole('radio', { name: new RegExp(`^${name}`) });
+const recordedNote = (p: Page) => p.locator('.wf-rr-foot [role=status]');
+// Shell test preferences (Agent 1, design parity): start before any booking, with demo controls open.
+const prefs = (c: import('@playwright/test').BrowserContext) =>
+  c.addInitScript(() => {
+    localStorage.setItem('wayfare:v1:first-stage', 'planning');
+    localStorage.setItem('wayfare:v1:demo-controls', 'open');
+  });
 
 async function snapshot(page: Page) {
   return page.evaluate(async () => {
@@ -28,84 +35,86 @@ test.skipIf(!available)('ReRoute actual approval → shell claims → receipts; 
   const browser = await chromium.launch({ headless: true, ...(executablePath ? { executablePath } : { channel: 'chrome' }), args: ['--no-sandbox'] });
   const errors: string[] = [];
   const context = await browser.newContext({ viewport: { width: 1440, height: 1000 } });
+  await prefs(context);
   const page = await context.newPage(); page.on('pageerror', e => errors.push(e.message));
   async function start(p: Page) {
     await p.goto(base + trip);
     await button(p, 'Import sample bookings').click();
     await expect(p.getByText('Saved 4 reviewed sample bookings.')).toBeVisible();
     await button(p, 'Trigger flight cancellation').click();
-    await expect(p.getByText(/Disruption:.*Bayline Air cancelled/)).toBeVisible();
+    await expect(p.getByText('Bayline Air cancelled your flight. You don’t need to call anyone.')).toBeVisible();
     await p.goto(base + trip + '/reroute');
-    await expect(card(p, 'Cancel the trip')).toContainText('$820.00');
+    await expect(option(p, 'Cancel the whole trip')).toContainText('+$820');
   }
   try {
     await start(page);
-    await expect(card(page, 'Continue the trip')).toContainText('$940.00');
-    await button(page, 'Review cancel-trip actions').click();
+    await expect(option(page, 'Keep the trip')).toContainText('−$360');
+    await button(page, 'Review and confirm').click();
     await expect(page.getByRole('dialog')).toBeVisible();
-    await expect(button(page, 'Approve actions')).toBeDisabled();
+    await expect(button(page, 'Cancel the trip')).toBeDisabled();
     await page.keyboard.press('Escape');
     await expect(page.getByRole('dialog')).toHaveCount(0);
-    await expect(button(page, 'Review cancel-trip actions')).toBeFocused();
+    await expect(button(page, 'Review and confirm')).toBeFocused();
     for (const width of [1440, 1023, 767, 390, 320]) {
       await page.setViewportSize({ width, height: 1000 });
       expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(0);
       expect(await page.locator('.wf-reroute-options').evaluate(el => getComputedStyle(el).gridTemplateColumns.split(' ').length)).toBe(width < 1024 ? 1 : 2);
     }
-    await button(page, 'Review cancel-trip actions').click();
+    await button(page, 'Review and confirm').click();
     await page.getByLabel('I understand these are simulated actions').check();
-    await button(page, 'Approve actions').focus(); await page.keyboard.press('Enter');
-    await expect(card(page, 'Simulated actions recorded')).toContainText('4 recorded; 0 unfinished.');
+    await button(page, 'Cancel the trip').focus(); await page.keyboard.press('Enter');
+    await expect(recordedNote(page)).toHaveText('4 cancellations recorded.');
     await expect.poll(async () => (await snapshot(page)).claims.length).toBe(4);
     const recorded = await snapshot(page);
     expect(recorded.actions.length).toBe(4);
     expect(recorded.claims.reduce((sum, c) => sum + ('amountMinor' in c.expected ? c.expected.amountMinor : NaN), 0)).toBe(E.cancelTripOption.expectedCashRecovery.amountMinor);
     await page.reload();
-    await expect(card(page, 'Recorded actions')).toContainText('Harbor Line Hotel');
-    await expect(button(page, 'Review cancel-trip actions')).toBeDisabled();
+    await expect(recordedNote(page)).toHaveText('4 cancellations recorded.');
+    await expect(button(page, 'Trip cancelled')).toBeDisabled();
     await page.getByRole('link', { name: 'Open TripWallet' }).click();
     await expect(page).toHaveURL(new RegExp(trip + '/wallet$'));
     await expect(page.getByRole('heading', { name: 'TripWallet', exact: true })).toBeVisible();
-    const hotel = card(page, 'Harbor Line Hotel Midtown');
+    const hotel = page.locator('.wf-wal-item').filter({ hasText: 'HLH-48213' });
     await expect(hotel).toContainText('$400.00');
+    await page.locator('details.wf-wal-add summary').click();
     await button(page, 'Load sample refund confirmation').click();
     const select = page.getByRole('combobox', { name: /^Claim to confirm/ });
     const hotelId = await select.locator('option').filter({ hasText: 'HLH-48213' }).getAttribute('value');
     await select.selectOption(hotelId!);
     await button(page, 'Confirm reviewed evidence').click();
-    for (const [amount, reference, outstanding] of [['250', 'HLH-RF-0001', '150'], ['150', 'HLH-RF-0002', '0']]) {
+    for (const [amount, reference, after] of [['250', 'HLH-RF-0001', 'Received $250.00 · $150.00 outstanding'], ['150', 'HLH-RF-0002', 'Received $400.00']]) {
       await button(page, `Load sample $${amount} receipt`).click();
       await button(page, 'Confirm reviewed evidence').click();
       await page.getByRole('combobox', { name: new RegExp(`^Claim for receipt ${reference}\\b`) }).selectOption(hotelId!);
       await button(page, `Match receipt ${reference}`).click();
-      await expect(hotel).toContainText(`Outstanding $${outstanding}.00`);
+      await expect(hotel).toContainText(after!);
     }
-    await page.reload(); await expect(hotel).toContainText('Outstanding $0.00');
+    await page.reload(); await expect(hotel).toContainText('Received $400.00'); await expect(hotel).toContainText('100%');
     const finished = await snapshot(page);
     expect(finished.claims.length).toBe(4); expect(finished.receipts.length).toBe(2);
     expect(finished.claims.reduce((sum, c) => sum + ('amountMinor' in c.outstanding ? c.outstanding.amountMinor : NaN), 0)).toBe(E.cancelTripOption.expectedCashRecovery.amountMinor - E.hotelClaim.expected.amountMinor);
 
     // Separate visitor: another tab advances the clock while approval is open.
-    const staleContext = await browser.newContext(); const stale = await staleContext.newPage();
+    const staleContext = await browser.newContext(); await prefs(staleContext); const stale = await staleContext.newPage();
     stale.on('pageerror', e => errors.push(e.message)); await start(stale);
-    await button(stale, 'Review cancel-trip actions').click();
+    await button(stale, 'Review and confirm').click();
     await stale.getByLabel('I understand these are simulated actions').check();
     await stale.evaluate(async () => {
       const path = '/src/core/index.ts'; const c = await new Function('path', 'return import(path)')(path) as typeof import('../../core/index.ts');
       c.unwrap(await c.createLocalRepository({ storage: localStorage, workspaceId: localStorage.getItem(c.ACTIVE_WORKSPACE_KEY)! }).setClock({ mode: 'sample', current: c.DEMO_TIMES.hotelDeadline }));
     });
-    await button(stale, 'Approve actions').click();
+    await button(stale, 'Cancel the trip').click();
     await expect(stale.getByRole('dialog')).toContainText('preview changed or expired');
     await expect(stale.getByRole('dialog')).toContainText('$620.00');
     expect((await snapshot(stale)).actions.length).toBe(0);
-    await expect(button(stale, 'Approve actions')).toBeDisabled();
-    await stale.getByLabel('I understand these are simulated actions').check(); await button(stale, 'Approve actions').click();
-    await expect(card(stale, 'Simulated actions recorded')).toContainText('4 recorded; 0 unfinished.');
+    await expect(button(stale, 'Cancel the trip')).toBeDisabled();
+    await stale.getByLabel('I understand these are simulated actions').check(); await button(stale, 'Cancel the trip').click();
+    await expect(recordedNote(stale)).toHaveText('4 cancellations recorded.');
     await staleContext.close();
 
     // Inject exactly one repository transport failure; retry goes through UI
     // after reload so in-memory approval state cannot mask durability defects.
-    const partialContext = await browser.newContext(); const partial = await partialContext.newPage();
+    const partialContext = await browser.newContext(); await prefs(partialContext); const partial = await partialContext.newPage();
     partial.on('pageerror', e => errors.push(e.message)); await start(partial);
     await partial.evaluate(async () => {
       const path = '/src/core/index.ts'; const c = await new Function('path', 'return import(path)')(path) as typeof import('../../core/index.ts');
@@ -116,13 +125,13 @@ test.skipIf(!available)('ReRoute actual approval → shell claims → receipts; 
         return original.call(this, input);
       };
     });
-    await button(partial, 'Review cancel-trip actions').click(); await partial.getByLabel('I understand these are simulated actions').check(); await button(partial, 'Approve actions').click();
-    await expect(card(partial, 'Some actions are not recorded')).toContainText('3 recorded; 1 unfinished.');
+    await button(partial, 'Review and confirm').click(); await partial.getByLabel('I understand these are simulated actions').check(); await button(partial, 'Cancel the trip').click();
+    await expect(partial.locator('.wf-rr-result')).toContainText('3 recorded; 1 unfinished.');
     const successes = (await snapshot(partial)).actions;
-    await partial.reload(); await button(partial, 'Review cancel-trip actions').click();
-    await expect(partial.getByRole('dialog')).toContainText('Approve 1 cancel-trip actions?');
-    await partial.getByLabel('I understand these are simulated actions').check(); await button(partial, 'Approve actions').click();
-    await expect(card(partial, 'Simulated actions recorded')).toContainText('4 recorded; 0 unfinished.');
+    await partial.reload(); await button(partial, 'Review and confirm').click();
+    await expect(partial.getByRole('dialog')).toContainText('3 already recorded; 1 left to record.');
+    await partial.getByLabel('I understand these are simulated actions').check(); await button(partial, 'Cancel the trip').click();
+    await expect(recordedNote(partial)).toHaveText('4 cancellations recorded.');
     await expect.poll(async () => (await snapshot(partial)).claims.length).toBe(4);
     expect((await snapshot(partial)).actions.slice(0, 3)).toEqual(successes);
     expect(errors).toEqual([]);
