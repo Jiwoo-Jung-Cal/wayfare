@@ -1,8 +1,9 @@
-// Trip dashboard — layout from design draft r1 (Figma 02 — Dashboard, frames 9:2 / 9:181 / 9:428).
+// Trip Overview: r2-final hero (src/app/Overview.tsx) above the trip detail cards.
 // Presents stored results from the owning modules; it does not recalculate plan
 // totals, recovery options or refund balances. The only arithmetic here is the
 // sum of what confirmed bookings say was paid.
 
+import { useEffect } from 'react';
 import { Link } from 'react-router';
 import {
   deadlineStatus,
@@ -19,11 +20,17 @@ import { Card, EmptyState, InstantText, KeyValue, MoneyStat, MoneyText, Notice, 
 import { useAppServices } from './AppServices.tsx';
 import { ClaimSyncNotice } from './ClaimSyncNotice.tsx';
 import { FEATURES, ROUTE_TABLE } from './featureRegistry.ts';
+import { OverviewHero } from './Overview.tsx';
 
 const BOOKING_TONE: Record<string, Tone> = { confirmed: 'positive', disrupted: 'danger', cancelled: 'neutral', replaced: 'neutral', changed: 'info' };
 const CLAIM_TONE: Record<string, Tone> = { expected: 'info', provider_confirmed: 'accent', partially_received: 'warning', received: 'positive', overdue: 'danger', needs_review: 'warning', closed_unrecovered: 'neutral' };
 const label = (s: string) => s.charAt(0).toUpperCase() + s.slice(1).replace(/_/g, ' ');
 const CLOSING_SOON_MS = 36 * 3_600_000;
+/** "Fri, Nov 20 – Mon, Nov 23" from local dates (no timezone shift). */
+const tripDates = (start: string, end: string) => {
+  const f = (d: string) => new Intl.DateTimeFormat('en-US', { weekday: 'short', month: 'short', day: 'numeric', timeZone: 'UTC' }).format(new Date(`${d}T12:00:00Z`));
+  return `${f(start)} – ${f(end)}`;
+};
 
 export function TripList({ snapshot }: { snapshot: WorkspaceSnapshot }) {
   if (snapshot.trips.length === 0) {
@@ -65,7 +72,11 @@ function assetValue(a: WalletAsset) {
 }
 
 export function TripDashboard({ tripId }: { tripId: Id }) {
-  const { load, clock, featureContext } = useAppServices();
+  const { load, clock, featureContext, refresh } = useAppServices();
+  // Feature pages write through ctx.repo; re-read on arrival so the Overview shows their latest stored results.
+  useEffect(() => {
+    void refresh();
+  }, [tripId, refresh]);
   if (load.status !== 'ready') return null;
   const s = load.snapshot;
   const trip = s.trips.find((t) => t.id === tripId);
@@ -92,9 +103,11 @@ export function TripDashboard({ tripId }: { tripId: Id }) {
       <header className="wf-page-header">
         <h1>{trip.title}</h1>
         <p>
-          {trip.startDate} to {trip.endDate} · {trip.origin.name} to {trip.destination.name} · times shown in {trip.displayTimezone}
+          {trip.origin.name} to {trip.destination.name} · {tripDates(trip.startDate, trip.endDate)} · 1 traveler
         </p>
       </header>
+
+      <OverviewHero s={s} tripId={tripId} now={now} />
 
       {disruption && (
         <Notice tone="danger">

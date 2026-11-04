@@ -436,3 +436,12 @@
     gap: 2px;
   }
 }
+
+/* Mode toggle icons as in the reference: yellow sun, blue moon. */
+.wf-mode .wf-sun {
+  color: #f2a007;
+}
+.wf-mode .wf-moon {
+  color: #5b7bff;
+}
+
