@@ -76,20 +76,31 @@
   z-index: 3;
   width: 290px;
 }
-html:not(.wf-windowed) .wf-bp:has(.wf-bp-hit:hover) .wf-bp-stub,
-html:not(.wf-windowed) .wf-bp:focus .wf-bp-stub {
+/* The tear works at every window size (Jiwoo, 2026-11-04): hover, keyboard focus, or a tap. */
+.wf-bp:has(.wf-bp-hit:hover) .wf-bp-stub,
+.wf-bp:focus .wf-bp-stub,
+.wf-bp:active .wf-bp-stub {
   transform: translate(3px, 0) rotate(11deg);
 }
-html:not(.wf-windowed) .wf-bp:has(.wf-bp-hit:hover)::after,
-html:not(.wf-windowed) .wf-bp:focus::after {
+.wf-bp:has(.wf-bp-hit:hover)::after,
+.wf-bp:focus::after,
+.wf-bp:active::after {
   opacity: 0;
 }
-html.wf-windowed .wf-bp-hit,
-html.wf-windowed .wf-bp-tear-hint {
-  display: none;
+@media (prefers-reduced-motion: reduce) {
+  .wf-bp-stub {
+    transition: none;
+  }
 }
-html.wf-windowed .wf-bp-stub {
-  transition: none;
+/* Placeholder pass (nothing booked yet): same design, quieter ink. */
+.wf-bp[data-empty] .wf-bp-band {
+  background: var(--wf-color-text-faint);
+}
+.wf-bp[data-empty] .wf-bp-code {
+  color: var(--wf-color-text-faint);
+}
+.wf-bp[data-empty] .wf-bp-barcode {
+  opacity: 0.25;
 }
 .wf-bp-band {
   display: flex;
@@ -450,6 +461,18 @@ html.wf-windowed .wf-bp-stub {
   }
   .wf-bp-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  /* Stacked pass: the stub hangs below and tears away downward, pivoting on its top-left corner. */
+  .wf-bp-hit {
+    display: none;
+  }
+  .wf-bp-stub {
+    transform-origin: 0% 0%;
+  }
+  .wf-bp .wf-bp-stub:hover,
+  .wf-bp:focus .wf-bp-stub,
+  .wf-bp:active .wf-bp-stub {
+    transform: translate(2px, 6px) rotate(4deg);
   }
 }
 @media (max-width: 47.49rem) {
