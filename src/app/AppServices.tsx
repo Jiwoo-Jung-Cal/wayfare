@@ -28,6 +28,7 @@ import {
   type FeatureContext,
   type Id,
   type Instant,
+  type Result,
   type WorkspaceRepository,
   type WorkspaceSnapshot,
 } from '../core/index.ts';
@@ -67,11 +68,25 @@ type Backend = {
   walletEvidence?: WalletEvidenceService;
   /** Sample mode only: a brand-new browser workspace opens like the design reference (booked + simulated cancellation). */
   firstVisit?: boolean;
+  /** No workspace existed in this browser before this page load (it was just created, already booked). */
+  brandNew?: boolean;
 };
 type BootState = { status: 'loading' } | { status: 'error'; error: AppError } | { status: 'ready'; backend: Backend };
 
 /** Test/QA override for a new workspace's seed: "planning" starts before any booking (the old default). */
 const FIRST_STAGE_KEY = 'wayfare:v1:first-stage';
+const REFERENCE_SEEDED_KEY = 'wayfare:v1:reference-seeded';
+
+/** The design reference's starting point: booked sample trip plus the simulated airline cancellation. */
+export async function openReferenceScenario(repo: WorkspaceRepository, ctx: FeatureContext): Promise<Result<string>> {
+  const reset = await repo.resetDemo('booked');
+  if (!reset.ok) return reset;
+  const trip = reset.value.trips[0];
+  const trigger = FEATURES.reroute?.triggerDemoDisruption;
+  if (!trip || !trigger) return { ok: true, value: 'Booked sample loaded.' };
+  const r = await trigger({ tripId: trip.id }, ctx);
+  return r.ok ? { ok: true, value: 'Reference scenario loaded: NY Trip booked, flight BL 214 cancelled by the airline (simulated).' } : r;
+}
 
 // Created once per page: React StrictMode runs effects twice in development, and a second
 // call would already see the new workspace id and lose the first-visit flag.
@@ -83,10 +98,14 @@ function sampleBackend(): Backend {
 
 function createSampleBackend(): Backend {
   const storage = window.localStorage;
-  const firstVisit = !storage.getItem('wayfare:v1:active-workspace') && storage.getItem(FIRST_STAGE_KEY) !== 'planning';
+  // Opens like the design reference once per browser: a brand-new workspace, or one left
+  // untouched (no bookings, no actions) from before the reference scenario became the default.
+  const firstVisit = storage.getItem(FIRST_STAGE_KEY) !== 'planning' && storage.getItem(REFERENCE_SEEDED_KEY) !== '1';
+  const brandNew = !storage.getItem('wayfare:v1:active-workspace');
   const initialStage = storage.getItem(FIRST_STAGE_KEY) === 'planning' ? 'planning' : 'booked';
   return {
     firstVisit,
+    brandNew,
     repo: createLocalRepository({ storage, workspaceId: getOrCreateLocalWorkspaceId(storage), initialStage }),
     extraction: (now) => createSampleExtractionService(now),
     walletEvidence: createUnavailableWalletEvidenceService(),
@@ -216,16 +235,29 @@ function ServicesInner({ children, backend }: { children: ReactNode; backend: Ba
   );
   ctxRef.current = featureContext;
 
-  // A first visit opens on the reference scenario: the simulated airline cancellation is
-  // recorded through ReRoute's own demo trigger, once, for this new workspace only.
+  // Once per browser, an empty or untouched workspace opens on the reference scenario
+  // (booked + the simulated cancellation, recorded through ReRoute's own demo trigger).
+  // A workspace with any booking or recorded action is left exactly as it is.
   const seeded = useRef(false);
   useEffect(() => {
     if (!backend.firstVisit || seeded.current || load.status !== 'ready') return;
     seeded.current = true;
-    const trip = load.snapshot.trips[0];
-    if (!trip || load.snapshot.disruptions.length || !FEATURES.reroute?.triggerDemoDisruption) return;
-    void FEATURES.reroute.triggerDemoDisruption({ tripId: trip.id }, featureContext).then(() => refresh());
-  }, [backend.firstVisit, load, featureContext, refresh]);
+    try {
+      window.localStorage.setItem(REFERENCE_SEEDED_KEY, '1');
+    } catch {
+      /* storage blocked: seeding may repeat next visit, which is harmless for an untouched workspace */
+    }
+    const s = load.snapshot;
+    if (s.actions.length || s.disruptions.length) return;
+    const trip = s.trips[0];
+    if (backend.brandNew && trip && FEATURES.reroute?.triggerDemoDisruption) {
+      // New workspace: already seeded booked; add the simulated cancellation.
+      void FEATURES.reroute.triggerDemoDisruption({ tripId: trip.id }, featureContext).then(() => refresh());
+    } else if (!backend.brandNew && !s.bookings.length) {
+      // Untouched workspace from an earlier visit: open the reference scenario.
+      void openReferenceScenario(repo, featureContext).then(() => refresh());
+    }
+  }, [backend.firstVisit, backend.brandNew, load, repo, featureContext, refresh]);
 
   const value = useMemo(
     () => ({ repo, extraction, load, clock, refresh, claimSync, runClaimSync, featureContext }),

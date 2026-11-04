@@ -43,7 +43,7 @@ npx vite preview --port 4173        # open http://localhost:4173/
 
 ## Walkthrough (about 5 minutes)
 
-A **first visit** opens like the design reference: NY Trip is booked and Bayline Air has cancelled flight BL 214 (simulated). To start before any booking instead, open **Demo controls** at the bottom of the page and press **Load sample trip**; **Clear workspace** removes everything. Amounts are for the canonical sample trip.
+A **first visit** opens like the design reference: NY Trip is booked and Bayline Air has cancelled flight BL 214 (simulated). A browser that kept an empty workspace from an earlier visit is moved to this scenario once. **Show the reference scenario** under **Demo controls** (bottom of the page) brings it back at any time; **Load sample trip** starts before any booking; **Clear workspace** removes everything. Amounts are for the canonical sample trip.
 
 1. **Overview**: the boarding pass is stamped *Cancelled by airline*, the stub shows the +$320 refund owed, and **Decide within** counts down to Thursday 6:00 PM ET, when the hotel refund drops. Money tiles: **+$820** back if you cancel, **−$80** you can't get back, **$900** paid for 4 bookings. **Your passes** opens each booking.
 2. **Plan**: three sample plans appear (red-eye $815, nonstop $900 *Your current trip*, and a flexible plan at **$1,010 + ?** whose price is incomplete and can't be chosen). Change **What matters most** or **Saturday morning** and the plans re-rank at once. Before any booking, **Choose this plan** saves a plan ("Plan saved. No reservation was made."); a plan is not a booking. The attach button opens **Import**.
