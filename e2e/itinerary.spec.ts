@@ -41,5 +41,5 @@ test('itinerary lists every booking with its own deadline; day selection highlig
 
   // Calendar sync is a labelled demo with nothing connected.
   await page.getByRole('button', { name: 'Connect Google Calendar' }).click();
-  await expect(page.getByRole('dialog', { name: 'Connect Google Calendar' })).toContainText('Demo only.');
+  await expect(page.getByRole('dialog', { name: 'Connect Google Calendar' })).toContainText('no Google account is contacted');
 });

@@ -7,47 +7,60 @@ import { expect, test, type Page } from '@playwright/test';
 const TRIP = '/#/trips/trip-demo-nyc';
 
 const control = (page: Page, name: string) => page.getByRole('button', { name, exact: true });
-const bookingRows = (page: Page) => page.getByRole('table').getByRole('row').filter({ hasNot: page.getByRole('columnheader') });
-const deadline = (page: Page, label: string) => page.getByRole('listitem').filter({ hasText: label });
+// Bookings and their deadlines are listed in the Itinerary (design r2-final); open it first.
+const ITIN = `${TRIP}/itinerary`;
+const bookingRows = (page: Page) => page.locator('.wf-row-b');
+const row = (page: Page, text: string) => bookingRows(page).filter({ hasText: text });
+/** The hotel's own deadline line in the Itinerary: "… · 30h 00m left" while open, "… · passed" after. */
+const hotelDeadline = (page: Page) => row(page, 'Harbor Line Hotel Midtown').locator('.wf-dlx');
+const cancelledNote = (page: Page) => page.getByText('Bayline Air cancelled your flight. You don’t need to call anyone.');
 const statusMessage = (page: Page) => page.locator('[aria-live="polite"]').filter({ hasText: /\w/ }).last();
 
 test.describe('demo journey: shell steps', () => {
   test('load, import (no duplicates), disrupt, deadline boundary, reload, reset', async ({ page }) => {
     await page.goto(TRIP);
-    await expect(page.getByRole('heading', { level: 1, name: 'San Francisco to New York' })).toBeVisible();
-    await expect(page.getByText('Sample data: saved in this browser')).toBeVisible();
-    await expect(page.getByText('Simulated: AI extraction')).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1, name: 'NY Trip' })).toBeVisible();
+    // Capability labels live in the footer, as in the design reference.
+    const footer = page.locator('footer.wf-footer');
+    await expect(footer).toContainText('sample trip with fictional providers, saved in this browser');
+    await expect(footer).toContainText('every provider action is simulated');
+    await expect(footer).toContainText('AI extraction is simulated');
     await expect(page.getByText(/No confirmed bookings yet/)).toBeVisible();
 
     // Import the four reviewed sample bookings; a repeat import must not duplicate.
+    await page.goto(ITIN);
     await control(page, 'Import sample bookings').click();
     await expect(statusMessage(page)).toHaveText('Saved 4 reviewed sample bookings.');
     await expect(bookingRows(page)).toHaveCount(4);
     await control(page, 'Import sample bookings').click();
     await expect(statusMessage(page)).toHaveText('Sample bookings were already imported; nothing duplicated.');
     await expect(bookingRows(page)).toHaveCount(4);
-    for (const amount of ['$320.00', '$450.00', '$80.00', '$50.00']) {
-      await expect(page.getByRole('cell', { name: amount, exact: true })).toBeVisible();
+    for (const [title, amount] of [['BL 214', '$320.00'], ['Harbor Line Hotel Midtown', '$450.00'], ['Skyline Walk', '$80.00'], ['transfer', '$50.00']]) {
+      await expect(row(page, title!)).toContainText(amount!);
     }
 
-    // Simulated outbound cancellation.
+    // Simulated outbound cancellation: the airline owes the fare; the Overview says what happened.
     await control(page, 'Trigger flight cancellation').click();
-    await expect(page.getByText(/Disruption:.*Bayline Air cancelled BL 214/)).toBeVisible();
+    await expect(row(page, 'BL 214')).toContainText('No deadline · the airline owes you +$320');
+    await page.goto(TRIP);
+    await expect(cancelledNote(page)).toBeVisible();
 
     // Frozen boundary: open one second before, passed exactly at 2026-11-19T23:00:00Z.
+    await page.goto(ITIN);
     await control(page, '1 s before hotel deadline').click();
     await expect(page.getByLabel('Active clock')).toContainText('2026-11-19T22:59:59Z');
-    await expect(deadline(page, 'Hotel $400 refund deadline')).toContainText('Open');
+    await expect(hotelDeadline(page)).toContainText('+$400 → +$200 · 0h 00m left');
     await control(page, 'At hotel deadline').click();
     await expect(page.getByLabel('Active clock')).toContainText('2026-11-19T23:00:00Z');
-    await expect(deadline(page, 'Hotel $400 refund deadline')).toContainText('Passed');
+    await expect(hotelDeadline(page)).toContainText('passed');
 
     // Reload: state, clock and boundary persist.
     await page.reload();
     await expect(bookingRows(page)).toHaveCount(4);
-    await expect(page.getByText(/Disruption:/)).toBeVisible();
     await expect(page.getByLabel('Active clock')).toContainText('2026-11-19T23:00:00Z');
-    await expect(deadline(page, 'Hotel $400 refund deadline')).toContainText('Passed');
+    await expect(hotelDeadline(page)).toContainText('passed');
+    await page.goto(TRIP);
+    await expect(cancelledNote(page)).toBeVisible();
 
     // Reset affects only this workspace and asks for confirmation first.
     page.once('dialog', (d) => d.accept());
@@ -75,7 +88,7 @@ test.describe('demo journey: shell steps', () => {
     // Every token is in rem; a non-default root font size silently rescales all of them (#4 comment 6587211156).
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto(TRIP);
-    const h1 = page.getByRole('heading', { level: 1, name: 'San Francisco to New York' });
+    const h1 = page.getByRole('heading', { level: 1, name: 'NY Trip' });
     await expect(h1).toBeVisible();
     const style = (selector: string, prop: 'fontSize' | 'fontFamily') => page.locator(selector).first().evaluate((el, p) => getComputedStyle(el)[p], prop);
     expect(await style('html', 'fontSize')).toBe('16px');
@@ -94,7 +107,7 @@ test.describe('demo journey: shell steps', () => {
     const bg = () => page.evaluate(() => getComputedStyle(document.body).backgroundColor);
     const mode = page.getByRole('group', { name: 'Colour mode' });
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
-    expect(await bg()).toBe('rgb(255, 255, 255)');
+    await expect.poll(bg).toBe('rgb(255, 255, 255)'); // body fades between modes; wait for the settled colour
     await mode.getByRole('button', { name: 'Dark mode' }).click();
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
     await expect(mode.getByRole('button', { name: 'Dark mode' })).toHaveAttribute('aria-pressed', 'true');
@@ -106,10 +119,10 @@ test.describe('demo journey: shell steps', () => {
   });
 
   test('@mobile narrow layout has no horizontal scroll', async ({ page }) => {
-    await page.goto(TRIP);
+    await page.goto(ITIN);
     await control(page, 'Import sample bookings').click();
     await expect(bookingRows(page)).toHaveCount(4);
-    await expectNoOverflow(page, ['', 'reroute', 'wallet']);
+    await expectNoOverflow(page, ['', 'itinerary', 'reroute', 'wallet']);
   });
 });
 
@@ -130,6 +143,12 @@ async function expectNoOverflow(page: Page, routes: string[]) {
 const card = (page: Page, heading: string) => page.locator('.wf-card').filter({ has: page.getByRole('heading', { name: heading, exact: true }) });
 const planCard = (page: Page, label: string) =>
   page.getByRole('region', { name: 'Plan comparison' }).getByRole('article').filter({ has: page.getByRole('heading', { name: new RegExp(`\\d\\. ${label.replace(/[+]/g, '\\+')}$`) }) });
+// TripWallet (design r2-final): claims are list items; evidence import sits in a collapsible panel.
+const walletItem = (page: Page, reference: string) => page.locator('.wf-wal-item').filter({ hasText: reference });
+async function openEvidence(page: Page) {
+  const panel = page.locator('details.wf-wal-add');
+  if ((await panel.getAttribute('open')) === null) await panel.locator('summary').click();
+}
 const status = (page: Page, text: string) => page.getByRole('status').filter({ hasText: text });
 const sampleSelect = (page: Page) => page.locator('label', { hasText: 'Sample document' }).locator('select');
 
@@ -182,10 +201,10 @@ test.describe('demo journey: Wayfinder and intake (Agent 2, #4)', () => {
     await control(page, 'Save reviewed booking').click();
     await expect(status(page, 'Already imported: Harbor Line Hotel Midtown HLH-48213. No duplicate was created')).toBeVisible();
 
-    await page.goto(TRIP);
+    await page.goto(ITIN);
     await expect(bookingRows(page)).toHaveCount(1);
-    await expect(page.getByRole('cell', { name: '$450.00', exact: true })).toBeVisible();
-    await expect(deadline(page, 'Hotel $400 refund deadline')).toContainText('Open');
+    await expect(row(page, 'Harbor Line Hotel Midtown')).toContainText('$450.00');
+    await expect(hotelDeadline(page)).toContainText('left');
 
     // Unknown policy stays unknown; no invented refund rule.
     await page.goto(`${TRIP}/import`);
@@ -237,18 +256,21 @@ async function startReRoute(page: Page) {
   await control(page, 'Import sample bookings').click();
   await expect(statusMessage(page)).toHaveText('Saved 4 reviewed sample bookings.');
   await control(page, 'Trigger flight cancellation').click();
-  await expect(page.getByText(/Disruption:.*Bayline Air cancelled BL 214/)).toBeVisible();
-  await page.getByRole('link', { name: 'Open ReRoute' }).click();
-  await expect(page.getByRole('heading', { level: 1, name: 'ReRoute' })).toBeVisible();
+  await expect(cancelledNote(page)).toBeVisible();
+  await page.getByRole('link', { name: 'See what to do' }).click();
+  await expect(page.getByRole('heading', { level: 1, name: 'What should you do?' })).toBeVisible();
 }
 
+const option = (page: Page, name: string) => page.getByRole('radio', { name: new RegExp(`^${name}`) });
+const recorded = (page: Page) => page.locator('.wf-rr-foot [role=status]');
+
 async function approveCancelTrip(page: Page) {
-  await control(page, 'Review cancel-trip actions').click();
-  const dialog = page.getByRole('dialog');
-  await expect(control(page, 'Approve actions')).toBeDisabled();
+  await control(page, 'Review and confirm').click();
+  const dialog = page.getByRole('dialog', { name: 'Cancel the trip?' });
+  await expect(dialog.getByRole('button', { name: 'Cancel the trip', exact: true })).toBeDisabled();
   await dialog.getByLabel('I understand these are simulated actions').check();
-  await control(page, 'Approve actions').click();
-  await expect(card(page, 'Simulated actions recorded')).toContainText('4 recorded; 0 unfinished.');
+  await dialog.getByRole('button', { name: 'Cancel the trip', exact: true }).click();
+  await expect(recorded(page)).toHaveText('4 cancellations recorded.');
 }
 
 test.describe('demo journey: ReRoute approval to TripWallet (Agents 4 and 5, #6/#7)', () => {
@@ -258,7 +280,8 @@ test.describe('demo journey: ReRoute approval to TripWallet (Agents 4 and 5, #6/
     const errors: string[] = [];
     page.on('pageerror', (e) => errors.push(e.message));
     await startReRoute(page);
-    await expect(card(page, 'Cancel the trip')).toContainText('$820.00');
+    await expect(option(page, 'Cancel the whole trip')).toContainText('+$820');
+    await expect(page.locator('.wf-rr-kv').first()).toContainText('+$400.00');
     await approveCancelTrip(page);
     // The shell, not ReRoute, created the claims; the claim-sync status reports it in words.
     // Sync runs after each recorded action, so the last run's split varies; the total is fixed.
@@ -273,13 +296,15 @@ test.describe('demo journey: ReRoute approval to TripWallet (Agents 4 and 5, #6/
     await page.getByRole('main').getByRole('link', { name: 'Open TripWallet' }).click();
     await expect(page).toHaveURL(/#\/trips\/trip-demo-nyc\/wallet$/);
     await expect(page.getByRole('heading', { level: 1, name: 'TripWallet', exact: true })).toBeVisible();
-    await expect(card(page, 'Harbor Line Hotel Midtown')).toContainText('$400.00');
+    await expect(walletItem(page, 'HLH-48213')).toContainText('$400.00');
 
+    // The Overview reports the recorded choice; the Itinerary shows every booking cancelled.
     await page.goto(TRIP);
-    const claimsCard = card(page, 'Refund claims');
-    await expect(claimsCard.getByRole('listitem')).toHaveCount(4);
-    await expect(claimsCard).toContainText('$400.00');
-    for (const row of await bookingRows(page).all()) await expect(row).toContainText(/cancelled/i);
+    await expect(page.getByText('You chose to cancel. We recorded 4 cancellations.')).toBeVisible();
+    await expect(page.locator('.wf-money-tiles')).toContainText('+$820');
+    await page.goto(ITIN);
+    await expect(bookingRows(page)).toHaveCount(4);
+    for (const r of await bookingRows(page).all()) await expect(r).toContainText('Cancelled');
     expect(errors).toEqual([]);
   });
 
@@ -290,23 +315,24 @@ test.describe('demo journey: ReRoute approval to TripWallet (Agents 4 and 5, #6/
     // Shared demo clock exactly at the exclusive cutoff: hotel falls to the $200 tier.
     await control(page, 'At hotel deadline').click();
     await expect(page.getByLabel('Active clock')).toContainText('2026-11-19T23:00:00Z');
-    await expect(card(page, 'Cancel the trip')).toContainText('$620.00');
+    await expect(option(page, 'Cancel the whole trip')).toContainText('+$620');
     await approveCancelTrip(page);
     await expect.poll(async () => (await storedWorkspace(page)).claims).toBe(4);
     expect(await storedWorkspace(page)).toMatchObject({ actions: 4, expectedMinor: 62000, hotelExpectedMinor: 20000 });
 
     // Reload: recorded state persists and approval cannot run again.
     await page.reload();
-    await expect(card(page, 'Recorded actions')).toContainText('Harbor Line Hotel');
-    await expect(control(page, 'Review cancel-trip actions')).toBeDisabled();
+    await expect(recorded(page)).toHaveText('4 cancellations recorded.');
+    await expect(control(page, 'Trip cancelled')).toBeDisabled();
     // Re-triggering the disruption from the dashboard is a no-op.
     await page.goto(TRIP);
     await control(page, 'Trigger flight cancellation').click();
-    await expect(page.getByText(/Disruption:.*Bayline Air cancelled BL 214/)).toHaveCount(1);
+    await expect(cancelledNote(page)).toHaveCount(1);
 
     // Wallet load re-runs claim sync (idempotent); importing the same receipt twice stores it once.
     await page.goto(`${TRIP}/wallet`);
     await expect(page.getByRole('status').filter({ hasText: '0 created, 4 already tracked' })).toBeVisible();
+    await openEvidence(page);
     for (let i = 0; i < 2; i++) {
       await control(page, 'Load sample $150 receipt').click();
       await control(page, 'Confirm reviewed evidence').click();
@@ -325,7 +351,7 @@ test.describe('TripWallet integration', () => {
     const errors: string[] = [];
     page.on('pageerror', error => errors.push(error.message));
     await page.goto(TRIP);
-    await expect(page.getByRole('heading', { level: 1, name: 'San Francisco to New York' })).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1, name: 'NY Trip' })).toBeVisible();
     // ReRoute's UI is not delivered. Seed only its canonical durable output;
     // wallet-load sync, evidence review and every receipt operation use real UI.
     await page.evaluate(async () => {
@@ -340,40 +366,43 @@ test.describe('TripWallet integration', () => {
       for (const action of core.demoCancelTripActions(fx)) core.unwrap(await repo.recordBookingAction({ action, expectedBookingRevision: 1 }));
     });
     await page.goto(`${TRIP}/wallet`);
-    const hotel = card(page, 'Harbor Line Hotel Midtown');
+    const hotel = walletItem(page, 'HLH-48213');
     await expect(hotel).toContainText('$400.00');
+    await openEvidence(page);
     await control(page, 'Load sample refund confirmation').click();
     const claimSelect = page.getByRole('combobox', { name: /^Claim to confirm/ });
     const hotelId = await claimSelect.locator('option').filter({ hasText: 'HLH-48213' }).getAttribute('value');
     expect(hotelId).toBeTruthy();
     await claimSelect.selectOption(hotelId!);
     await control(page, 'Confirm reviewed evidence').click();
-    await expect(hotel).toContainText('provider confirmed');
-    for (const [amount, reference, state] of [['250', 'HLH-RF-0001', 'partially received'], ['150', 'HLH-RF-0002', 'received']]) {
+    await expect(hotel).toContainText('Company confirmed · not received yet');
+    for (const [amount, reference, state] of [['250', 'HLH-RF-0001', 'Received $250.00 · $150.00 outstanding'], ['150', 'HLH-RF-0002', 'Received $400.00']]) {
       await control(page, `Load sample $${amount} receipt`).click();
       await control(page, 'Confirm reviewed evidence').click();
       await page.getByRole('combobox', { name: new RegExp(`^Claim for receipt ${reference}\\b`) }).selectOption(hotelId!);
       await control(page, `Match receipt ${reference}`).click();
       await expect(hotel).toContainText(state!);
       if (amount === '250') {
-        await expect(hotel).toContainText('Outstanding $150.00');
-        await control(page, 'Prepare follow-up draft for HLH-48213').click();
+        await hotel.locator('.wf-wal-head').click();
+        await control(page, 'Write a reminder').click();
         await expect(page.getByLabel('Editable follow-up draft')).toHaveValue(/Outstanding: \$150.00/);
+        await page.keyboard.press('Escape');
       }
     }
-    await expect(hotel).toContainText('Outstanding $0.00');
+    await expect(hotel).toContainText('100%');
     await control(page, 'Load sample $250 receipt').click();
     await control(page, 'Confirm reviewed evidence').click();
     await page.reload();
     await expect(hotel).toContainText('Received $400.00');
-    await expect(hotel).toContainText('Outstanding $0.00');
-    await expect(page.getByText('8,000 points (Harbor Line Rewards)')).toBeVisible();
+    await expect(hotel).toContainText('100%');
+    await expect(walletItem(page, 'Harbor Line Rewards')).toContainText('8,000 pts');
     // A populated wallet exercises long claim IDs, capability labels and evidence.
     for (const width of [390, 360, 320]) {
       await page.setViewportSize({ width, height: 844 });
       await expect(page.getByRole('heading', { level: 1, name: 'TripWallet', exact: true })).toBeVisible();
       expect(await horizontalOverflow(page), `reconciled wallet at ${width}px`).toBeLessThanOrEqual(0);
     }
+    await hotel.locator('.wf-wal-head').click();
     await hotel.getByText('Action, evidence and allocation history', { exact: true }).click();
     await expect(hotel.locator('details').first()).toHaveAttribute('open', '');
     expect(await horizontalOverflow(page), 'expanded evidence at 320px').toBeLessThanOrEqual(0);

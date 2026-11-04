@@ -20,8 +20,18 @@ import { Button, ErrorState, StatusBadge } from '../ui/index.tsx';
 import { useAppServices } from './AppServices.tsx';
 import { FEATURES } from './featureRegistry.ts';
 
+const PANEL_KEY = 'wayfare:v1:demo-controls';
+const initiallyOpen = () => {
+  try {
+    return window.localStorage.getItem(PANEL_KEY) === 'open';
+  } catch {
+    return false;
+  }
+};
+
 export function DemoControls() {
   const { repo, load, clock, refresh, featureContext } = useAppServices();
+  const [openPanel, setOpenPanel] = useState(initiallyOpen);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<AppError | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -101,10 +111,25 @@ export function DemoControls() {
   const disabled = busy !== null;
 
   return (
-    <section className="wf-demo-panel" aria-labelledby="wf-demo-heading">
-      <div className="wf-main wf-stack" style={{ paddingBlock: 'var(--wf-space-4)' }}>
+    <details
+      className="wf-demo-panel"
+      open={openPanel}
+      onToggle={(e) => {
+        const v = (e.currentTarget as HTMLDetailsElement).open;
+        setOpenPanel(v);
+        try {
+          window.localStorage.setItem(PANEL_KEY, v ? 'open' : 'closed');
+        } catch {
+          /* storage blocked: the panel still works for this page */
+        }
+      }}
+    >
+      <summary>Demo controls</summary>
+      <section className="wf-stack" aria-labelledby="wf-demo-heading">
         <div className="wf-row" style={{ justifyContent: 'space-between' }}>
-          <h2 id="wf-demo-heading">Demo controls</h2>
+          <h2 id="wf-demo-heading" className="wf-visually-hidden">
+            Demo controls
+          </h2>
           <span className="wf-row">
             <StatusBadge tone="info">{clock.mode === 'sample' ? 'Demo clock' : 'Real-time clock'}</StatusBadge>
             <span className="wf-mono" aria-label="Active clock">
@@ -155,7 +180,7 @@ export function DemoControls() {
           {message && <span>{message}</span>}
         </div>
         {error && <ErrorState error={error} title="Demo control failed" />}
-      </div>
-    </section>
+      </section>
+    </details>
   );
 }

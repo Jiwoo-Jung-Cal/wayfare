@@ -12,6 +12,20 @@ const API_PORT = 8788;
 const DEMO_PORT = 5176; // production build (dist/), served under a sub-path like a static host
 const reuse = !process.env.CI;
 const connected = /connected\.spec\.ts$/;
+// Existing journeys start before any booking with the demo controls open. A fresh visitor
+// instead opens on the booked, cancelled reference scenario (e2e/parity.spec.ts clears this).
+const prefs = (port: number) => ({
+  cookies: [],
+  origins: [
+    {
+      origin: `http://localhost:${port}`,
+      localStorage: [
+        { name: 'wayfare:v1:first-stage', value: 'planning' },
+        { name: 'wayfare:v1:demo-controls', value: 'open' },
+      ],
+    },
+  ],
+});
 const demo = /demo\.spec\.ts$/;
 
 export default defineConfig({
@@ -26,18 +40,18 @@ export default defineConfig({
     ...(channel ? { channel } : {}),
   },
   projects: [
-    { name: 'desktop', testIgnore: [connected, demo], use: { ...devices['Desktop Chrome'], ...(channel ? { channel } : {}) } },
-    { name: 'mobile', testIgnore: [connected, demo], use: { ...devices['Pixel 7'], ...(channel ? { channel } : {}) }, grep: /@mobile/ },
+    { name: 'desktop', testIgnore: [connected, demo], use: { ...devices['Desktop Chrome'], ...(channel ? { channel } : {}), storageState: prefs(PORT) } },
+    { name: 'mobile', testIgnore: [connected, demo], use: { ...devices['Pixel 7'], ...(channel ? { channel } : {}), storageState: prefs(PORT) }, grep: /@mobile/ },
     {
       // The shareable demo: the documented walkthrough (docs/DEMO.md) against the real production build.
       name: 'demo',
       testMatch: demo,
-      use: { ...devices['Desktop Chrome'], ...(channel ? { channel } : {}), baseURL: `http://localhost:${DEMO_PORT}/wayfare/` },
+      use: { ...devices['Desktop Chrome'], ...(channel ? { channel } : {}), baseURL: `http://localhost:${DEMO_PORT}/wayfare/`, storageState: prefs(DEMO_PORT) },
     },
     {
       name: 'connected',
       testMatch: connected,
-      use: { ...devices['Desktop Chrome'], ...(channel ? { channel } : {}), baseURL: `http://localhost:${CONNECTED_PORT}` },
+      use: { ...devices['Desktop Chrome'], ...(channel ? { channel } : {}), baseURL: `http://localhost:${CONNECTED_PORT}`, storageState: prefs(CONNECTED_PORT) },
     },
   ],
   webServer: [

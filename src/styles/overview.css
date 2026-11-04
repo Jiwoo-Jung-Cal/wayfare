@@ -148,10 +148,30 @@ html.wf-windowed .wf-bp-stub {
   position: absolute;
   z-index: 2;
   top: 50%;
-  right: 0;
+  left: calc(100% - 26px);
   width: 26px;
   height: 26px;
   margin-top: -13px;
+  animation: wf-fly 6s cubic-bezier(0.45, 0, 0.2, 1) 0.4s both;
+}
+/* The plane flies from origin to destination and stops there, passing behind the stamp. */
+@keyframes wf-fly {
+  0% {
+    left: 0;
+    opacity: 0;
+  }
+  8% {
+    opacity: 1;
+  }
+  100% {
+    left: calc(100% - 26px);
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .wf-bp-fly {
+    animation: none;
+  }
 }
 .wf-bp-fly .wf-icon {
   width: 26px;
@@ -327,7 +347,7 @@ html.wf-windowed .wf-bp-stub {
   display: flex;
   flex-direction: column;
   width: 100%;
-  margin-top: -12px;
+  margin-top: 2px; /* reference: closed passes peek 64 px apart */
   padding: 0;
   overflow: hidden;
   border: 0;
@@ -341,6 +361,9 @@ html.wf-windowed .wf-bp-stub {
 }
 .wf-pass:first-child {
   margin-top: 0;
+}
+.wf-pass-open + .wf-pass {
+  margin-top: 12px;
 }
 .wf-pass:hover {
   transform: translateY(-14px);
