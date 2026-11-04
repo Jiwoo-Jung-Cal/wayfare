@@ -103,6 +103,7 @@
 .wf-cmp-t th, .wf-cmp-t td { padding: 10px 12px; border-bottom: 1px solid var(--wf-color-border-soft); text-align: right; font-variant-numeric: tabular-nums; }
 .wf-cmp-t th:first-child, .wf-cmp-t td:first-child { text-align: left; }
 .wf-cmp-t thead th { color: var(--wf-color-text-muted); font-size: 0.84rem; font-weight: 500; }
+.wf-cmp-t th:first-child, .wf-cmp-t td:first-child { white-space: nowrap; }
 .wf-cmp-t tbody td:first-child i { display: inline-block; width: 8px; height: 8px; margin-right: 8px; border-radius: 2px; vertical-align: middle; }
 .wf-cmp-t tfoot td { border-bottom: 0; font-weight: 600; }
 .wf-lo { color: var(--wf-color-positive); }
@@ -112,5 +113,11 @@
   .wf-plan-options, .wf-ex-grid { grid-template-columns: minmax(0, 1fr); }
   .wf-wfbox { grid-template-columns: minmax(0, 1fr); }
   .wf-pop { left: 10px !important; }
-  .wf-recent { flex-direction: column; }
+  /* r2 narrow export: the composer's chips stay on one row; the route chip shows its icon only. */
+  .wf-chip-route span { display: none; }
+  .wf-cb { gap: 4px; padding-inline: 8px; }
+  .wf-chipb { gap: 5px; padding: 0 9px; font-size: 0.84rem; }
+  .wf-chip-route { padding: 0 9px; }
+  .wf-cmp-t { font-size: 0.85rem; }
+  .wf-cmp-t th, .wf-cmp-t td { padding: 9px 8px; }
 }

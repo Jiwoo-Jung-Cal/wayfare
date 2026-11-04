@@ -44,7 +44,7 @@
 .wf-rr-kv > div > span:first-child { color: var(--wf-color-text-muted); }
 .wf-rr-tot { padding-top: 8px; border-top: 1px solid var(--wf-color-border-soft); font-weight: 600; }
 .wf-rr-kv .wf-rr-tot > span:first-child { color: var(--wf-color-text); }
-.wf-rr-note { margin-top: 14px; font-size: 0.86rem; }
+.wf-rr-chart-card .wf-rr-note { margin-top: 14px; font-size: 0.86rem; }
 
 .wf-rr-foot { display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: 16px; margin-top: 20px; }
 .wf-rr-foot > span { font-size: 0.9rem; }

@@ -17,7 +17,7 @@ import {
   type Result,
 } from '../core/index.ts';
 import { Button, ErrorState, StatusBadge } from '../ui/index.tsx';
-import { useAppServices } from './AppServices.tsx';
+import { openReferenceScenario, useAppServices } from './AppServices.tsx';
 import { FEATURES } from './featureRegistry.ts';
 
 const PANEL_KEY = 'wayfare:v1:demo-controls';
@@ -139,6 +139,7 @@ export function DemoControls() {
         </div>
 
         <div className="wf-row" role="group" aria-label="Sample data">
+          <Button disabled={disabled} onClick={() => run('reference', () => openReferenceScenario(repo, featureContext))}>Show the reference scenario</Button>
           <Button disabled={disabled} onClick={() => reset('planning')}>Load sample trip</Button>
           <Button disabled={disabled || !hasTrip} onClick={loadBookings}>Import sample bookings</Button>
           <Button disabled={disabled || !hasBookings} onClick={triggerDisruption}>Trigger flight cancellation</Button>

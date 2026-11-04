@@ -398,22 +398,28 @@
     border-radius: var(--wf-radius-full);
     box-shadow: var(--wf-shadow-lift);
   }
+  /* r2 narrow export: an icon-only floating pill; each tab keeps its name for assistive tech. */
   .wf-tabbar a {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 2px;
-    min-width: 0;
-    padding: 6px 12px;
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 36px;
     border-radius: var(--wf-radius-full);
     color: var(--wf-color-text-muted);
-    font-size: 0.7rem;
-    font-weight: var(--wf-weight-medium);
     text-decoration: none;
   }
+  .wf-tabbar a span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
   .wf-tabbar a[aria-current='page'] {
-    background: var(--wf-color-surface-muted);
+    background: var(--wf-color-surface);
     color: var(--wf-color-text);
+    box-shadow: 0 1px 2px rgb(0 0 0 / 0.08), 0 0 0 1px var(--wf-color-border-soft);
   }
   .wf-tabbar .wf-icon {
     width: 18px;
@@ -428,9 +434,6 @@
   .wf-trip {
     margin-left: 4px;
     padding: 6px 9px;
-  }
-  .wf-brand span {
-    display: none;
   }
   .wf-tools {
     gap: 2px;
