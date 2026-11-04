@@ -7,7 +7,6 @@ import { Link } from 'react-router';
 import {
   deadlineStatus,
   findInWindow,
-  isBefore,
   isUnknown,
   msUntil,
   sumMaybe,
@@ -21,6 +20,7 @@ import {
 } from '../core/index.ts';
 import { Icon, type IconName } from '../ui/icons.tsx';
 import { MoneyText } from '../ui/index.tsx';
+import { tripFacts } from './tripFacts.ts';
 
 export const CAT: Record<BookingKind, { color: string; icon: IconName; label: string }> = {
   flight: { color: 'var(--wf-color-cat-flight)', icon: 'plane', label: 'Flight' },
@@ -29,6 +29,22 @@ export const CAT: Record<BookingKind, { color: string; icon: IconName; label: st
   transfer: { color: 'var(--wf-color-cat-ride)', icon: 'car', label: 'Ride' },
   other: { color: 'var(--wf-color-text-muted)', icon: 'ticket', label: 'Booking' },
 };
+
+/** Display names for airport codes shown on the pass (lookup only; codes come from the trip). */
+const AIRPORT: Record<string, [string, string]> = {
+  SFO: ['San Francisco', 'International'],
+  JFK: ['New York', 'John F. Kennedy Intl.'],
+};
+
+/** A "Key: value" line from the booking's stored evidence document, if present. */
+function docField(s: WorkspaceSnapshot, b: Booking, key: string): string | null {
+  for (const id of b.evidenceDocumentIds) {
+    const text = s.documents.find((d) => d.id === id)?.text ?? '';
+    const m = new RegExp(`^${key}:\\s*(.+)$`, 'mi').exec(text);
+    if (m) return m[1]!.trim();
+  }
+  return null;
+}
 
 const fmt = (at: Instant, tz: string, opts: Intl.DateTimeFormatOptions) => new Intl.DateTimeFormat('en-US', { timeZone: tz, ...opts }).format(new Date(at));
 const day = (at: Instant, tz: string) => fmt(at, tz, { weekday: 'short', month: 'short', day: 'numeric' });
@@ -80,18 +96,30 @@ function BoardingPass({ s, flight, now }: { s: WorkspaceSnapshot; flight: Bookin
   const flightNo = /^[A-Z0-9]{2}\s?\d+/.exec(flight.title)?.[0] ?? flight.title;
   const from = trip.origin.code ?? trip.origin.name;
   const to = trip.destination.code ?? trip.destination.name;
+  const fromName = AIRPORT[from] ?? [trip.origin.name, ''];
+  const toName = AIRPORT[to] ?? [trip.destination.name, ''];
+  const fare = docField(s, flight, 'Fare');
+  const passenger = docField(s, flight, 'Passenger');
   const label = `Boarding pass for ${flight.provider} flight ${flightNo}${disrupted ? ', cancelled by the airline' : ''}`;
   return (
     <div className="wf-bp" tabIndex={0} aria-label={label}>
       <div className="wf-bp-main">
         <div className="wf-bp-band">
           <b>{flight.provider.toUpperCase()}</b>
-          <span className="wf-label-mono">Boarding pass</span>
+          <span className="wf-label-mono">Boarding pass{fare ? ` · ${fare}` : ''}</span>
         </div>
         <div className="wf-bp-body">
           <div>
             <div className="wf-bp-code">{from}</div>
-            <div className="wf-bp-city">{trip.origin.name}</div>
+            <div className="wf-bp-city">
+              {fromName[0]}
+              {fromName[1] && (
+                <>
+                  <br />
+                  {fromName[1]}
+                </>
+              )}
+            </div>
           </div>
           <div className="wf-bp-path">
             {disrupted && (
@@ -105,14 +133,22 @@ function BoardingPass({ s, flight, now }: { s: WorkspaceSnapshot; flight: Bookin
           </div>
           <div style={{ textAlign: 'right' }}>
             <div className="wf-bp-code">{to}</div>
-            <div className="wf-bp-city">{trip.destination.name}</div>
+            <div className="wf-bp-city">
+              {toName[0]}
+              {toName[1] && (
+                <>
+                  <br />
+                  {toName[1]}
+                </>
+              )}
+            </div>
           </div>
         </div>
         <div className="wf-bp-grid">
-          <Field k="Passenger" v="1 traveler" />
+          <Field k="Passenger" v={passenger ?? 'Not set'} muted={!passenger} />
           <Field k="Flight" v={flightNo} />
-          <Field k="Date" v={day(flight.startsAt, tz)} />
-          <Field k="Departs" v={time(flight.startsAt, tz)} />
+          <Field k="Date" v={fmt(flight.startsAt, tz, { weekday: 'short', day: 'numeric', month: 'short' }).replace(/(\w+), (\w+) (\d+)/, '$1, $3 $2')} />
+          <Field k="Departs" v={fmt(flight.startsAt, tz, { hour: 'numeric', minute: '2-digit' })} />
           <Field k="Gate" v="Not set" muted />
           <Field k="Seat" v="Not set" muted />
         </div>
@@ -129,7 +165,7 @@ function BoardingPass({ s, flight, now }: { s: WorkspaceSnapshot; flight: Bookin
             <Field k="To" v={to} />
           </div>
           <div className="wf-bp-row2">
-            <Field k="Date" v={fmt(flight.startsAt, tz, { day: 'numeric', month: 'short' })} />
+            <Field k="Date" v={fmt(flight.startsAt, tz, { day: 'numeric', month: 'short' }).replace(/(\w+) (\d+)/, '$2 $1')} />
             <Field k="Refund" v={owed ? <span className="wf-gain"><Signed value={owed} sign="+" /></span> : '—'} />
           </div>
           <div className="wf-bp-barcode" aria-hidden="true" />
@@ -157,39 +193,42 @@ function useTick(ms: number) {
   }, [ms]);
 }
 
+const NOUN: Record<string, string> = { flight: 'flight', hotel: 'hotel', activity: 'activity', transfer: 'ride', other: 'booking' };
+/** "Thursday 6:00 PM ET" */
+const whenGeneric = (at: Instant, tz: string) =>
+  fmt(at, tz, { weekday: 'long', hour: 'numeric', minute: '2-digit', timeZoneName: 'shortGeneric' }).replace(/ at /, ' ').replace(/,/, '');
+
 export function OverviewHero({ s, tripId, now }: { s: WorkspaceSnapshot; tripId: string; now: Instant }) {
   useTick(30_000);
-  const bookings = s.bookings.filter((b) => b.tripId === tripId);
+  const f = tripFacts(s, tripId, now);
+  const bookings = f.bookings;
   if (bookings.length === 0) return null;
   const flight = bookings.find((b) => b.kind === 'flight');
   const disruption = s.disruptions.find((d) => d.tripId === tripId && d.status === 'active');
-  const actions = s.actions.filter((a) => a.tripId === tripId);
-  const claims = s.claims.filter((c) => c.tripId === tripId);
-  const approved = actions.length > 0;
-  const cancelOption = s.recoveryOptions.find((o) => o.tripId === tripId && o.kind === 'cancel_trip');
-  const optionFresh = cancelOption && (cancelOption.validUntil === null || isBefore(now, cancelOption.validUntil));
-
-  // Decide within: the earliest still-open deadline on a booking that is not cancelled yet.
-  const open = s.policies
-    .filter((p) => p.tripId === tripId)
-    .flatMap((p) => p.deadlines.map((d) => ({ d, p, booking: bookings.find((b) => b.id === p.bookingId) })))
-    .filter(({ d, booking }) => booking && booking.state !== 'cancelled' && booking.state !== 'replaced' && deadlineStatus(now, d.at) === 'before_deadline')
-    .sort((a, b) => a.d.at.localeCompare(b.d.at))[0];
-
+  const actions = s.actions.filter((a) => a.tripId === tripId && (!disruption || a.disruptionId === disruption.id));
+  const cancels = actions.filter((a) => a.action === 'cancel').length;
+  const approved = f.approved;
+  const open = f.nextDeadline;
   const paid = sumMaybe(bookings.map((b) => b.paid), 'USD');
-  const back: MaybeMoney | null = approved
-    ? sumMaybe(claims.map((c) => c.expected), 'USD')
-    : optionFresh
-      ? cancelOption!.expectedCashRecovery
-      : null;
-  const lost: MaybeMoney | null = !approved && optionFresh ? cancelOption!.forecastCost : null;
+  const back = f.cancelTrip?.expectedCashRecovery ?? null;
+  const lost = f.cancelTrip?.forecastCost ?? null;
+  const d = f.disrupted;
 
   const steps: { title: string; body: string; done: boolean; now: boolean; to?: string; cta?: string }[] = disruption
     ? [
-        { title: 'Read what happened', body: `${disruption.description}${disruption.capability === 'simulated' ? ' (simulated)' : ''}`, done: true, now: false },
+        {
+          title: 'Read what happened',
+          body: `${d?.provider ?? 'The provider'} cancelled your ${NOUN[d?.kind ?? 'other']}. You don’t need to call anyone.`,
+          done: true,
+          now: false,
+        },
         {
           title: 'Choose: keep the trip or cancel it',
-          body: approved ? `You chose an option. ${actions.length} simulated action${actions.length === 1 ? '' : 's'} recorded.` : 'Compare both options in ReRoute.',
+          body: approved
+            ? cancels
+              ? `You chose to cancel. We recorded ${cancels} cancellation${cancels === 1 ? '' : 's'}.`
+              : 'You chose to keep the trip. We recorded the rebooking.'
+            : 'Compare both options in ReRoute. It takes about a minute.',
           done: approved,
           now: !approved,
           to: `/trips/${tripId}/reroute`,
@@ -197,7 +236,7 @@ export function OverviewHero({ s, tripId, now }: { s: WorkspaceSnapshot; tripId:
         },
         {
           title: 'Get your money back',
-          body: approved ? 'TripWallet tracks every refund claim.' : 'Each refund is tracked once you choose.',
+          body: approved ? 'We’re tracking every refund in TripWallet.' : 'We’ll track each refund and tell you when it arrives.',
           done: false,
           now: approved,
           to: `/trips/${tripId}/wallet`,
@@ -220,7 +259,7 @@ export function OverviewHero({ s, tripId, now }: { s: WorkspaceSnapshot; tripId:
               {Math.floor(msUntil(now, open.d.at) / 3_600_000)}h {String(Math.floor((msUntil(now, open.d.at) % 3_600_000) / 60_000)).padStart(2, '0')}m
             </div>
             <p className="wf-muted">
-              By {fmt(open.d.at, open.d.displayTimezone, { weekday: 'long', hour: 'numeric', minute: '2-digit', timeZoneName: 'short' })}. After that, {open.booking!.provider} refunds less.
+              By {whenGeneric(open.d.at, open.d.displayTimezone)}. After that, the {NOUN[open.booking.kind]} refunds less.
             </p>
           </div>
           <Link className="wf-button" data-variant="dark" to={`/trips/${tripId}/reroute`}>
@@ -254,14 +293,14 @@ export function OverviewHero({ s, tripId, now }: { s: WorkspaceSnapshot; tripId:
           )}
           <div className="wf-money-tiles">
             <div>
-              <span className="wf-label-mono">{approved ? 'Expected back' : 'Back if you cancel'}</span>
+              <span className="wf-label-mono">{approved ? 'Coming back' : 'Back if you cancel'}</span>
               <div className="wf-big wf-num wf-gain">{back ? <Signed value={back} sign="+" /> : '—'}</div>
-              <p className="wf-muted">{back ? 'Expected' : <Link to={`/trips/${tripId}/reroute`}>Compare in ReRoute</Link>}</p>
+              <p className="wf-muted">{back ? 'Expected' : 'Nothing to compare yet'}</p>
             </div>
             <div>
               <span className="wf-label-mono">Can’t get back</span>
               <div className="wf-big wf-num wf-loss">{lost ? <Signed value={lost} sign="−" /> : '—'}</div>
-              <p className="wf-muted">{lost ? 'If you cancel now' : approved ? 'See TripWallet' : 'Compare in ReRoute'}</p>
+              <p className="wf-muted">{lost ? (approved ? 'Lost to fees' : 'If you cancel now') : 'Nothing to compare yet'}</p>
             </div>
             <div>
               <span className="wf-label-mono">You paid</span>
@@ -276,9 +315,59 @@ export function OverviewHero({ s, tripId, now }: { s: WorkspaceSnapshot; tripId:
   );
 }
 
+/** Pass header right-hand label and value, as in the reference ("CHECK IN · Fri 3 PM"). */
+function passMeta(b: Booking): [string, string] {
+  const tz = b.localTimezone;
+  const short = (at: Instant) => fmt(at, tz, { weekday: 'short', hour: 'numeric', minute: '2-digit' }).replace(':00', '').replace(',', '');
+  if (b.kind === 'flight') return ['FLIGHT', /^[A-Z0-9]{2}\s?\d+/.exec(b.title)?.[0] ?? b.reference];
+  if (b.kind === 'hotel') return ['CHECK IN', short(b.startsAt)];
+  if (b.kind === 'transfer') return ['PICK UP', short(b.startsAt)];
+  return ['STARTS', short(b.startsAt)];
+}
+
+function passFields(s: WorkspaceSnapshot, b: Booking): [string, ReactNode][] {
+  const tz = b.localTimezone;
+  const d = (at: Instant) => day(at, tz);
+  const t = (at: Instant) => fmt(at, tz, { hour: 'numeric', minute: '2-digit' });
+  const paid = isMoney(b.paid) ? <MoneyText value={b.paid} /> : 'Unknown';
+  if (b.kind === 'flight') return [['Date', d(b.startsAt)], ['Departs', time(b.startsAt, tz)], ['Fare', docField(s, b, 'Fare') ?? 'Not set'], ['Booking', b.reference]];
+  if (b.kind === 'hotel') return [['Check in', d(b.startsAt)], ['Check out', b.endsAt ? d(b.endsAt) : 'Not set'], ['Paid', paid], ['Booking', b.reference]];
+  if (b.kind === 'transfer') return [['Date', d(b.startsAt)], ['Pick up', t(b.startsAt)], ['Paid', paid], ['Booking', b.reference]];
+  return [['Date', d(b.startsAt)], ['Starts', t(b.startsAt)], ['Paid', paid], ['Booking', b.reference]];
+}
+
+function passHero(s: WorkspaceSnapshot, b: Booking): string {
+  const trip = s.trips.find((t) => t.id === b.tripId);
+  if (b.kind === 'flight' && trip) return `${trip.origin.code ?? trip.origin.name} → ${trip.destination.code ?? trip.destination.name}`;
+  return b.title;
+}
+
+/** One-line refund note from the stored policy tiers and recorded state. */
+function passNote(s: WorkspaceSnapshot, b: Booking, now: Instant): string {
+  const disrupted = s.disruptions.some((d) => d.bookingId === b.id && d.status === 'active' && d.type === 'cancellation');
+  const policy = s.policies.find((p) => p.id === b.policyId);
+  if (disrupted) {
+    const owed = refundTierNow(policy, now, 'provider_cancels')?.refund;
+    return `Cancelled by the ${b.kind === 'flight' ? 'airline' : 'provider'}.${owed && isMoney(owed) ? ` +${tileMoney(owed)} refund owed.` : ''}`;
+  }
+  if (b.state === 'cancelled') return s.claims.some((c) => c.bookingId === b.id) ? 'Cancelled. Refund claim open.' : 'Cancelled.';
+  if (!policy || policy.refundability === 'unknown') return 'Refund terms unknown · review the booking';
+  const dl = policy.deadlines.filter((x) => deadlineStatus(now, x.at) === 'before_deadline').sort((a, c) => a.at.localeCompare(c.at))[0];
+  const short = (at: Instant, tz: string) => fmt(at, tz, { weekday: 'short', hour: 'numeric', minute: '2-digit' }).replace(':00', '').replace(',', '').replace(/12 PM/, 'noon');
+  if (dl) {
+    const before = policy.refundTiers.find((x) => x.window.endsBefore === dl.at)?.refund;
+    return before && isMoney(before) ? `Cancel before ${short(dl.at, dl.displayTimezone)}: +${tileMoney(before)} back.` : `Refund changes ${short(dl.at, dl.displayTimezone)}.`;
+  }
+  const nowTier = refundTierNow(policy, now, 'traveler_cancels') ?? refundTierNow(policy, now);
+  if (nowTier && isMoney(nowTier.refund)) return nowTier.refund.amountMinor ? `Cancelling now: +${tileMoney(nowTier.refund)} back.` : 'No refund if you cancel now.';
+  return '';
+}
+
+const KIND_ORDER: Record<string, number> = { flight: 0, hotel: 1, activity: 2, transfer: 3, other: 4 };
+
 function Passes({ s, bookings, now }: { s: WorkspaceSnapshot; bookings: Booking[]; now: Instant }) {
-  const [openId, setOpenId] = useState<string | null>(bookings[0]?.id ?? null);
-  const order = [...bookings].sort((a, b) => a.startsAt.localeCompare(b.startsAt));
+  const order = [...bookings].sort((a, b) => KIND_ORDER[a.kind]! - KIND_ORDER[b.kind]! || a.startsAt.localeCompare(b.startsAt));
+  const [openId, setOpenId] = useState<string | null>(order[0]?.id ?? null);
   return (
     <div>
       <h2 className="wf-sec-t">
@@ -288,19 +377,8 @@ function Passes({ s, bookings, now }: { s: WorkspaceSnapshot; bookings: Booking[
         {order.map((b) => {
           const cat = CAT[b.kind] ?? CAT.other;
           const open = openId === b.id;
-          const policy = s.policies.find((p) => p.id === b.policyId);
-          const tier = refundTierNow(policy, now, b.kind === 'flight' ? 'provider_cancels' : undefined);
-          const claim = s.claims.find((c) => c.bookingId === b.id);
-          const note =
-            b.state === 'cancelled'
-              ? claim
-                ? 'Cancelled. Refund claim open in TripWallet.'
-                : 'Cancelled.'
-              : tier && isMoney(tier.refund)
-                ? `${tier.label}`
-                : policy?.refundability === 'unknown'
-                  ? 'Refund terms unknown · review in Import'
-                  : '';
+          const [rk, rv] = passMeta(b);
+          const note = passNote(s, b, now);
           return (
             <button
               key={b.id}
@@ -314,29 +392,19 @@ function Passes({ s, bookings, now }: { s: WorkspaceSnapshot; bookings: Booking[
                 <Icon name={cat.icon} />
                 <b>{b.provider}</b>
                 <span className="wf-pass-r">
-                  <small>{cat.label.toUpperCase()}</small>
-                  {day(b.startsAt, b.localTimezone)}
+                  <small>{rk}</small>
+                  {rv}
                 </span>
               </span>
               {open && (
                 <span className="wf-pass-b">
-                  <span className="wf-pass-hero">{b.title}</span>
-                  <span>
-                    <small>STARTS</small>
-                    {time(b.startsAt, b.localTimezone)}
-                  </span>
-                  <span>
-                    <small>BOOKING</small>
-                    {b.reference}
-                  </span>
-                  <span>
-                    <small>PAID</small>
-                    {isMoney(b.paid) ? <MoneyText value={b.paid} /> : 'Unknown'}
-                  </span>
-                  <span>
-                    <small>STATUS</small>
-                    {b.state.charAt(0).toUpperCase() + b.state.slice(1)}
-                  </span>
+                  <span className="wf-pass-hero">{passHero(s, b)}</span>
+                  {passFields(s, b).map(([k, v]) => (
+                    <span key={k}>
+                      <small>{k.toUpperCase()}</small>
+                      {v}
+                    </span>
+                  ))}
                   {note && <span className="wf-pass-note">{note}</span>}
                   <span className="wf-pass-bc" aria-hidden="true" />
                 </span>

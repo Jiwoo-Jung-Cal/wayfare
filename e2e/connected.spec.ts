@@ -7,19 +7,22 @@ import { expect, test, type Page } from '@playwright/test';
 const TRIP = '/#/trips/trip-demo-nyc';
 
 const control = (page: Page, name: string) => page.getByRole('button', { name, exact: true });
-const bookingRows = (page: Page) => page.getByRole('table').getByRole('row').filter({ hasNot: page.getByRole('columnheader') });
+// Bookings are listed in the Itinerary; the Overview says what happened to the flight.
+const bookingRows = (page: Page) => page.locator('.wf-row-b');
+const cancelledNote = (page: Page) => page.getByText('Bayline Air cancelled your flight. You don’t need to call anyone.');
 const workspaceId = async (page: Page) => (await page.getByText(/^Workspace ws-/).textContent())!.replace('Workspace ', '').trim();
 
 test('two visitors get isolated server workspaces; reset is scoped; state survives reload', async ({ browser }) => {
   const visitorA = await (await browser.newContext()).newPage();
   const visitorB = await (await browser.newContext()).newPage();
 
-  await visitorA.goto(TRIP);
+  await visitorA.goto(`${TRIP}/itinerary`);
   await expect(visitorA.locator('footer.wf-footer')).toContainText('server workspace');
   await control(visitorA, 'Import sample bookings').click();
   await expect(bookingRows(visitorA)).toHaveCount(4);
   await control(visitorA, 'Trigger flight cancellation').click();
-  await expect(visitorA.getByText(/Disruption:.*Bayline Air cancelled BL 214/)).toBeVisible();
+  await visitorA.goto(TRIP);
+  await expect(cancelledNote(visitorA)).toBeVisible();
 
   // Workspace data lives on the server, not in the browser.
   const localKeys = await visitorA.evaluate(() => Object.keys(localStorage));
@@ -30,7 +33,7 @@ test('two visitors get isolated server workspaces; reset is scoped; state surviv
   await visitorB.goto(TRIP);
   await expect(visitorB.locator('footer.wf-footer')).toContainText('server workspace');
   await expect(visitorB.getByText(/No confirmed bookings yet/)).toBeVisible();
-  await expect(visitorB.getByText(/Disruption:/)).toHaveCount(0);
+  await expect(cancelledNote(visitorB)).toHaveCount(0);
   expect(await workspaceId(visitorB)).not.toBe(await workspaceId(visitorA));
 
   // B clears only B's workspace.
@@ -41,8 +44,9 @@ test('two visitors get isolated server workspaces; reset is scoped; state surviv
 
   // A's server workspace is untouched and survives a reload.
   await visitorA.reload();
+  await expect(cancelledNote(visitorA)).toBeVisible();
+  await visitorA.goto(`${TRIP}/itinerary`);
   await expect(bookingRows(visitorA)).toHaveCount(4);
-  await expect(visitorA.getByText(/Disruption:/)).toBeVisible();
 });
 
 test('intake extraction runs on the server and never fakes unrecognized text', async ({ page }) => {

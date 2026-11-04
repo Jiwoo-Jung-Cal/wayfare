@@ -7,8 +7,13 @@ import { expect, test, type Page } from '@playwright/test';
 const TRIP = '/#/trips/trip-demo-nyc';
 
 const control = (page: Page, name: string) => page.getByRole('button', { name, exact: true });
-const bookingRows = (page: Page) => page.getByRole('table').getByRole('row').filter({ hasNot: page.getByRole('columnheader') });
-const deadline = (page: Page, label: string) => page.getByRole('listitem').filter({ hasText: label });
+// Bookings and their deadlines are listed in the Itinerary (design r2-final); open it first.
+const ITIN = `${TRIP}/itinerary`;
+const bookingRows = (page: Page) => page.locator('.wf-row-b');
+const row = (page: Page, text: string) => bookingRows(page).filter({ hasText: text });
+/** The hotel's own deadline line in the Itinerary: "… · 30h 00m left" while open, "… · passed" after. */
+const hotelDeadline = (page: Page) => row(page, 'Harbor Line Hotel Midtown').locator('.wf-dlx');
+const cancelledNote = (page: Page) => page.getByText('Bayline Air cancelled your flight. You don’t need to call anyone.');
 const statusMessage = (page: Page) => page.locator('[aria-live="polite"]').filter({ hasText: /\w/ }).last();
 
 test.describe('demo journey: shell steps', () => {
@@ -23,34 +28,39 @@ test.describe('demo journey: shell steps', () => {
     await expect(page.getByText(/No confirmed bookings yet/)).toBeVisible();
 
     // Import the four reviewed sample bookings; a repeat import must not duplicate.
+    await page.goto(ITIN);
     await control(page, 'Import sample bookings').click();
     await expect(statusMessage(page)).toHaveText('Saved 4 reviewed sample bookings.');
     await expect(bookingRows(page)).toHaveCount(4);
     await control(page, 'Import sample bookings').click();
     await expect(statusMessage(page)).toHaveText('Sample bookings were already imported; nothing duplicated.');
     await expect(bookingRows(page)).toHaveCount(4);
-    for (const amount of ['$320.00', '$450.00', '$80.00', '$50.00']) {
-      await expect(page.getByRole('cell', { name: amount, exact: true })).toBeVisible();
+    for (const [title, amount] of [['BL 214', '$320.00'], ['Harbor Line Hotel Midtown', '$450.00'], ['Skyline Walk', '$80.00'], ['transfer', '$50.00']]) {
+      await expect(row(page, title!)).toContainText(amount!);
     }
 
-    // Simulated outbound cancellation.
+    // Simulated outbound cancellation: the airline owes the fare; the Overview says what happened.
     await control(page, 'Trigger flight cancellation').click();
-    await expect(page.getByText(/Disruption:.*Bayline Air cancelled BL 214/)).toBeVisible();
+    await expect(row(page, 'BL 214')).toContainText('No deadline · the airline owes you +$320');
+    await page.goto(TRIP);
+    await expect(cancelledNote(page)).toBeVisible();
 
     // Frozen boundary: open one second before, passed exactly at 2026-11-19T23:00:00Z.
+    await page.goto(ITIN);
     await control(page, '1 s before hotel deadline').click();
     await expect(page.getByLabel('Active clock')).toContainText('2026-11-19T22:59:59Z');
-    await expect(deadline(page, 'Hotel $400 refund deadline')).toContainText('Open');
+    await expect(hotelDeadline(page)).toContainText('+$400 → +$200 · 0h 00m left');
     await control(page, 'At hotel deadline').click();
     await expect(page.getByLabel('Active clock')).toContainText('2026-11-19T23:00:00Z');
-    await expect(deadline(page, 'Hotel $400 refund deadline')).toContainText('Passed');
+    await expect(hotelDeadline(page)).toContainText('passed');
 
     // Reload: state, clock and boundary persist.
     await page.reload();
     await expect(bookingRows(page)).toHaveCount(4);
-    await expect(page.getByText(/Disruption:/)).toBeVisible();
     await expect(page.getByLabel('Active clock')).toContainText('2026-11-19T23:00:00Z');
-    await expect(deadline(page, 'Hotel $400 refund deadline')).toContainText('Passed');
+    await expect(hotelDeadline(page)).toContainText('passed');
+    await page.goto(TRIP);
+    await expect(cancelledNote(page)).toBeVisible();
 
     // Reset affects only this workspace and asks for confirmation first.
     page.once('dialog', (d) => d.accept());
@@ -109,10 +119,10 @@ test.describe('demo journey: shell steps', () => {
   });
 
   test('@mobile narrow layout has no horizontal scroll', async ({ page }) => {
-    await page.goto(TRIP);
+    await page.goto(ITIN);
     await control(page, 'Import sample bookings').click();
     await expect(bookingRows(page)).toHaveCount(4);
-    await expectNoOverflow(page, ['', 'reroute', 'wallet']);
+    await expectNoOverflow(page, ['', 'itinerary', 'reroute', 'wallet']);
   });
 });
 
@@ -185,10 +195,10 @@ test.describe('demo journey: Wayfinder and intake (Agent 2, #4)', () => {
     await control(page, 'Save reviewed booking').click();
     await expect(status(page, 'Already imported: Harbor Line Hotel Midtown HLH-48213. No duplicate was created')).toBeVisible();
 
-    await page.goto(TRIP);
+    await page.goto(ITIN);
     await expect(bookingRows(page)).toHaveCount(1);
-    await expect(page.getByRole('cell', { name: '$450.00', exact: true })).toBeVisible();
-    await expect(deadline(page, 'Hotel $400 refund deadline')).toContainText('Open');
+    await expect(row(page, 'Harbor Line Hotel Midtown')).toContainText('$450.00');
+    await expect(hotelDeadline(page)).toContainText('left');
 
     // Unknown policy stays unknown; no invented refund rule.
     await page.goto(`${TRIP}/import`);
@@ -240,8 +250,8 @@ async function startReRoute(page: Page) {
   await control(page, 'Import sample bookings').click();
   await expect(statusMessage(page)).toHaveText('Saved 4 reviewed sample bookings.');
   await control(page, 'Trigger flight cancellation').click();
-  await expect(page.getByText(/Disruption:.*Bayline Air cancelled BL 214/)).toBeVisible();
-  await page.getByRole('link', { name: 'Open ReRoute' }).click();
+  await expect(cancelledNote(page)).toBeVisible();
+  await page.getByRole('link', { name: 'See what to do' }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'ReRoute' })).toBeVisible();
 }
 
@@ -278,11 +288,13 @@ test.describe('demo journey: ReRoute approval to TripWallet (Agents 4 and 5, #6/
     await expect(page.getByRole('heading', { level: 1, name: 'TripWallet', exact: true })).toBeVisible();
     await expect(card(page, 'Harbor Line Hotel Midtown')).toContainText('$400.00');
 
+    // The Overview reports the recorded choice; the Itinerary shows every booking cancelled.
     await page.goto(TRIP);
-    const claimsCard = card(page, 'Refund claims');
-    await expect(claimsCard.getByRole('listitem')).toHaveCount(4);
-    await expect(claimsCard).toContainText('$400.00');
-    for (const row of await bookingRows(page).all()) await expect(row).toContainText(/cancelled/i);
+    await expect(page.getByText('You chose to cancel. We recorded 4 cancellations.')).toBeVisible();
+    await expect(page.locator('.wf-money-tiles')).toContainText('+$820');
+    await page.goto(ITIN);
+    await expect(bookingRows(page)).toHaveCount(4);
+    for (const r of await bookingRows(page).all()) await expect(r).toContainText('Cancelled');
     expect(errors).toEqual([]);
   });
 
@@ -305,7 +317,7 @@ test.describe('demo journey: ReRoute approval to TripWallet (Agents 4 and 5, #6/
     // Re-triggering the disruption from the dashboard is a no-op.
     await page.goto(TRIP);
     await control(page, 'Trigger flight cancellation').click();
-    await expect(page.getByText(/Disruption:.*Bayline Air cancelled BL 214/)).toHaveCount(1);
+    await expect(cancelledNote(page)).toHaveCount(1);
 
     // Wallet load re-runs claim sync (idempotent); importing the same receipt twice stores it once.
     await page.goto(`${TRIP}/wallet`);

@@ -41,7 +41,7 @@ test.skipIf(!available)('ReRoute actual approval → shell claims → receipts; 
     await button(p, 'Import sample bookings').click();
     await expect(p.getByText('Saved 4 reviewed sample bookings.')).toBeVisible();
     await button(p, 'Trigger flight cancellation').click();
-    await expect(p.getByText(/Disruption:.*Bayline Air cancelled/)).toBeVisible();
+    await expect(p.getByText('Bayline Air cancelled your flight. You don’t need to call anyone.')).toBeVisible();
     await p.goto(base + trip + '/reroute');
     await expect(card(p, 'Cancel the trip')).toContainText('$820.00');
   }
