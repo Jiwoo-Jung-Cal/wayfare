@@ -25,9 +25,8 @@ test('demo walkthrough on the production build: plan, intake, disruption, approv
 
   // 1. Planning: compare sample plans and select one (a plan is not a booking).
   await page.goto(`./${TRIP}/plan`);
-  await button(page, 'Generate options').click();
   const nonstop = page.getByRole('region', { name: 'Plan comparison' }).getByRole('article').filter({ hasText: 'Nonstop + Midtown hotel' });
-  await nonstop.getByRole('button', { name: 'Select plan' }).click();
+  await nonstop.getByRole('button', { name: 'Choose this plan' }).click();
   await expect(page.getByRole('status').filter({ hasText: 'Plan saved. No reservation was made.' })).toBeVisible();
   await page.goto(`./${TRIP}`);
   await expect(card(page, 'Selected plan')).toContainText('Nonstop + Midtown hotel');
