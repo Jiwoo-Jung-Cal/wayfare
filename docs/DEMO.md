@@ -67,6 +67,11 @@ A **first visit** opens like the design reference: NY Trip is booked and Bayline
   - To see which commit you are looking at, open https://jiwoo-jung-cal.github.io/wayfare/version.json or read the page's `<meta name="wayfare-source">`.
   - First verified deployment: run #9 on 2026-11-04 served `66b23b670e4012db76f7ef82511e3d1334db1829` (`dirty: false`, `mode: sample`), per the deploy job's live check. Later pushes redeploy the same way, so `version.json` is the authority for what is live now.
   - The cloud agent container cannot reach `github.io` (blocked by its network policy). The live check is the workflow's own, and the walkthrough is verified on the identical `--base /wayfare/` production build by the `demo` Playwright project.
+- **Vercel (prepared, not yet connected):** `vercel.json` configures the same sample-mode build (`npm ci`, `npm run build`, output `dist/`, long-cache `assets/`, no-cache `index.html`/`version.json`). The build reads `VERCEL_GIT_COMMIT_SHA` for provenance because Vercel builds have no `.git`. To connect, once, in the Vercel dashboard:
+  1. **Add New… → Project → Import** `Jiwoo-Jung-Cal/wayfare` (install the Vercel GitHub app on the repository when asked).
+  2. Keep the detected settings (Framework *Vite*, Root `./`; `vercel.json` supplies the commands). Under **Settings → General → Node.js Version** choose **24.x**.
+  3. Leave **`VITE_WAYFARE_API_URL` unset** so the public site stays in sample mode; never add `ANTHROPIC_API_KEY` to this project (it would be unused by the static site and must stay on a backend).
+  4. **Deploy.** Every push to `main` then deploys to production and every PR gets a preview URL. Check it with `https://<project>.vercel.app/version.json`: `source` must equal the deployed commit and `mode` must be `sample`.
 - **Figma Code Layer `24:1182`:** an older snapshot (source `5249cb7`, from before ReRoute and the r1 font fix). It is **not** current main, and its preview inside Figma has not been verified.
 
 ## Limitations
