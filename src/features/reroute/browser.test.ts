@@ -12,6 +12,12 @@ const available = !!executablePath || existsSync('/opt/google/chrome/chrome') ||
 const button = (p: Page, name: string) => p.getByRole('button', { name, exact: true });
 const card = (p: Page, name: string) => p.locator('.wf-card').filter({ has: p.getByRole('heading', { name, exact: true }) });
 const trip = '#/trips/trip-demo-nyc';
+// Shell test preferences (Agent 1, design parity): start before any booking, with demo controls open.
+const prefs = (c: import('@playwright/test').BrowserContext) =>
+  c.addInitScript(() => {
+    localStorage.setItem('wayfare:v1:first-stage', 'planning');
+    localStorage.setItem('wayfare:v1:demo-controls', 'open');
+  });
 
 async function snapshot(page: Page) {
   return page.evaluate(async () => {
@@ -28,6 +34,7 @@ test.skipIf(!available)('ReRoute actual approval → shell claims → receipts; 
   const browser = await chromium.launch({ headless: true, ...(executablePath ? { executablePath } : { channel: 'chrome' }), args: ['--no-sandbox'] });
   const errors: string[] = [];
   const context = await browser.newContext({ viewport: { width: 1440, height: 1000 } });
+  await prefs(context);
   const page = await context.newPage(); page.on('pageerror', e => errors.push(e.message));
   async function start(p: Page) {
     await p.goto(base + trip);
@@ -86,7 +93,7 @@ test.skipIf(!available)('ReRoute actual approval → shell claims → receipts; 
     expect(finished.claims.reduce((sum, c) => sum + ('amountMinor' in c.outstanding ? c.outstanding.amountMinor : NaN), 0)).toBe(E.cancelTripOption.expectedCashRecovery.amountMinor - E.hotelClaim.expected.amountMinor);
 
     // Separate visitor: another tab advances the clock while approval is open.
-    const staleContext = await browser.newContext(); const stale = await staleContext.newPage();
+    const staleContext = await browser.newContext(); await prefs(staleContext); const stale = await staleContext.newPage();
     stale.on('pageerror', e => errors.push(e.message)); await start(stale);
     await button(stale, 'Review cancel-trip actions').click();
     await stale.getByLabel('I understand these are simulated actions').check();
@@ -105,7 +112,7 @@ test.skipIf(!available)('ReRoute actual approval → shell claims → receipts; 
 
     // Inject exactly one repository transport failure; retry goes through UI
     // after reload so in-memory approval state cannot mask durability defects.
-    const partialContext = await browser.newContext(); const partial = await partialContext.newPage();
+    const partialContext = await browser.newContext(); await prefs(partialContext); const partial = await partialContext.newPage();
     partial.on('pageerror', e => errors.push(e.message)); await start(partial);
     await partial.evaluate(async () => {
       const path = '/src/core/index.ts'; const c = await new Function('path', 'return import(path)')(path) as typeof import('../../core/index.ts');

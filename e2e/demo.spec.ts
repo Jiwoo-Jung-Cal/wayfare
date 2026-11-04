@@ -20,8 +20,8 @@ test('demo walkthrough on the production build: plan, intake, disruption, approv
   const version = await (await request.get('version.json')).json() as { source: string; dirty: boolean; mode: string };
   expect(version.mode).toBe('sample');
   expect(meta).toBe(`${version.source}${version.dirty ? '-dirty' : ''}; mode=sample`);
-  await expect(page.getByText('Sample data: saved in this browser')).toBeVisible();
-  await expect(page.getByText('Simulated: provider actions')).toBeVisible();
+  await expect(page.locator('footer.wf-footer')).toContainText('sample trip with fictional providers, saved in this browser');
+  await expect(page.locator('footer.wf-footer')).toContainText('every provider action is simulated');
 
   // 1. Planning: compare sample plans and select one (a plan is not a booking).
   await page.goto(`./${TRIP}/plan`);

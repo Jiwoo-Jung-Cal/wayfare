@@ -15,7 +15,7 @@ test('two visitors get isolated server workspaces; reset is scoped; state surviv
   const visitorB = await (await browser.newContext()).newPage();
 
   await visitorA.goto(TRIP);
-  await expect(visitorA.getByText('Live: server workspace')).toBeVisible();
+  await expect(visitorA.locator('footer.wf-footer')).toContainText('server workspace');
   await control(visitorA, 'Import sample bookings').click();
   await expect(bookingRows(visitorA)).toHaveCount(4);
   await control(visitorA, 'Trigger flight cancellation').click();
@@ -28,7 +28,7 @@ test('two visitors get isolated server workspaces; reset is scoped; state surviv
 
   // Visitor B has a different workspace and sees none of A's records.
   await visitorB.goto(TRIP);
-  await expect(visitorB.getByText('Live: server workspace')).toBeVisible();
+  await expect(visitorB.locator('footer.wf-footer')).toContainText('server workspace');
   await expect(visitorB.getByText(/No confirmed bookings yet/)).toBeVisible();
   await expect(visitorB.getByText(/Disruption:/)).toHaveCount(0);
   expect(await workspaceId(visitorB)).not.toBe(await workspaceId(visitorA));
@@ -47,7 +47,7 @@ test('two visitors get isolated server workspaces; reset is scoped; state surviv
 
 test('intake extraction runs on the server and never fakes unrecognized text', async ({ page }) => {
   await page.goto(`${TRIP}/import`);
-  await expect(page.getByText('Live: server workspace')).toBeVisible();
+  await expect(page.locator('footer.wf-footer')).toContainText('server workspace');
   await page.locator('label', { hasText: 'Sample document' }).locator('select').selectOption({ label: 'Harbor Line Hotel HLH-48213 confirmation' });
   await control(page, 'Use sample document').click();
   await control(page, 'Extract booking').click();

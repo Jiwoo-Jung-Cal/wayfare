@@ -232,7 +232,7 @@ export function demoTrip(ctx: DemoContext): Trip {
   return {
     id: DEMO_TRIP_ID,
     workspaceId: ctx.workspaceId,
-    title: 'San Francisco to New York',
+    title: 'NY Trip',
     origin: { name: 'San Francisco', code: 'SFO' },
     destination: { name: 'New York', code: 'JFK' },
     startDate: '2026-11-20',
