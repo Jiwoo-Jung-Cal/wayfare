@@ -10,7 +10,6 @@ import { DEMO_EXPECTED as E } from '../../core/index.ts';
 const executablePath = process.env.PW_EXECUTABLE_PATH;
 const available = !!executablePath || existsSync('/opt/google/chrome/chrome') || existsSync('/usr/bin/google-chrome');
 const button = (p: Page, name: string) => p.getByRole('button', { name, exact: true });
-const card = (p: Page, name: string) => p.locator('.wf-card').filter({ has: p.getByRole('heading', { name, exact: true }) });
 const trip = '#/trips/trip-demo-nyc';
 const option = (p: Page, name: string) => p.getByRole('radio', { name: new RegExp(`^${name}`) });
 const recordedNote = (p: Page) => p.locator('.wf-rr-foot [role=status]');
@@ -75,21 +74,22 @@ test.skipIf(!available)('ReRoute actual approval → shell claims → receipts; 
     await page.getByRole('link', { name: 'Open TripWallet' }).click();
     await expect(page).toHaveURL(new RegExp(trip + '/wallet$'));
     await expect(page.getByRole('heading', { name: 'TripWallet', exact: true })).toBeVisible();
-    const hotel = card(page, 'Harbor Line Hotel Midtown');
+    const hotel = page.locator('.wf-wal-item').filter({ hasText: 'HLH-48213' });
     await expect(hotel).toContainText('$400.00');
+    await page.locator('details.wf-wal-add summary').click();
     await button(page, 'Load sample refund confirmation').click();
     const select = page.getByRole('combobox', { name: /^Claim to confirm/ });
     const hotelId = await select.locator('option').filter({ hasText: 'HLH-48213' }).getAttribute('value');
     await select.selectOption(hotelId!);
     await button(page, 'Confirm reviewed evidence').click();
-    for (const [amount, reference, outstanding] of [['250', 'HLH-RF-0001', '150'], ['150', 'HLH-RF-0002', '0']]) {
+    for (const [amount, reference, after] of [['250', 'HLH-RF-0001', 'Received $250.00 · $150.00 outstanding'], ['150', 'HLH-RF-0002', 'Received $400.00']]) {
       await button(page, `Load sample $${amount} receipt`).click();
       await button(page, 'Confirm reviewed evidence').click();
       await page.getByRole('combobox', { name: new RegExp(`^Claim for receipt ${reference}\\b`) }).selectOption(hotelId!);
       await button(page, `Match receipt ${reference}`).click();
-      await expect(hotel).toContainText(`Outstanding $${outstanding}.00`);
+      await expect(hotel).toContainText(after!);
     }
-    await page.reload(); await expect(hotel).toContainText('Outstanding $0.00');
+    await page.reload(); await expect(hotel).toContainText('Received $400.00'); await expect(hotel).toContainText('100%');
     const finished = await snapshot(page);
     expect(finished.claims.length).toBe(4); expect(finished.receipts.length).toBe(2);
     expect(finished.claims.reduce((sum, c) => sum + ('amountMinor' in c.outstanding ? c.outstanding.amountMinor : NaN), 0)).toBe(E.cancelTripOption.expectedCashRecovery.amountMinor - E.hotelClaim.expected.amountMinor);
