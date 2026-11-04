@@ -19,7 +19,7 @@ import {
   type WorkspaceSnapshot,
 } from '../core/index.ts';
 import { EmptyState, MoneyText, StatusBadge, type Tone } from '../ui/index.tsx';
-import { GoogleG, Icon } from '../ui/icons.tsx';
+import { GoogleG, Icon, type IconName } from '../ui/icons.tsx';
 import { useAppServices } from './AppServices.tsx';
 import { useAccount } from './account.tsx';
 import { useToast } from './toasts.tsx';
@@ -80,6 +80,21 @@ export function googleCalendarLink(b: Booking, tripTitle: string, deadlines: Dea
   const details = [`${tripTitle} on WayFare. Booking: ${b.provider} · ${b.reference}.`, ...dl].join(' ');
   const q = new URLSearchParams({ action: 'TEMPLATE', text: b.title, dates, details });
   return `https://calendar.google.com/calendar/render?${q.toString()}`;
+}
+
+const TAG: Record<Tone, ['bad' | 'warn' | 'ok' | 'mute' | 'info', IconName]> = {
+  danger: ['bad', 'alert'], warning: ['warn', 'clock'], positive: ['ok', 'check'], neutral: ['mute', 'minus'], info: ['info', 'spark'],
+  accent: ['info', 'spark'], simulated: ['info', 'spark'],
+} as Record<Tone, ['bad' | 'warn' | 'ok' | 'mute' | 'info', IconName]>;
+/** Reference "tag" pill: icon in the tone colour, text in the body colour. */
+function Tag({ tone, text }: { tone: Tone; text: string }) {
+  const [t, icon] = TAG[tone] ?? ['mute', 'minus'];
+  return (
+    <span className="wf-tag" data-tone={t}>
+      <Icon name={icon} />
+      {text}
+    </span>
+  );
 }
 
 function bookingTag(b: Booking, s: WorkspaceSnapshot): { tone: Tone; text: string } {
@@ -449,7 +464,7 @@ export function Itinerary({ tripId }: { tripId: string }) {
                             <span className="wf-num">
                               <MoneyText value={b.paid} />
                             </span>
-                            <StatusBadge tone={tag.tone}>{tag.text}</StatusBadge>
+                            <Tag tone={tag.tone} text={tag.text} />
                           </span>
                           <Icon name="chev" className="wf-icon wf-row-chev" />
                         </button>

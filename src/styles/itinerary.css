@@ -90,9 +90,13 @@
 .wf-cal-h h2 {
   margin: 0;
   font-size: 1.1rem;
+  white-space: nowrap;
 }
 .wf-cal-h .wf-mono {
-  font-size: 0.75rem;
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-align: right;
+  text-transform: uppercase;
 }
 .wf-dow,
 .wf-weeks {
@@ -239,13 +243,10 @@ button.wf-cell:hover {
   font-size: 1.25rem;
 }
 .wf-dayh {
-  margin: 18px 0 6px;
-  color: var(--wf-color-text-muted);
-  font-family: var(--wf-font-mono);
-  font-size: 0.78rem;
-  font-weight: 500;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  margin: 0;
+  padding: 18px 0 6px;
+  font-size: 1rem;
+  font-weight: 600;
 }
 .wf-dayh[data-on] {
   color: var(--wf-color-accent);
@@ -253,24 +254,20 @@ button.wf-cell:hover {
 .wf-rows {
   margin: 0;
   padding: 0;
-  overflow: hidden;
-  border: 1px solid var(--wf-color-border);
-  border-radius: 14px;
-  background: var(--wf-color-surface);
   list-style: none;
 }
-.wf-rows li + li {
+.wf-rows li {
   border-top: 1px solid var(--wf-color-border-soft);
 }
 .wf-row-b {
   display: grid;
-  grid-template-columns: 7.5rem 22px minmax(0, 1fr) auto 16px;
-  gap: 12px;
-  align-items: start;
+  grid-template-columns: 84px 26px minmax(0, 1fr) auto 16px;
+  gap: 14px;
+  align-items: center;
   width: 100%;
-  padding: 14px 16px;
+  padding: 14px 10px;
   border: 0;
-  border-left: 3px solid transparent;
+  border-radius: 10px;
   background: none;
   color: var(--wf-color-text);
   font: inherit;
@@ -282,17 +279,17 @@ button.wf-cell:hover {
   background: var(--wf-color-surface-muted);
 }
 .wf-row-b[data-hl] {
-  border-left-color: var(--wf-color-accent);
   background: var(--wf-color-accent-subtle);
+  box-shadow: inset 3px 0 0 var(--wf-color-accent);
 }
 .wf-tm {
-  padding-top: 1px;
   color: var(--wf-color-text-muted);
-  font-size: 0.88rem;
+  font-size: 0.85rem;
 }
 .wf-cat .wf-icon {
-  width: 20px;
-  height: 20px;
+  width: 24px;
+  height: 24px;
+  stroke-width: 1.4;
 }
 .wf-row-main {
   display: flex;
@@ -300,7 +297,7 @@ button.wf-cell:hover {
   min-width: 0;
 }
 .wf-row-t {
-  font-weight: 600;
+  font-weight: 500;
 }
 .wf-row-b[data-x] .wf-row-t {
   color: var(--wf-color-text-muted);
@@ -452,20 +449,16 @@ button.wf-cell:hover {
     font-size: 0;
   }
   .wf-row-b {
-    grid-template-columns: 22px minmax(0, 1fr) 16px;
+    grid-template-columns: 72px 26px minmax(0, 1fr) 16px;
+    gap: 10px;
+    padding-inline: 0;
   }
-  .wf-tm {
-    grid-column: 1 / -1;
-  }
+  /* r2 narrow: amount and status move out of the row; the strike-through and deadline line carry the state. */
   .wf-row-r {
-    grid-column: 2;
-    flex-direction: row;
-    align-items: center;
-    justify-content: flex-start;
+    display: none;
   }
-  .wf-row-chev {
-    grid-row: 2;
-    grid-column: 3;
+  .wf-cal-h .wf-mono {
+    font-size: 0.6rem;
   }
   .wf-calbar {
     align-items: flex-start;

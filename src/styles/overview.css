@@ -465,8 +465,14 @@ html.wf-windowed .wf-bp-stub {
   .wf-bp-grid {
     padding-inline: 18px;
   }
+  /* r2 narrow export: the band keeps its fare label, wrapping beside the airline. */
+  .wf-bp-band {
+    align-items: flex-start;
+  }
   .wf-bp-band .wf-label-mono {
-    display: none;
+    max-width: 60%;
+    font-size: 0.6rem;
+    line-height: 1.5;
   }
 }
 @media (max-width: 29.99rem) {
@@ -480,6 +486,6 @@ html.wf-windowed .wf-bp-stub {
     display: none;
   }
   .wf-bp-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px 12px;
   }
 }
