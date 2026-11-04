@@ -252,16 +252,19 @@ async function startReRoute(page: Page) {
   await control(page, 'Trigger flight cancellation').click();
   await expect(cancelledNote(page)).toBeVisible();
   await page.getByRole('link', { name: 'See what to do' }).click();
-  await expect(page.getByRole('heading', { level: 1, name: 'ReRoute' })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: 'What should you do?' })).toBeVisible();
 }
 
+const option = (page: Page, name: string) => page.getByRole('radio', { name: new RegExp(`^${name}`) });
+const recorded = (page: Page) => page.locator('.wf-rr-foot [role=status]');
+
 async function approveCancelTrip(page: Page) {
-  await control(page, 'Review cancel-trip actions').click();
-  const dialog = page.getByRole('dialog');
-  await expect(control(page, 'Approve actions')).toBeDisabled();
+  await control(page, 'Review and confirm').click();
+  const dialog = page.getByRole('dialog', { name: 'Cancel the trip?' });
+  await expect(dialog.getByRole('button', { name: 'Cancel the trip', exact: true })).toBeDisabled();
   await dialog.getByLabel('I understand these are simulated actions').check();
-  await control(page, 'Approve actions').click();
-  await expect(card(page, 'Simulated actions recorded')).toContainText('4 recorded; 0 unfinished.');
+  await dialog.getByRole('button', { name: 'Cancel the trip', exact: true }).click();
+  await expect(recorded(page)).toHaveText('4 cancellations recorded.');
 }
 
 test.describe('demo journey: ReRoute approval to TripWallet (Agents 4 and 5, #6/#7)', () => {
@@ -271,7 +274,8 @@ test.describe('demo journey: ReRoute approval to TripWallet (Agents 4 and 5, #6/
     const errors: string[] = [];
     page.on('pageerror', (e) => errors.push(e.message));
     await startReRoute(page);
-    await expect(card(page, 'Cancel the trip')).toContainText('$820.00');
+    await expect(option(page, 'Cancel the whole trip')).toContainText('+$820');
+    await expect(page.locator('.wf-rr-kv').first()).toContainText('+$400.00');
     await approveCancelTrip(page);
     // The shell, not ReRoute, created the claims; the claim-sync status reports it in words.
     // Sync runs after each recorded action, so the last run's split varies; the total is fixed.
@@ -305,15 +309,15 @@ test.describe('demo journey: ReRoute approval to TripWallet (Agents 4 and 5, #6/
     // Shared demo clock exactly at the exclusive cutoff: hotel falls to the $200 tier.
     await control(page, 'At hotel deadline').click();
     await expect(page.getByLabel('Active clock')).toContainText('2026-11-19T23:00:00Z');
-    await expect(card(page, 'Cancel the trip')).toContainText('$620.00');
+    await expect(option(page, 'Cancel the whole trip')).toContainText('+$620');
     await approveCancelTrip(page);
     await expect.poll(async () => (await storedWorkspace(page)).claims).toBe(4);
     expect(await storedWorkspace(page)).toMatchObject({ actions: 4, expectedMinor: 62000, hotelExpectedMinor: 20000 });
 
     // Reload: recorded state persists and approval cannot run again.
     await page.reload();
-    await expect(card(page, 'Recorded actions')).toContainText('Harbor Line Hotel');
-    await expect(control(page, 'Review cancel-trip actions')).toBeDisabled();
+    await expect(recorded(page)).toHaveText('4 cancellations recorded.');
+    await expect(control(page, 'Trip cancelled')).toBeDisabled();
     // Re-triggering the disruption from the dashboard is a no-op.
     await page.goto(TRIP);
     await control(page, 'Trigger flight cancellation').click();

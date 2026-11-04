@@ -51,14 +51,14 @@ test('demo walkthrough on the production build: plan, intake, disruption, approv
   await page.goto(`./${TRIP}`);
   await expect(page.getByText('Bayline Air cancelled your flight. You don’t need to call anyone.')).toBeVisible();
   await page.getByRole('link', { name: 'See what to do' }).click();
-  await expect(card(page, 'Continue the trip')).toContainText('$940.00');
-  await expect(card(page, 'Cancel the trip')).toContainText('$820.00');
+  await expect(page.getByRole('radio', { name: /^Keep the trip/ })).toContainText('−$360');
+  await expect(page.getByRole('radio', { name: /^Cancel the whole trip/ })).toContainText('+$820');
 
   // 4. Approval: explicit acknowledgement; four simulated actions; the shell syncs claims.
-  await button(page, 'Review cancel-trip actions').click();
+  await button(page, 'Review and confirm').click();
   await page.getByRole('dialog').getByLabel('I understand these are simulated actions').check();
-  await button(page, 'Approve actions').click();
-  await expect(card(page, 'Simulated actions recorded')).toContainText('4 recorded; 0 unfinished.');
+  await page.getByRole('dialog').getByRole('button', { name: 'Cancel the trip', exact: true }).click();
+  await expect(page.locator('.wf-rr-foot [role=status]')).toHaveText('4 cancellations recorded.');
   await expect(page.getByRole('status').filter({ hasText: /Refund claims up to date/ })).toBeVisible();
 
   // 5. TripWallet: hotel claim $400; provider confirmation; two receipts reconcile it to $0.
