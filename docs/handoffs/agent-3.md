@@ -1,52 +1,45 @@
 # Agent 3 handoff
 
 - Task: https://github.com/Jiwoo-Jung-Cal/wayfare/issues/9 — final release verification remains open.
-- Source/runtime handoff: https://github.com/Jiwoo-Jung-Cal/wayfare/issues/8
+- Candidate/runtime handoff: https://github.com/Jiwoo-Jung-Cal/wayfare/issues/8#issuecomment-6628324849
 - Existing PR: https://github.com/Jiwoo-Jung-Cal/wayfare/pull/42
-- Local branch: `agent-3/release-status-refresh`; this refresh is committed locally but publication is blocked as recorded below. PR #42's last verified remote head is `a43ed6804e9ecde16dfeb080e80429d8f2183fe5`.
-- Source/CI checkpoint: main `17623fc12bd60c33b5a4927562469dbbcb660857`, checked November 3, 2026 (America/Los_Angeles).
+- Branch: `agent-3/release-status-refresh`; preserve this PR and its prior commits. Published head and verified report URL are recorded in PR #42/#9 after publication.
+- Source checkpoint: fetched main `323592aaa6d76f77a0b22eb79b0e269ae8455d93`, November 4, 2026 (America/Los_Angeles).
 
-## Resolved integration and source evidence
+## Current evidence and resolved blockers
 
-[Agent 1's current report](https://github.com/Jiwoo-Jung-Cal/wayfare/issues/8#issuecomment-6596944284) supersedes older pending-Kelvin/#39 statements. #37's corrected head `30f2dbb4982ee868223bdf02ccf05743beb221a1` includes the path-relative navigation fixes, atomic policy/clock precondition adoption and feature regressions. Agent 1 merged it into reviewed #39 head `3c3e195271e43b1f7a5f5f471056c3e31f2c6a8b`; #39 merged at main `17623fc`, and GitHub marks #37 merged too. The shared journey clicks ReRoute's actual wallet link and exercises the before/at-cutoff recovery cases, claim sync, reload, idempotency and duplicate receipts. These code blockers are resolved.
+Current GitHub records supersede the initial request's open-#59/two-pending-findings status. #58/#60 are merged; #59 reconciled at `b1edbfd` and merged at `07e30db5fd6b80e528d67bd1d6b7e41e4c654470`. #62 merged at `3010e6e2cd7cd4812ae2aa32474c1aa9f4e800dc`, fixing both shared UI findings (ErrorState duplicate issue keys and intake IBM Plex Mono cascade) and adding the live-AI smoke command. Previous Kelvin/#39 integration blockers are also resolved.
 
-Independently checked GitHub API evidence:
-- Full main SHA and #37/#39 merge states.
-- Main and reviewed #39 head have identical Git trees.
-- Main [Application run 41568454043](https://github.com/Jiwoo-Jung-Cal/wayfare/actions/runs/41568454043) and [Coordination run 41568454787](https://github.com/Jiwoo-Jung-Cal/wayfare/actions/runs/41568454787) succeeded at that exact SHA.
+Jiwoo formally approved r2-final on November 3 in `design/approvals.json` for all four areas. Do not restore old r1-pending approval statements. Kelvin/Brian feature implementation reviews are separate remaining inputs.
 
-Agent 1 reports 174 tests passed (0 skipped, 0 todo), 20 browser checks passed (0 skipped), typecheck/build success and repeated no-retry journeys, using Node 24.21.0/npm 11.19.0/Chrome on the reviewed tree. Agent 3 did not rerun or independently recount those successful application suites. Keep owner-reported counts distinct from the independently checked metadata/tree proof.
+Hosting works: https://jiwoo-jung-cal.github.io/wayfare/ (public, sample mode). Agent 1 supplied candidate `323592a`, its 10-step `docs/DEMO.md` walkthrough and workflow runtime/source proof. Agent 3 independently read exact-main application [41807515792](https://github.com/Jiwoo-Jung-Cal/wayfare/actions/runs/41807515792), coordination [41807515805](https://github.com/Jiwoo-Jung-Cal/wayfare/actions/runs/41807515805) and Pages [41807515876](https://github.com/Jiwoo-Jung-Cal/wayfare/actions/runs/41807515876) success metadata, including successful provenance and live-source-check steps. The workflow/Agent 1 report `version.json` matches this SHA in sample mode. The container cannot reach `github.io`; no independent live-site visit or judge-path verification is claimed.
 
-## This bounded refresh
+Agent 1 reports typecheck/build, 177 tests and 36 browser checks with retries disabled, on `07e30db` plus #62/#63 trees (Node 24.21.0/Chrome). These counts are owner-reported, not rerun/recounted by Agent 3 or silently reassigned to another SHA. Current-main CI success is separately verified metadata. Agent 2's standalone browser check passed on reconciled #59 per Agent 1's review.
 
-Read AGENTS.md, the Agent 3 prompt, current #8/#9/#7 updates and the current #42 diff. Preserved the existing PR, branch history and other owners' work; refreshed main into this branch without conflicts. Updated only README, setup/runbook/checklist/evidence documentation and this own handoff. Other owners' handoffs and application/contracts/package files have no new edits relative to current main.
+Vercel is prepared by #63, but no deployment exists; its workflow skips without configured repository authentication. Pages works, so optional Vercel setup is not a release hosting blocker. No configuration or deployment action is part of this pass.
 
-Removed obsolete pending-Kelvin/#39 descriptions, recorded verified source/CI evidence and separated the remaining release gates. The previous PR42 head `a43ed68` had successful application/coordination/dashboard checks; any new head has its own status in the PR/final #9 report. Run only documentation/coordination checks for this pass and retain their actual outcomes there. The final evidence template remains NOT VERIFIED; this is not final demo/submission sign-off.
+## Bounded refresh and checks
 
-Source synchronization/publication uses hash-verified GitHub Git objects and an expected-head, non-forced update of PR #42's branch because native Git transport is blocked by current network policy. No environment configuration/publication changes, new trackers, extra agents, access grants, deployments, Figma edits or independent-review claims are part of the pass.
+Read AGENTS.md, the Agent 3 prompt, ownership/coordination/report instructions, current #8/#4/#9/#6/#7 and PR #42's six-file diff. Preserved local unpublished work and the existing PR branch/history. Refreshed current main through hash-verified GitHub Git objects because native Git transport is restricted; Git connectivity passed. Merged current main without conflicts.
 
-## Remaining release gates
+Updated only README, setup/runbook/checklist/evidence documentation and this own handoff relative to current main. **`docs/DEMO.md` is byte-for-byte current main**, Git blob `e546d4510bc00ca727cbaee5a480f8c22f678db4`; newer hosting/walkthrough content is preserved. No new application/config/schema edits, other owners' handoff changes, duplicate PR/tracker, Figma edit, environment publication or access change.
 
-1. **Working demo and accepted runtime/source:** Agent 1 supplies a working URL, executable complete-demo script, accepted full source SHA, actual runtime version and operating mode. Main source CI is established; the published/embedded demo and its source mapping still need acceptance and verification.
-2. **Formal design approval:** Jiwoo approves the applicable revision. `design/approvals.json` remains pending/null for all areas. Source/layout tests do not supply visual approval.
-3. **Verified capability labels:** validate working/sample/simulated/blocked/unverified claims for the accepted demo, including sample/manual extraction versus live AI. Provider actions remain simulated; live AI and hosted capabilities need actual evidence before being claimed.
-4. **Official submission/access requirements:** obtain authoritative deadline/timezone, required judge links/formats and intended public/private access rules, then test the actual judge path. The private repository and imported editor link are not proof of judge access.
-5. **Brian's #7 milestone/source changes:** the latest published follow-up report is in progress for feature-owned wallet extraction/review; remaining asset/acceptance work needs actual PR/commit/checks or an explicitly accepted limitation. Preserve the integrated ledger and shared seams. Any resulting source change requires updating affected CI, capability and runtime evidence; do not carry 174/20 counts to a different SHA without support.
+Checks passed: six Markdown files, 47 relative links/anchors, balanced fences, six npm script names, 17 configuration names, whitespace, six-file scope, historical commit scope and protected DEMO blob identity. Existing coordination checks passed: five Node cases and four Python cases, no failures. Published-head CI status is recorded separately in PR #42 and the final structured #9 report. No successful application suite was repeated. The prior temporary GitHub authentication failure is recovered for this pass; remote publication/readback evidence, rather than the old blocker note, determines shared status.
 
-## Official instructions and runtime notes
+## Remaining gates and owners
 
-The team-provided November 10, 2026, 11:59 PM deadline has no confirmed official timezone/source. The [prior recorded review](https://github.com/Jiwoo-Jung-Cal/wayfare/issues/9#issuecomment-6589735905) of [the organizer's event page](https://luma.com/1gj6jag5) found product/code-walkthrough context but no exact Round 2 deadline/submission/access rules. This pass records that finding; no fresh public-page fetch or timezone inference is claimed. Jiwoo was already asked for the official announcement/form/email text.
+1. **Accepted deployed-candidate final verification — Agent 1/Agent 3/Jiwoo:** a working candidate is now supplied. Record final technical acceptance, current full deployed SHA/mode, live walkthrough/visual review and intended judge access for the accepted version. This documentation pass pauses before final sign-off.
+2. **Kelvin r2 implementation review — #6:** review merged #55 against approved r2 and confirm feature limitations. Do not reopen resolved navigation/atomic-contract/#39 source blockers.
+3. **Brian evidence/asset follow-up — #7:** review merged #56's r2 implementation, complete feature-owned evidence/asset/manual browser-label follow-up with actual PR/commit/checks or explicitly accepted limitations. Preserve the integrated ledger/shared seams. Any source change updates affected CI, runtime mapping, capabilities and reviews.
+4. **Live AI / capability verification:** no successful live call or hosted backend is evidenced. `npm run smoke:live-ai` and fake-adapter tests do not prove live operation. Hosted extraction is sample-only; provider actions/Google dialogs are simulated; Ask WayFare is scripted; Calendar template links are actual links, not account sync. Verify any live claim on the accepted version or retain unverified/sample labels.
+5. **Official submission/access requirements — Jiwoo:** authoritative deadline/year/timezone/source, required links/formats, recording rules and public/private access requirements remain unknown. Team time is November 10, 2026, 11:59 PM; do not infer a timezone. [SETUP_STATUS.md](../SETUP_STATUS.md#deadline-and-judge-links) retains the link matrix and prior organizer-page review. No fresh external-source confirmation is claimed.
 
-[SETUP_STATUS.md](../SETUP_STATUS.md#deadline-and-judge-links) retains the link matrix. Code Layer `24:1182` was imported from `5249cb7`, not this integration checkpoint; its running preview/source alignment remains unverified. Agent 1 needs the signed-in preview's actual output. No judge-facing runtime URL, recording or submission portal has been verified by this pass.
+Old Figma Code Layer `24:1182` is source `5249cb7`, not the candidate; Pages hosting does not prove Figma synchronization. Verify Figma runtime/access only as required by final scope/official instructions. Plan illustrations remain deliberate while photo licensing is unknown.
 
-## Pause and next accepted-version pass
+## Pause and next pass
 
-The start report POST succeeded, but the publication attempt failed on its first read before updating PR #42: GitHub REST returned HTTP 401 Bad credentials and `gh auth status` confirmed the injected `GH_TOKEN` invalid. The API hostname is allowed/enforced and runtime metadata declares no alternative GitHub credential; no connected GitHub tool is available. This is a publication-authentication blocker, not a source/application failure. Local PR/Issue/report drafts are retained; no refreshed PR head, Issue body or final report is claimed as published.
+Publish the refreshed existing PR, update #9 with verified report/readback and pause. Keep #9 open, the evidence template NOT VERIFIED and final release sign-off pending. Do not merge, self-approve, debug product code or monitor idly.
 
-Refresh the environment's GitHub authentication securely, then reread current main/#8/#9/#42/#7 before retrying. Preserve remote work, update this temporary authentication note after verified recovery, and reconcile any later source or accepted-demo inputs rather than publishing stale status. Do not request secret values in chat or reapply unrelated environment configuration.
+At the explicitly accepted deployed version, compare the full SHA/runtime/mode with existing exact-target evidence. Review applicable CI/owner logs and run only outstanding or change-justified release checks. Distinguish passed/failed/skipped/todo/retry/unrun results. A later merge/deploy requires affected source/runtime/capability evidence updates; a moving Pages URL does not preserve an old provenance result.
 
-After publishing this refresh and verifying its structured #9 report, pause. Do not debug product code, repeat successful application suites without reason, close #9, merge PRs or monitor in an idle loop.
-
-Once Agent 1 supplies accepted demo/source inputs, match the full SHA/runtime to the existing evidence, reuse applicable verified checks, and perform only outstanding or change-justified release checks. Record actual targets, outcomes/counts and log links, distinguishing passed/failed/skipped/todo/unrun results. Verify capability labels, formal approval and required judge links/access from authoritative instructions.
-
-For any later integration, including #7, record the new source identity and refresh the affected checks and runtime/capability mapping. Route application failures with command/error/commit/run evidence to Agent 2/#4, Kelvin/#6, Brian/#7 or Agent 1/#8 as appropriate; Agent 3 fixes only owned coordination defects. Keep final release unverified until the required evidence and acceptance exist.
+Route failures with command/scenario, error excerpt, tested SHA and run/log link: Agent 2/#4 for planning/intake, Kelvin/#6 for ReRoute, Brian/#7 for wallet, Agent 1/#8 for shared/backend/integration. Agent 3 fixes only owned coordination defects. No final-release verification claim until the required acceptance exists.
