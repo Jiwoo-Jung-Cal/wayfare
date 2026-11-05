@@ -23,9 +23,21 @@ Later on 2026-11-04 (merged): #58 reference scenario for returning visitors with
 - Config is server-only (`server/config.ts`): `ANTHROPIC_API_KEY` (or `WAYFARE_ANTHROPIC_API_KEY`), optional `WAYFARE_AI_MODEL` (default `claude-opus-5-5`), `WAYFARE_AI_EFFORT`, `WAYFARE_AI_TIMEOUT_MS`. The base URL is always explicit, so an unrelated `ANTHROPIC_BASE_URL` in the shell is never inherited.
 - **Not verified live:** no API key is available in this cloud environment and no backend is hosted. The public Pages build is sample mode by design and must never carry a key.
 - `npm run smoke:live-ai` (server only): with a key, sends the four sample confirmations through the real adapter and production extraction path and lists field differences from the reviewed facts for review; provider errors fail it. Without a key it names the missing setting and exits 2. Its logic is unit-tested with a fake adapter.
+- Wire-level checks (#66, `server/ai/modelAdapter.wire.test.ts`) run the **real** adapter and SDK against a local HTTP stand-in for the Messages API. They cover:
+  - the request shape: server key only, `json_schema` output format, effort, `fallbacks: "default"` plus its beta;
+  - refusal, truncation, schema-invalid output, 401/429/529 and timeout mapping;
+  - the full four-document smoke run (all `live`, zero differences).
+
+  They found and fixed one bug: truncated JSON surfaced as a non-retryable `internal` error and is now a retryable `provider_error`. This is still not live evidence, because the provider is simulated.
+- **Exact missing configuration for a live, hosted extraction:**
+  1. `ANTHROPIC_API_KEY` in the server process environment.
+  2. A Node host running `npm run server`, with `WAYFARE_ALLOWED_ORIGINS` set to the frontend origin, a persistent `WAYFARE_DATA_DIR`, and `WAYFARE_TRUST_PROXY=1` behind a proxy.
+  3. A separate connected frontend build with `VITE_WAYFARE_API_URL` set to that host.
+
+  Pages stays sample mode.
 - To demonstrate live AI: on a machine with the key, `ANTHROPIC_API_KEY=… npm run smoke:live-ai`, then `npm run server` and `VITE_WAYFARE_API_URL=http://localhost:8787 npm run dev`, paste a non-sample confirmation into Import, and review/edit before saving (the review labels the extraction "Live").
 
-Release candidate (posted on #8): main `323592a` — Application checks #114 and demo-pages #22 green (live `version.json` = this SHA, sample mode, per the workflow). #63 added Vercel config, a `VERCEL_GIT_COMMIT_SHA` provenance fallback and `.github/workflows/demo-vercel.yml`; it skips until the `VERCEL_TOKEN` secret exists (Jiwoo will set up Vercel later), so there is no Vercel deployment yet.
+Release candidate (posted on #8): main `323592a` — Application checks #114 and demo-pages #22 green (live `version.json` = this SHA, sample mode, per the workflow). #63 added Vercel config, a `VERCEL_GIT_COMMIT_SHA` provenance fallback and `.github/workflows/demo-vercel.yml`; it skips until the `VERCEL_TOKEN` secret exists (Jiwoo will set up Vercel later), so there is no Vercel deployment yet. After the candidate: #64 (this handoff), #65 (e2e race fix: specs navigated before async demo controls finished; flaky on main, 5 of 8 local runs failed) and #66 (adapter error mapping and server tests). None of them changes browser app code.
 
 Remaining: Agent 3 verification of the candidate; owner reviews of #55–#57 (Agents 4/5/2); Vercel token (Jiwoo); a live AI run needs a server key (Jiwoo); Figma Code Layer `24:1182` is an old snapshot (`5249cb7`), not current main; a re-import needs Jiwoo's go-ahead, and a deployed website does not establish Figma runtime sync.
 
