@@ -1,6 +1,6 @@
 # Coordination setup — release evidence and remaining gates
 
-Checked November 4, 2026 (America/Los_Angeles), against fetched main `b54eb5e3cd19e5faa21d2f4e8eda310e17dc0b93` and current Issues/PRs. Agent 1 supplied this replacement while the prior-candidate pass was in progress; merged PR #42 is preserved. This records refreshed exact-source CI/deployment evidence plus explicitly reused browser observations. **Final release sign-off remains pending.**
+Rechecked November 5, 2026 (America/Los_Angeles), against unchanged fetched main `b54eb5e3cd19e5faa21d2f4e8eda310e17dc0b93` and current Issues/PRs. Agent 1 supplied this replacement while the prior-candidate pass was in progress; merged PR #42 is preserved. This records refreshed exact-source CI/deployment evidence plus explicitly reused browser observations. **Final release sign-off remains pending.**
 
 - Repository: https://github.com/Jiwoo-Jung-Cal/wayfare
 - Existing dashboard: https://github.com/Jiwoo-Jung-Cal/wayfare/issues/1
@@ -38,6 +38,8 @@ Do not assign owner-reported counts to a different target without evidence. Curr
 ## Direct candidate verification
 
 Agent 3 directly ran supplied `323592a`, then fetched replacement `b54eb5e` and verified the entire `src` tree plus index/package/lock/Vite/TypeScript/env-example/DEMO inputs are identical. The direct observations remain labeled `323592a` and are reused for the unchanged browser code; new exact-source CI/deployment evidence above targets `b54eb5e`. No deployed-bundle byte-identity claim. See [the verification record](releases/b54eb5e-verification.md) for the local production walkthrough, desktop/390px screenshots and explicit evidence boundaries. Core recovery/wallet/receipt/reload behavior passed locally. Plan preference reranking passed, but the BOOKED wording and post-reload Plan state require Agent 2 disposition; the local strict console check failed on `/favicon.ico` 404. The earlier PR42 `dfdbd35` failure was resolved by Agent 1's merged #65 test-race fix; final PR42 head `30c80e3` and replacement-main CI are green. The old failure is retained as history, not an active integration gate. These results do not erase candidate-main CI success or establish a remote-site visit.
+
+November 5 continuation directly checked a clean local `b54eb5e` build: unknown price/policy after reload, one hour after cutoff, two browser profiles/reset isolation, and settled dark Overview desktop/390px with theme persistence passed. [The dated continuation](releases/b54eb5e-verification.md#direct-replacement-checks--november-5) retains raw verifier failures and evidence limits. PR67 prior head `615361b` application/coordination/dashboard checks are now successful; any updated head has separate check status. Fresh live Pages/version requests still receive proxy CONNECT403; the current runtime policy state is unknown, so actual responses are used as evidence. Plan/fav-icon findings and other release gates remain open.
 
 ## Remaining release gates
 

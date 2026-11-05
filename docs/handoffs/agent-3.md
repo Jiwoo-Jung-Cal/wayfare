@@ -7,6 +7,14 @@
 - Earlier branch: `agent-3/release-status-refresh`; Agent 1 updated it without force-push and merged #42 at `b54eb5e`. Do not push new work to that merged branch.
 - Current source checkpoint: fetched replacement main `b54eb5e3cd19e5faa21d2f4e8eda310e17dc0b93`, November 4, 2026 (America/Los_Angeles).
 
+## November 5 continuation
+
+Current main is still supplied `b54eb5e`; no new accepted candidate is missing. Existing PR67 prior head `615361b` application41974443378, coordination41974443329 and dashboard41974443333 completed successfully. Preserved merged PR42, open draft PR67, previous evidence and DEMO blob identity. New publication head/check/report links are recorded on #9.
+
+Directly rebuilt clean tracked b54eb5e for previously outstanding checks (Node24.19/npm11.9/Chromium154, no fresh npm-ci assertion): unknown price and policy survive reload as Unknown/refund-rule unknown; profile A clear leaves profile B's four bookings intact; one hour after hotel cutoff remains $620; settled dark Overview at1440/390 and theme persistence pass. [Dated evidence](../releases/b54eb5e-verification.md#direct-replacement-checks--november-5) includes two screenshots and raw results. An initial immediate-colour assertion failed during transition; settled follow-up passed, raw failure preserved. Known favicon404 remains, no page exceptions. No product fix or successful full-suite repeat. Updated documentation checks passed: eight Markdown files, 80 local links/anchors, eight screenshot hashes, three JSON records, whitespace and 19 release-only paths relative to main; DEMO identity unchanged.
+
+Fresh Pages/version requests still fail at proxy CONNECT403. Runtime configuration lists API-only destinations but current enforcement state is unknown; actual denial is observed, not inferred readiness. Live/judge checks remain unverified. Current #4/#6/#7/#8 show no new owner dispositions, Brian milestone or official submission/timezone/access evidence. Plan/fav-icon findings and conditional live-AI proof remain open; final release NOT VERIFIED. Continue on the existing branch/PR; do not create another PR or overwrite merged42.
+
 ## Current evidence and resolved blockers
 
 Current GitHub records supersede the initial request's open-#59/two-pending-findings status. #58/#60 are merged; #59 reconciled at `b1edbfd` and merged at `07e30db5fd6b80e528d67bd1d6b7e41e4c654470`. #62 merged at `3010e6e2cd7cd4812ae2aa32474c1aa9f4e800dc`, fixing both shared UI findings (ErrorState duplicate issue keys and intake IBM Plex Mono cascade) and adding the live-AI smoke command. Previous Kelvin/#39 integration blockers are also resolved.

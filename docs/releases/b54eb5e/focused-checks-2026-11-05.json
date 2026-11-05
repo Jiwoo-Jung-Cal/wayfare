@@ -1,0 +1,175 @@
+{
+  "date": "2026-11-05 America/Los_Angeles",
+  "candidate": "b54eb5e3cd19e5faa21d2f4e8eda310e17dc0b93",
+  "basis": "New direct observations on local rebuilt b54eb5e; no remote/live visit or full suite rerun",
+  "focused_attempt": {
+    "date": "2026-11-05 America/Los_Angeles",
+    "candidate": "b54eb5e3cd19e5faa21d2f4e8eda310e17dc0b93",
+    "base": "http://127.0.0.1:4173/wayfare/",
+    "build": {
+      "candidate": "b54eb5e3cd19e5faa21d2f4e8eda310e17dc0b93",
+      "node": "v24.19.0",
+      "npm": "11.9.0",
+      "provenance": {
+        "source": "b54eb5e3cd19e5faa21d2f4e8eda310e17dc0b93",
+        "dirty": false,
+        "mode": "sample",
+        "builtAt": "2026-11-05T23:48:19.323Z"
+      },
+      "tracked_source_clean": true,
+      "reason": "Build needed for outstanding direct checks on replacement; successful suites not repeated",
+      "dependency_basis": "Existing node_modules incl matching5.3.0 hash-verified font files restored in previous pass; no fresh npm ci assertion"
+    },
+    "browser": "154.0.8037.57",
+    "observations": [
+      {
+        "name": "Replacement local production identity",
+        "outcome": "PASS",
+        "detail": {
+          "source": "b54eb5e3cd19e5faa21d2f4e8eda310e17dc0b93",
+          "dirty": false,
+          "mode": "sample",
+          "builtAt": "2026-11-05T23:48:19.323Z"
+        }
+      },
+      {
+        "name": "Unknown price and uncertain policy save/reload",
+        "outcome": "PASS",
+        "detail": {
+          "saved_status": "Policy still needs review",
+          "before_reload": "Saved bookings in this trip\nBayline Air \u00b7 BLA7Q2\n$320.00\n\nconfirmed Bayline Air confirmation BLA7Q2\n\nSkyline Walks NYC \u00b7 SKW-90551\n$80.00\n\nconfirmed Skyline Walks order SKW-90551\n\nMetroLink Transfers \u00b7 MLT-3307\n$50.00\n\nconfirmed MetroLink booking MLT-3307\n\nHarbor Line Hotel Midtown \u00b7 HLH-48213\nUnknown\n\nconfirmed Harbor Line Hotel Midtown HLH-48213\n\nReturn to trip dashboard",
+          "after_reload": "Saved bookings in this trip\nHarbor Line Hotel Midtown \u00b7 HLH-48213\nUnknown\n\nconfirmed Harbor Line Hotel Midtown HLH-48213\n\nReturn to trip dashboard",
+          "note": "Visible amount remains Unknown; policy uncertainty flagged on save. No underlying storage inspection."
+        }
+      },
+      {
+        "name": "Two sample profiles are isolated through reset/reload",
+        "outcome": "PASS",
+        "detail": {
+          "profile_A_before_clear": 1,
+          "profile_A_after_clear": "No trips yet persists on reload",
+          "profile_B_before_and_after_A_clear": 4,
+          "mode": "browser sample profiles; not a hosted/multiuser API test"
+        }
+      },
+      {
+        "name": "One hour after hotel cutoff uses reduced tier",
+        "outcome": "PASS",
+        "detail": {
+          "before": 820,
+          "at_cutoff": 620,
+          "one_hour_after": 620,
+          "active_clock": "2026-11-20T00:00:00Z (Nov 19, 2026, 7:00 PM EST)",
+          "provider_action": "none approved in this check"
+        }
+      },
+      {
+        "name": "Dark theme desktop/narrow and preference persistence",
+        "outcome": "FAIL",
+        "error": "expect(received).not.toBe(expected) // Object.is equality\n\nExpected: not \"rgb(255, 255, 255)\""
+      },
+      {
+        "name": "Focused pages have no JavaScript exceptions",
+        "outcome": "PASS",
+        "detail": {
+          "page_errors": 0,
+          "console_errors": [
+            "Failed to load resource: the server responded with a status of 404 (File not found)"
+          ],
+          "http_errors": [],
+          "note": "Known local favicon404/strict console failure is retained separately; no clean-console pass inferred."
+        }
+      }
+    ],
+    "pageErrors": [],
+    "consoleErrors": [
+      "Failed to load resource: the server responded with a status of 404 (File not found)"
+    ],
+    "httpErrors": []
+  },
+  "settled_dark_followup": {
+    "candidate": "b54eb5e3cd19e5faa21d2f4e8eda310e17dc0b93",
+    "original_assertion": "Immediate post-click background read equaled light colour; initial failure retained in focused-results.json",
+    "outcome": "PASS",
+    "consoleErrors": [
+      "Failed to load resource: the server responded with a status of 404 (File not found)"
+    ],
+    "pageErrors": [],
+    "browser": "154.0.8037.57",
+    "light": {
+      "bg": "rgb(255, 255, 255)",
+      "color": "rgb(34, 34, 34)"
+    },
+    "dark": {
+      "bg": "rgb(18, 19, 20)",
+      "color": "rgb(241, 241, 241)",
+      "root_theme": "dark",
+      "figtree": true,
+      "mono": true
+    },
+    "reload_preference": "Dark mode stays selected",
+    "narrow": {
+      "viewport": 390,
+      "document": 390,
+      "body": 390
+    },
+    "disposition": "The initial immediate-style assertion was a verifier timing failure during the colour transition; settled desktop/narrow/reload checks passed. No product dark-mode defect inferred; raw failed attempt preserved."
+  },
+  "saved_policy_followup": {
+    "candidate": "b54eb5e3cd19e5faa21d2f4e8eda310e17dc0b93",
+    "outcome": "PASS",
+    "purpose": "Inspect the visible saved policy after reload; do not infer model/storage internals",
+    "itinerary_after_reload": "3:00 PM EST\nHarbor Line Hotel Midtown, 3 nights\nHarbor Line Hotel Midtown \u00b7 HLH-48213\nNo refund deadline in the policy\n$450.00\nBooked",
+    "details_after_reload": "Harbor Line Hotel Midtown, 3 nights\nBooked\nProvider\nHarbor Line Hotel Midtown\nBooking\nHLH-48213\nCheck in\nFri, Nov 20 \u00b7 3:00 PM EST\nCheck out\nMon, Nov 23 \u00b7 11:00 AM EST\nYou paid\n$450.00\nRefund rule\nunknown\nNo refund deadline in the policy\nAdd to Google Calendar\nClose",
+    "policy_uncertainty_visible": true,
+    "note": "Uncertain policy is still visibly unknown/review-needed after reload."
+  },
+  "final_requirement_outcomes": {
+    "local_source_provenance": "PASS",
+    "unknown_price_after_reload": "PASS",
+    "unknown_policy_visible_after_reload": "PASS",
+    "two_sample_profiles_and_clear_isolation": "PASS",
+    "one_hour_after_hotel_cutoff": "PASS",
+    "settled_dark_desktop_and_390_with_preference_reload": "PASS"
+  },
+  "retained_failures": {
+    "first_dark_verifier": "FAIL sampled immediate light paint during transition; settled follow-up passes; raw attempt preserved",
+    "favicon": "Known local GET /favicon.ico HTTP404 still observed, no clean-console pass inferred; owner disposition open",
+    "plan": "Existing labels/reload-display finding remains open on #4, not rerun or resolved here"
+  },
+  "direct_access": [
+    {
+      "url": "https://jiwoo-jung-cal.github.io/wayfare/",
+      "exit": 56,
+      "response": "HTTP/1.1 403 Forbidden\ncontent-length: 16\ncontent-type: text/plain\ndate: Thu, 05 Nov 2026 23:46:13 GMT\nserver: envoy\nconnection: close\n\n",
+      "error": "curl: (56) CONNECT tunnel failed, response 403\n"
+    },
+    {
+      "url": "https://jiwoo-jung-cal.github.io/wayfare/version.json",
+      "exit": 56,
+      "response": "HTTP/1.1 403 Forbidden\ncontent-length: 16\ncontent-type: text/plain\ndate: Thu, 05 Nov 2026 23:46:13 GMT\nserver: envoy\nconnection: close\n\n",
+      "error": "curl: (56) CONNECT tunnel failed, response 403\n"
+    }
+  ],
+  "network_readiness": "Configured API-only; latest environment_status reports enforcement state unknown. Actual proxy CONNECT403 responses are the denial evidence, not a claim of enforced readiness.",
+  "prior_pr67_head_checks": {
+    "head": "615361b60c914ff9b05e4dd249698ba7c028637f",
+    "application": "https://github.com/Jiwoo-Jung-Cal/wayfare/actions/runs/41974443378",
+    "coordination": "https://github.com/Jiwoo-Jung-Cal/wayfare/actions/runs/41974443329",
+    "dashboard": "https://github.com/Jiwoo-Jung-Cal/wayfare/actions/runs/41974443333",
+    "conclusions": "all success; own API metadata read"
+  },
+  "images": [
+    {
+      "file": "overview-dark-desktop.png",
+      "sha256": "fd1d3ed49661408e702d4632963453e285e1c179b4e40761bcf10f21f0c788b5",
+      "bytes": 235984
+    },
+    {
+      "file": "overview-dark-390.png",
+      "sha256": "94cd469ec17c99e187fb7b51f16370598c6ed28aa071538c6d3dfd1ad335c47c",
+      "bytes": 187125
+    }
+  ],
+  "final_release": "NOT VERIFIED"
+}

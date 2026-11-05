@@ -29,6 +29,26 @@ The [identity record](b54eb5e-browser-inputs.json) contains each hash. Differenc
 
 **Applicable local passes:** reference Overview; three plans and preference reranking; budget/unknown-price blocking; sample intake review/duplicate guard and explicit non-sample AI refusal; itinerary/day highlight/Calendar template href; $820 before/$620 at cutoff; four acknowledged simulated cancellations and automatic claims; $400 hotel claim with $250+$150 receipts; receipt/action reload and duplicate protection; separate credits/points; scripted assistant/credential-free Google demo labels; six pages with no horizontal overflow at 390px and loaded fonts. Selected desktop/390px layouts were structurally compared to approved r2 exports. This is not final human visual approval, exhaustive visual coverage or proof of planning-state persistence.
 
+## Direct replacement checks — November 5
+
+Main and the supplied replacement remain `b54eb5e3cd19e5faa21d2f4e8eda310e17dc0b93`; no later source was inferred. PR #67's **prior head `615361b`** completed [application](https://github.com/Jiwoo-Jung-Cal/wayfare/actions/runs/41974443378), [coordination](https://github.com/Jiwoo-Jung-Cal/wayfare/actions/runs/41974443329) and [dashboard](https://github.com/Jiwoo-Jung-Cal/wayfare/actions/runs/41974443333) successfully. This closes the earlier pending-check snapshot for that head, not final release sign-off or a future head's check status.
+
+The outstanding local checks below were run directly on a new clean tracked `b54eb5e` worktree/build, rather than relabeling the old `323592a` run. `version.json` and page meta name the full replacement SHA, `dirty: false`, `mode: sample`. Runtime remains Node 24.19.0/npm 11.9.0/Chromium 154.0.8037.57; the previous dependency caveat still applies. A production build enabled these checks; successful full suites/clean install were not repeated. [Raw attempts, follow-ups, provenance and screenshot hashes](b54eb5e/focused-checks-2026-11-05.json) retain the actual outcomes.
+
+| Outstanding observation | Own result |
+| --- | --- |
+| Unknown price | PASS: after resetting this profile to planning, saved a reviewed sample hotel with blank price and uncertain policy. It displayed Unknown, not $0.00, after reload |
+| Unknown policy | PASS: a separate policy-only sample saved with “Policy still needs review”; after reload the Itinerary details drawer explicitly shows **Refund rule: unknown**, with paid amount $450 unchanged. No storage/model internals inspected |
+| Browser profile isolation | PASS: profile A had one saved booking; profile B independently had four reference bookings. Clearing/reloading A left No trips yet, while reloading B retained all four. This is sample-browser isolation, not a hosted multiuser API result |
+| After cutoff | PASS: cancel recovery is $820 before the cutoff, $620 at it and **$620 at `2026-11-20T00:00:00Z`**, one hour after the hotel cutoff. No provider action was approved in this check |
+| Dark theme | PASS after paint settles: desktop 1440px and narrow 390px Overview, both fonts loaded, no narrow horizontal overflow, and Dark mode remains selected after reload. Body changes from RGB255/255/255 with RGB34/34/34 text to RGB18/19/20 with RGB241/241/241 text. Structural review against the approved dark desktop export; no exhaustive visual/contrast or final human approval claim |
+
+[Dark desktop observation](b54eb5e/overview-dark-desktop.png) · [390px observation](b54eb5e/overview-dark-390.png) · [Approved dark desktop reference](../../design/exports/dashboard/r2-overview-desktop-dark.png).
+
+The first dark verifier sampled background colour immediately after the button state changed and **failed** while the paint was still light/mid-transition. That raw failed attempt and partial screenshot stay in the local audit, with its error in the committed JSON. The follow-up waited for finite colour transitions, captured the settled view and passed; this is a verifier timing correction, not an application fix. Zero page exceptions were observed; the known `/favicon.ico` 404/console warning remains open for owner disposition and is not filtered into a clean-console pass.
+
+Fresh Pages and `version.json` attempts again failed at proxy CONNECT403, before an origin response. The current configuration lists API-only destinations; environment status reports enforcement state **unknown**, so no readiness/enforcement claim is made from that metadata. Actual request failures establish the access limitation. No visibility, network, access, deployment or Figma settings changed. Official submission/timezone/access requirements and owner inputs have no new authoritative evidence.
+
 ## Failures and dispositions
 
 | Item | Current disposition / owner |
@@ -48,7 +68,7 @@ Merged #66 changes adapter truncation/error mapping and adds SDK wire-level test
 ## Genuine remaining gates
 
 - Agent 2's Plan finding/review disposition, Kelvin's #55 r2 review on #6, and Brian's #56 r2 review/#7 evidence/asset/manual-browser follow-up or accepted limitations. Formal Jiwoo r2-final design approval is already complete.
-- Direct live walkthrough/current provenance and intended judge access remain **unverified here**: Pages and `version.json` requests fail at proxy CONNECT 403 under enforced API-only policy. This is an environment access denial, not an application-origin failure. Authenticated managed private-repo API reads are not anonymous/intended-judge proof. Pages admin-read permission and artifact/log download destinations are also inaccessible; no settings or permissions changed.
+- Direct live walkthrough/current provenance and intended judge access remain **unverified here**: Pages and `version.json` requests fail at proxy CONNECT 403 with API-only configuration and directly observed proxy denial. This is an environment access denial, not an application-origin failure. Authenticated managed private-repo API reads are not anonymous/intended-judge proof. Pages admin-read permission and artifact/log download destinations are also inaccessible; no settings or permissions changed.
 - Official Round 2 deadline timezone/source, submission portal, required links/formats, recording and public/private access rules are unconfirmed. Team time remains November 10, 2026, 11:59 PM without an inferred official timezone. No new official-source review or submission receipt is claimed.
 - Actual live-AI proof only if claimed. Sample extraction, simulated provider/Google dialogs and scripted assistant labels remain accurate.
 - Final technical/visual acceptance after owner findings and required checks. Old Figma Code Layer `24:1182` is source `5249cb7`, separate from either candidate; runtime/access/sync unverified if required by submission scope.

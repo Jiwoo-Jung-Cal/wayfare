@@ -12,7 +12,7 @@ Candidate: main `b54eb5e3cd19e5faa21d2f4e8eda310e17dc0b93`, supplied by [Agent 1
 
 ## Direct local candidate checks
 
-Performed on `323592a`, then reused for `b54eb5e` only after hash verification of identical browser source/build inputs. Current CI/deployment checks independently target `b54eb5e`; no direct live-site observation is inferred.
+Initial checks were performed on `323592a` and reused for `b54eb5e` only after browser input identity verification. The November 5 focused checks below were directly run on a clean local `b54eb5e` build. Current candidate CI/deployment evidence targets `b54eb5e`; no direct live-site observation is inferred.
 
 [Actual observations, screenshots and owner routes](releases/b54eb5e-verification.md) distinguish the rebuilt candidate from workflow/live evidence.
 
@@ -21,6 +21,10 @@ Performed on `323592a`, then reused for `b54eb5e` only after hash verification o
 - [x] Automatic wallet sync, $400 claim/$250 receipt/$150 remaining/final receipt, separate credits/points, reload and duplicate protection checked locally.
 - [x] Scripted assistant, credential-free Google demo labels and non-sample AI refusal checked.
 - [x] Six critical pages fit 390px with loaded fonts; selected desktop/390px screenshots compared structurally with r2 exports. This is not final visual approval.
+- [x] Direct b54eb5e: unknown price remains Unknown after reload; uncertain saved policy is visibly “Refund rule: unknown” in booking details.
+- [x] Direct b54eb5e: profile A reset/clear/reload leaves profile B's four bookings intact.
+- [x] Direct b54eb5e: one hour after hotel cutoff still returns $620.
+- [x] Direct b54eb5e: settled dark Overview at 1440px/390px and theme preference after reload checked; initial timing failure retained in the evidence.
 - [ ] Plan-only labels/post-reload displayed state: owner finding on #4; no stored-data-loss conclusion.
 - [x] Earlier PR42 `dfdbd35` CI race resolved by merged #65; final PR42 head `30c80e3` and replacement `b54eb5e` application CI succeeded.
 - [ ] Local strict clean-console check failed on `/favicon.ico` 404; Agent 1 disposition/live impact unverified.
