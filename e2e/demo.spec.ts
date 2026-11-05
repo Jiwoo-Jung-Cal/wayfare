@@ -47,6 +47,7 @@ test('demo walkthrough on the production build: plan, intake, disruption, approv
 
   // 3. Disruption (simulated) -> Overview -> ReRoute comparison.
   await button(page, 'Trigger flight cancellation').click();
+  await expect(page.getByText(/ReRoute recorded disruption/)).toBeVisible();
   await page.goto(`./${TRIP}`);
   await expect(page.getByText('Bayline Air cancelled your flight. You don’t need to call anyone.')).toBeVisible();
   await page.getByRole('link', { name: 'See what to do' }).click();

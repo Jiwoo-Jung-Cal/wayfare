@@ -21,6 +21,7 @@ test('two visitors get isolated server workspaces; reset is scoped; state surviv
   await control(visitorA, 'Import sample bookings').click();
   await expect(bookingRows(visitorA)).toHaveCount(4);
   await control(visitorA, 'Trigger flight cancellation').click();
+  await expect(visitorA.getByText(/ReRoute recorded disruption/)).toBeVisible();
   await visitorA.goto(TRIP);
   await expect(cancelledNote(visitorA)).toBeVisible();
 
@@ -39,6 +40,7 @@ test('two visitors get isolated server workspaces; reset is scoped; state surviv
   // B clears only B's workspace.
   visitorB.once('dialog', (d) => d.accept());
   await control(visitorB, 'Clear workspace').click();
+  await expect(visitorB.getByText('This workspace was reset to "empty"')).toBeVisible();
   await visitorB.goto('/');
   await expect(visitorB.getByText('No trips yet')).toBeVisible();
 
