@@ -89,5 +89,8 @@ export function mapProviderError(e: unknown, requestId: string) {
   if (e instanceof Anthropic.BadRequestError) return appError('provider_error', 'The AI provider rejected the request', { requestId, retryable: false });
   if (e instanceof Anthropic.InternalServerError) return appError('provider_error', 'The AI provider had an internal error', { requestId, retryable: true });
   if (e instanceof Anthropic.APIError) return appError('provider_error', `AI provider error (${e.status ?? 'unknown status'})`, { requestId });
+  // Raised by the SDK's structured-output parser after a successful HTTP response (e.g. JSON cut
+  // off at max_tokens, or output that fails the schema): the response was unusable, so retry.
+  if (e instanceof Anthropic.AnthropicError) return appError('provider_error', 'The AI response was incomplete or not valid structured output', { requestId, retryable: true });
   return appError('internal', 'Unexpected error while calling the AI provider', { requestId });
 }
