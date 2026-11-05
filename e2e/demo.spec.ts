@@ -89,3 +89,18 @@ test('demo walkthrough on the production build: plan, intake, disruption, approv
   await expect(page.getByText('You chose to cancel. We recorded 4 cancellations.')).toBeVisible();
   expect(errors).toEqual([]);
 });
+
+test('the production build loads every tab with a clean console and no failed requests', async ({ page }) => {
+  const problems: string[] = [];
+  page.on('pageerror', (e) => problems.push(`pageerror: ${e.message}`));
+  page.on('console', (m) => { if (m.type() === 'error') problems.push(`console: ${m.text()}`); });
+  page.on('response', (r) => { if (r.status() >= 400) problems.push(`${r.status()} ${r.url()}`); });
+  page.on('requestfailed', (r) => problems.push(`failed ${r.url()}`));
+  for (const tab of ['', '/plan', '/import', '/itinerary', '/reroute', '/wallet']) {
+    await page.goto(`./${TRIP}${tab}`);
+    await expect(page.locator('main')).toBeVisible();
+  }
+  // The favicon is inline, so the browser does not ask the server for /favicon.ico.
+  await expect(page.locator('link[rel="icon"]')).toHaveAttribute('href', /^data:image\/svg\+xml,/);
+  expect(problems).toEqual([]);
+});
