@@ -65,6 +65,7 @@ test.describe('demo journey: shell steps', () => {
     // Reset affects only this workspace and asks for confirmation first.
     page.once('dialog', (d) => d.accept());
     await control(page, 'Clear workspace').click();
+    await expect(page.getByText('This workspace was reset to "empty"')).toBeVisible();
     await page.goto('/');
     await expect(page.getByText('No trips yet')).toBeVisible();
   });
