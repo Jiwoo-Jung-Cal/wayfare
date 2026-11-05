@@ -10,9 +10,22 @@ Candidate: main `323592aaa6d76f77a0b22eb79b0e269ae8455d93`, supplied by [Agent 1
 - [x] Both shared UI findings are fixed in source by #62 (duplicate issue keys; IBM Plex Mono input cascade).
 - [x] Jiwoo formally approved r2-final on November 3, 2026 for all four areas in `design/approvals.json`.
 
+## Direct local candidate checks
+
+[Actual observations, screenshots and owner routes](releases/323592a-verification.md) distinguish the rebuilt candidate from workflow/live evidence.
+
+- [x] Local production build identifies supplied full SHA, clean tracked source and sample mode.
+- [x] Reference Overview, intake duplicate/review, itinerary/day highlight/Calendar template, $820-before/$620-at cutoff, explicit acknowledgement and four simulated actions checked.
+- [x] Automatic wallet sync, $400 claim/$250 receipt/$150 remaining/final receipt, separate credits/points, reload and duplicate protection checked locally.
+- [x] Scripted assistant, credential-free Google demo labels and non-sample AI refusal checked.
+- [x] Six critical pages fit 390px with loaded fonts; selected desktop/390px screenshots compared structurally with r2 exports. This is not final visual approval.
+- [ ] Plan-only labels/post-reload displayed state: owner finding on #4; no stored-data-loss conclusion.
+- [ ] PR42 `dfdbd35` browser CI failed: Agent 1/#8 triage. Local strict clean-console check failed on `/favicon.ico` 404; live impact unverified.
+
 ## Final acceptance still required
 
-- [ ] Agent 1's final technical acceptance and accepted deployed full SHA/mode recorded; current deployment provenance matches it.
+- [x] Agent 1 supplied candidate full SHA, demo URL and sample mode; verification proceeded at that exact source.
+- [ ] Final technical acceptance after findings and required checks; direct current live provenance/judge path remain unverified due network access.
 - [ ] Actual live walkthrough completed against that accepted version, with visual/capability evidence and intended judge access.
 - [ ] Kelvin's #55 r2 implementation review/limitations recorded on #6.
 - [ ] Brian's #56 r2 review and outstanding #7 evidence/asset/manual browser follow-up have owner evidence or explicitly accepted limitations.

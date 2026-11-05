@@ -12,6 +12,8 @@ Agent 1 reports 177 tests and 36 no-retry browser checks on `07e30db` plus #62/#
 
 The remaining gates are final accepted-deployed-candidate verification; Kelvin's r2 review; Brian's evidence/asset follow-up or accepted limitations; live-AI proof if claimed; and authoritative deadline/submission/access rules. See the [current gate table](SETUP_STATUS.md#remaining-release-gates) and [judge-link record](SETUP_STATUS.md#deadline-and-judge-links). Preserve Agent 1's newer `docs/DEMO.md` launch, walkthrough and hosting content.
 
+[Agent 3's candidate verification](releases/323592a-verification.md) records direct local walkthrough/visual passes, the Plan label/reload finding, local favicon 404, failed PR42 browser CI and inaccessible live/judge checks. Candidate availability is satisfied; owner findings and final requirements remain.
+
 ## Reproduce the sample app
 
 Use an authorized private-repository checkout and record `git rev-parse HEAD`. Agent 1/CI use Node 24.21.0 and npm 11.19.0.
@@ -95,7 +97,7 @@ Browser tests default to Google Chrome. `PW_CHANNEL=` selects installed Playwrig
 
 ## Execute the accepted-version pass
 
-1. Obtain Agent 1's explicitly accepted deployed candidate, full SHA, mode, walkthrough and technical acceptance. A candidate is already supplied in #8; final release acceptance is still pending. Check whether any later merge/deploy replaced it.
+1. Use Agent 1's supplied `323592aaa6d76f77a0b22eb79b0e269ae8455d93` candidate, sample-mode URL and walkthrough. Verification is authorized and has proceeded; do not wait for another candidate handoff. Check whether later integration/deployment replaced it, and obtain final technical acceptance after the findings/required checks.
 2. Record current deployment provenance and compare it with exact-target source/CI evidence. Review applicable logs and owner evidence; perform outstanding live walkthrough, visual and capability checks. Preserve the approved r2-final design record while collecting Kelvin/Brian implementation reviews.
 3. Resolve Brian's outstanding evidence/asset scope through owner PR/commit/checks or explicit accepted limitations. Any resulting source change requires a new full SHA and refreshed affected checks, runtime mapping and capability evidence. #59/#62 no longer need integration fixes.
 4. Confirm the official deadline/year/timezone/source and submission rules. Team records say November 10, 2026, 11:59 PM; no official timezone is established. Verify required repository, demo, recording, Figma and form links only as required by those instructions, using the intended judge path.

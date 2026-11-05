@@ -35,11 +35,16 @@ Do not assign owner-reported counts to a different target without evidence. Curr
 - **Formal design approval is complete:** [design/approvals.json](../design/approvals.json) records Jiwoo's November 3 approval of `r2-final` for foundation, Wayfinder/intake, ReRoute and TripWallet. The [r2 specification](../design/handoffs/r2-final.md) and [reference prototype](../design/exports/prototype/r2/index.html) apply. Kelvin/Brian implementation reviews remain separate.
 - **Hosting works:** https://jiwoo-jung-cal.github.io/wayfare/ is the public sample demo. Candidate deployment provenance passed as recorded above. #63 prepares Vercel; no Vercel deployment exists, and that optional alternative is not a missing Pages-hosting gate.
 
+## Direct candidate verification
+
+Agent 3 proceeded with supplied `323592a`: see [the verification record](releases/323592a-verification.md) for the local production walkthrough, desktop/390px screenshots and explicit evidence boundaries. Core recovery/wallet/receipt/reload behavior passed locally. Plan preference reranking passed, but the BOOKED wording and post-reload Plan state require Agent 2 disposition; the local strict console check failed on `/favicon.ico` 404. PR #42's earlier `dfdbd35` browser CI failed separately and is routed to Agent 1. These results do not erase candidate-main CI success or establish a remote-site visit.
+
 ## Remaining release gates
 
 | Gate | Actual outstanding evidence / owner |
 | --- | --- |
-| Accepted deployed candidate / final verification | Agent 1 supplied candidate `323592a`, a URL and the [10-step walkthrough](DEMO.md). Final technical acceptance, actual live walkthrough/visual review, current runtime/source match and intended judge access remain to be recorded for the accepted version. This bounded documentation pass pauses before final sign-off |
+| Live/judge-path verification and final acceptance | Candidate `323592a`, URL and walkthrough are supplied; candidate availability is satisfied and local verification has proceeded. Direct Pages/version requests fail at proxy CONNECT 403, so live walkthrough/current provenance and intended judge path remain unverified here. Final technical/visual acceptance follows findings and required checks |
+| Newly observed failures | Agent 2/#4: Plan BOOKED wording versus plan-only success, and displayed state after reload. Agent 1/#8: PR42 `dfdbd35` browser CI failure and local favicon-404 disposition. See the linked verification record for exact reproduction/run/owner URLs; no root-cause equivalence inferred |
 | Kelvin's r2 implementation review | [#6 r2 review request](https://github.com/Jiwoo-Jung-Cal/wayfare/issues/6#issuecomment-6621476208) for merged #55: confirm ReRoute/CancelClock functionality, implementation and current limitations against approved r2; old code-integration blockers stay resolved |
 | Brian's evidence/asset follow-up | [#7](https://github.com/Jiwoo-Jung-Cal/wayfare/issues/7), including the [#56 r2 review request](https://github.com/Jiwoo-Jung-Cal/wayfare/issues/7#issuecomment-6621477268), feature-owned evidence/review and remaining assets, and stale manual browser-label follow-up. Supply actual PR/commit/checks or explicitly accepted limitations; preserve the integrated cash ledger/shared seams |
 | Live AI and capability verification | No successful live model call or hosted backend is evidenced. `npm run smoke:live-ai` exists; fake-adapter tests/configuration are not live proof. Verify any live claim on the accepted target, or retain explicit sample/scripted/simulated/unverified labels |
@@ -55,7 +60,7 @@ The [prior recorded organizer-page review](https://github.com/Jiwoo-Jung-Cal/way
 
 | Artifact | Current evidence | Remaining confirmation |
 | --- | --- | --- |
-| GitHub source | [Private repository](https://github.com/Jiwoo-Jung-Cal/wayfare), candidate `323592a` | Final accepted SHA, official source/access rules and intended-judge access |
+| GitHub source | [Private repository](https://github.com/Jiwoo-Jung-Cal/wayfare), candidate `323592a` | Supplied candidate SHA recorded; final technical acceptance, official source/access rules and intended-judge access |
 | Runnable demo | [Public Pages sample app](https://jiwoo-jung-cal.github.io/wayfare/); workflow verified candidate provenance; [version.json](https://jiwoo-jung-cal.github.io/wayfare/version.json) identifies current deployment | Accepted deployed version, final walkthrough and intended-judge path; link is mutable on main pushes |
 | Recording/video | No final URL or duration rule supplied | Whether required, official format/duration and viewing permissions |
 | Figma/prototype | [Design file / Code Layer `24:1182`](https://www.figma.com/design/ZZS9jEmANeCrjGxWxxCofK?node-id=24-1182); [DESIGN_MAP.md](DESIGN_MAP.md) | Whether required; old Code Layer source `5249cb7` is not this candidate; running preview/source alignment and judge access unverified |
@@ -78,4 +83,4 @@ An owner's authenticated repository read or Figma editor session does not prove 
 | Design / assets | r2-final approved; Figtree/IBM Plex Mono bundled. Plan illustrations are deliberate while photo licensing is unconfirmed; feature-owner reviews remain outstanding |
 | Hosted demo / judge access | Pages hosting and workflow provenance established; final live acceptance and official intended-judge access unverified |
 
-Technical acceptance belongs to Agent 1/eligible reviewers; Jiwoo owns visual design. Agent 3 assembles evidence and routes failures. For the next accepted-version pass, match the full SHA, runtime and mode; reuse exact-target CI and run only outstanding/change-justified release checks. Record passed/failed/skipped/todo/unrun outcomes and log links. Route Wayfinder/intake to Agent 2/#4, ReRoute to Kelvin/#6, wallet to Brian/#7, and shared/backend/integration to Agent 1/#8. Final evidence remains NOT VERIFIED until the required acceptance exists.
+Technical acceptance belongs to Agent 1/eligible reviewers; Jiwoo owns visual design. Agent 3 assembles evidence and routes failures. For remaining checks, continue with the supplied candidate's full SHA/runtime/mode; reuse exact-target CI and run only outstanding/change-justified release checks. Record passed/failed/skipped/todo/unrun outcomes and log links. Route Wayfinder/intake to Agent 2/#4, ReRoute to Kelvin/#6, wallet to Brian/#7, and shared/backend/integration to Agent 1/#8. Final evidence remains NOT VERIFIED until the required acceptance exists.

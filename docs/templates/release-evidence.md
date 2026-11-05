@@ -7,7 +7,8 @@ Status: **NOT VERIFIED for final release.** Candidate `323592aaa6d76f77a0b22eb79
 - Repository: https://github.com/Jiwoo-Jung-Cal/wayfare
 - Candidate demo: https://jiwoo-jung-cal.github.io/wayfare/ (public, sample; mutable on main pushes)
 - Walkthrough: [Agent 1's 10 steps](../DEMO.md)
-- Accepted full source SHA / Agent 1 final technical acceptance: PENDING
+- Supplied source SHA: `323592aaa6d76f77a0b22eb79b0e269ae8455d93`; candidate availability satisfied. Final technical acceptance after findings/requirements: PENDING
+- Instantiated candidate record: [direct observations, failures and access limits](../releases/323592a-verification.md)
 - Check date/time/timezone and runtime/package-manager versions:
 - Actual deployed `version.json` source / dirty flag / mode / builtAt:
 - Final live walkthrough / desktop/narrow review:
