@@ -86,11 +86,14 @@ test('a browser that kept an empty workspace from an earlier visit also opens on
   await page.locator('summary', { hasText: 'Demo controls' }).click();
   page.once('dialog', (d) => d.accept());
   await page.getByRole('button', { name: 'Clear workspace' }).click();
+  // Demo controls finish asynchronously; navigate only once each reports done.
+  await expect(page.getByText('This workspace was reset to "empty"')).toBeVisible();
   await page.goto('/');
   await page.reload();
   await expect(page.getByText('No trips yet')).toBeVisible();
   // The demo control brings the reference scenario back on demand.
   await page.getByRole('button', { name: 'Show the reference scenario' }).click();
+  await expect(page.getByText(/Reference scenario loaded/)).toBeVisible();
   await page.goto('/');
   await expect(page.getByLabel(/^Boarding pass for Bayline Air flight BL 214/)).toBeVisible();
 });
