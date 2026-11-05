@@ -134,6 +134,10 @@ export function WayfinderPage({ tripId, ctx }: FeaturePageProps) {
       const response = await selectPlanningOption(ctx.repo, plan, ctx.clock.now());
       if (!response.ok) { setError(response.error); return; }
       setSaved({ ...response.value.plan, status: 'selected' });
+      // Bookings may have changed since this page loaded (e.g. a demo reset): read them again
+      // so a newly selected plan is never labelled booked when the trip has no bookings.
+      const snap = await ctx.repo.snapshot();
+      setBooked(snap.ok && snap.value.bookings.some((b) => b.tripId === tripId));
       setReplayed(response.value.replayed);
       setMessage(response.value.replayed ? 'This plan is already selected. No reservation was made.' : 'Plan saved. No reservation was made.');
       try { await ctx.refresh(); } catch { setError(appError('unavailable', 'Plan saved, but the dashboard could not refresh. Reload to see it.')); }

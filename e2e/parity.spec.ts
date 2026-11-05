@@ -97,3 +97,19 @@ test('a browser that kept an empty workspace from an earlier visit also opens on
   await page.goto('/');
   await expect(page.getByLabel(/^Boarding pass for Bayline Air flight BL 214/)).toBeVisible();
 });
+
+test('choosing a plan after the workspace is reset to planning is not labelled booked (Agent 3 finding)', async ({ page }) => {
+  // The reference scenario starts booked; then Demo controls → Load sample trip removes every booking.
+  await page.goto('/#/trips/trip-demo-nyc/plan');
+  await expect(page.getByRole('region', { name: 'Plan comparison' }).getByRole('article')).toHaveCount(3);
+  await page.locator('summary', { hasText: 'Demo controls' }).click();
+  await page.getByRole('button', { name: 'Load sample trip' }).click();
+  await expect(page.getByText('This workspace was reset to "planning"')).toBeVisible();
+  const first = page.getByRole('region', { name: 'Plan comparison' }).getByRole('article').first();
+  await first.getByRole('button', { name: 'Choose this plan' }).click();
+  await expect(page.getByRole('status').filter({ hasText: 'Plan saved. No reservation was made.' })).toBeVisible();
+  await expect(first).not.toContainText('BOOKED');
+  await expect(first.getByRole('link', { name: 'View your trip' })).toHaveCount(0);
+  await expect(first).toContainText('Nothing is booked or paid until you confirm.');
+  await expect(page.getByText('plan selected, nothing booked yet')).toBeVisible();
+});
