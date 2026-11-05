@@ -1,0 +1,61 @@
+{
+  "old_candidate": "323592aaa6d76f77a0b22eb79b0e269ae8455d93",
+  "replacement_candidate": "b54eb5e3cd19e5faa21d2f4e8eda310e17dc0b93",
+  "files": [
+    {
+      "path": "src",
+      "old_object": "1d00b28b5b7f3fb794ec03b4d3e69c5bc6e215a7",
+      "new_object": "1d00b28b5b7f3fb794ec03b4d3e69c5bc6e215a7",
+      "same": true
+    },
+    {
+      "path": "index.html",
+      "old_object": "cf5cb49eaa259b92f8e7f9395e7149e0ef6ac69f",
+      "new_object": "cf5cb49eaa259b92f8e7f9395e7149e0ef6ac69f",
+      "same": true
+    },
+    {
+      "path": "package.json",
+      "old_object": "acc5e9278b6b415404c68c041a225e4e2cdc031f",
+      "new_object": "acc5e9278b6b415404c68c041a225e4e2cdc031f",
+      "same": true
+    },
+    {
+      "path": "package-lock.json",
+      "old_object": "ca4606fd001521c1ab33a369653bc78e1459700d",
+      "new_object": "ca4606fd001521c1ab33a369653bc78e1459700d",
+      "same": true
+    },
+    {
+      "path": "vite.config.ts",
+      "old_object": "5e97d93f538a9d86210667389b72fdd20f747b36",
+      "new_object": "5e97d93f538a9d86210667389b72fdd20f747b36",
+      "same": true
+    },
+    {
+      "path": "tsconfig.json",
+      "old_object": "62b47bd71250bbe6655f1a4980487a7be5f95748",
+      "new_object": "62b47bd71250bbe6655f1a4980487a7be5f95748",
+      "same": true
+    },
+    {
+      "path": ".env.example",
+      "old_object": "5908ab76f62da5d561b826b47f93b5cee1bcfac8",
+      "new_object": "5908ab76f62da5d561b826b47f93b5cee1bcfac8",
+      "same": true
+    },
+    {
+      "path": "public",
+      "old_object": null,
+      "new_object": null,
+      "same": true
+    },
+    {
+      "path": "docs/DEMO.md",
+      "old_object": "e546d4510bc00ca727cbaee5a480f8c22f678db4",
+      "new_object": "e546d4510bc00ca727cbaee5a480f8c22f678db4",
+      "same": true
+    }
+  ],
+  "scope": "tracked browser source/config/dependency inputs, not a claim of deployed bundle byte identity"
+}

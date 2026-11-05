@@ -1,14 +1,14 @@
 # Release evidence — accepted deployed version
 
-Status: **NOT VERIFIED for final release.** Candidate `323592aaa6d76f77a0b22eb79b0e269ae8455d93` is supplied, with verified source/CI and workflow Pages provenance; see [SETUP_STATUS.md](../SETUP_STATUS.md#verified-source-and-ci). r2-final is approved; #59/#62 source blockers are resolved. Complete this record only with actual final acceptance evidence.
+Status: **NOT VERIFIED for final release.** Replacement candidate `b54eb5e3cd19e5faa21d2f4e8eda310e17dc0b93` is supplied, with verified source/CI and workflow Pages provenance; see [SETUP_STATUS.md](../SETUP_STATUS.md#verified-source-and-ci). r2-final is approved; #59/#62 source blockers are resolved. Complete this record only with actual final acceptance evidence.
 
 - Release task: https://github.com/Jiwoo-Jung-Cal/wayfare/issues/9
-- Candidate handoff: https://github.com/Jiwoo-Jung-Cal/wayfare/issues/8#issuecomment-6628324849
+- Candidate handoff: https://github.com/Jiwoo-Jung-Cal/wayfare/issues/8#issuecomment-6650056430
 - Repository: https://github.com/Jiwoo-Jung-Cal/wayfare
 - Candidate demo: https://jiwoo-jung-cal.github.io/wayfare/ (public, sample; mutable on main pushes)
 - Walkthrough: [Agent 1's 10 steps](../DEMO.md)
-- Supplied source SHA: `323592aaa6d76f77a0b22eb79b0e269ae8455d93`; candidate availability satisfied. Final technical acceptance after findings/requirements: PENDING
-- Instantiated candidate record: [direct observations, failures and access limits](../releases/323592a-verification.md)
+- Supplied source SHA: `b54eb5e3cd19e5faa21d2f4e8eda310e17dc0b93`; candidate availability satisfied. Final technical acceptance after findings/requirements: PENDING
+- Instantiated candidate record: [direct observations, failures and access limits](../releases/b54eb5e-verification.md)
 - Check date/time/timezone and runtime/package-manager versions:
 - Actual deployed `version.json` source / dirty flag / mode / builtAt:
 - Final live walkthrough / desktop/narrow review:
@@ -29,7 +29,7 @@ Status: **NOT VERIFIED for final release.** Candidate `323592aaa6d76f77a0b22eb79
 | Node/Python coordination checks | Record documentation-head or accepted-source target explicitly | |
 | Live AI, only if claimed | UNVERIFIED; smoke command existing is not a successful call | |
 
-Reuse verified exact-target CI; run only outstanding/change-justified checks. Independently checked metadata and owner-reported counts are different evidence. Agent 1 reports 177 tests/36 no-retry browser checks on `07e30db` plus #62/#63 trees; do not silently assign those counts to another SHA. Record CI merge SHA/tree if it differs from the accepted source.
+Reuse verified exact-target CI; run only outstanding/change-justified checks. Independently checked metadata and owner-reported counts are different evidence. Agent 1 reports 184 tests/36 no-retry browser checks/20 parity repeats for replacement `b54eb5e`; fake-provider wire tests are not live-AI proof. Do not silently assign those counts to another SHA. Earlier direct `323592a` browser observations are reused only with the linked input-identity proof. Record CI merge SHA/tree if it differs from the accepted source.
 
 ## Journey and owner acceptance
 

@@ -1,18 +1,18 @@
 # Release preparation runbook
 
-Source/CI and workflow deployment checkpoint: main `323592aaa6d76f77a0b22eb79b0e269ae8455d93`, checked November 4, 2026 (America/Los_Angeles). Agent 1 supplied this candidate for verification. Hosting works, r2-final is approved, and #58/#60/#59/#62 are merged. **Final demo/submission sign-off remains pending under #9.**
+Source/CI and workflow deployment checkpoint: main `b54eb5e3cd19e5faa21d2f4e8eda310e17dc0b93`, checked November 4, 2026 (America/Los_Angeles). Agent 1 supplied this candidate for verification. Hosting works, r2-final is approved, and #58/#60/#59/#62 are merged. Since `323592a`, #64/#65/#66 and documentation #42 also merged; the replacement changes e2e/server/docs, with identical browser source/build inputs. **Final demo/submission sign-off remains pending under #9.**
 
-[Release #9](https://github.com/Jiwoo-Jung-Cal/wayfare/issues/9) · [Candidate handoff #8](https://github.com/Jiwoo-Jung-Cal/wayfare/issues/8#issuecomment-6628324849) · [Current demo walkthrough](DEMO.md) · [Checklist](RELEASE_CHECKLIST.md) · [Evidence template](templates/release-evidence.md) · [Architecture/tool decisions](ARCHITECTURE.md)
+[Release #9](https://github.com/Jiwoo-Jung-Cal/wayfare/issues/9) · [Candidate handoff #8](https://github.com/Jiwoo-Jung-Cal/wayfare/issues/8#issuecomment-6650056430) · [Current demo walkthrough](DEMO.md) · [Checklist](RELEASE_CHECKLIST.md) · [Evidence template](templates/release-evidence.md) · [Architecture/tool decisions](ARCHITECTURE.md)
 
 ## Current evidence and remaining requirements
 
 [SETUP_STATUS.md](SETUP_STATUS.md#verified-source-and-ci) records independently checked exact-main application/coordination CI and Pages job/step metadata. The Pages workflow's live provenance check passed; Agent 1 reports `version.json` matched this SHA in sample mode. This container cannot reach `github.io`, so no independent live-site visit is claimed.
 
-Agent 1 reports 177 tests and 36 no-retry browser checks on `07e30db` plus #62/#63 trees, including production-build `/wayfare/`, desktop/mobile, local-connected and shared UI regressions. Keep these owner-reported counts distinct from exact-main CI metadata. #59 integration and both shared findings (issue keys and mono-input cascade, fixed in #62) are resolved in source. Jiwoo's r2-final approval supersedes r1-pending statements; Kelvin's #55 and Brian's #56 implementation reviews remain separate.
+Agent 1 reports 184 tests, 36 no-retry browser checks and 20 parity repeats for replacement `b54eb5e`, including production-build `/wayfare/`, desktop/mobile, local-connected and shared UI regressions. Keep these owner-reported counts distinct from exact-main CI metadata. #59 integration and both shared findings (issue keys and mono-input cascade, fixed in #62) are resolved in source. Jiwoo's r2-final approval supersedes r1-pending statements; Kelvin's #55 and Brian's #56 implementation reviews remain separate.
 
 The remaining gates are final accepted-deployed-candidate verification; Kelvin's r2 review; Brian's evidence/asset follow-up or accepted limitations; live-AI proof if claimed; and authoritative deadline/submission/access rules. See the [current gate table](SETUP_STATUS.md#remaining-release-gates) and [judge-link record](SETUP_STATUS.md#deadline-and-judge-links). Preserve Agent 1's newer `docs/DEMO.md` launch, walkthrough and hosting content.
 
-[Agent 3's candidate verification](releases/323592a-verification.md) records direct local walkthrough/visual passes, the Plan label/reload finding, local favicon 404, failed PR42 browser CI and inaccessible live/judge checks. Candidate availability is satisfied; owner findings and final requirements remain.
+[Agent 3's candidate verification](releases/b54eb5e-verification.md) records direct local walkthrough/visual passes, the Plan label/reload finding, local favicon 404, inaccessible live/judge checks, and the resolved historical PR42 CI race (#65). Earlier direct browser observations are explicitly reused only after input identity was verified; current CI/provenance targets `b54eb5e`. Candidate availability is satisfied; owner findings and final requirements remain.
 
 ## Reproduce the sample app
 
@@ -97,7 +97,7 @@ Browser tests default to Google Chrome. `PW_CHANNEL=` selects installed Playwrig
 
 ## Execute the accepted-version pass
 
-1. Use Agent 1's supplied `323592aaa6d76f77a0b22eb79b0e269ae8455d93` candidate, sample-mode URL and walkthrough. Verification is authorized and has proceeded; do not wait for another candidate handoff. Check whether later integration/deployment replaced it, and obtain final technical acceptance after the findings/required checks.
+1. Use Agent 1's supplied `b54eb5e3cd19e5faa21d2f4e8eda310e17dc0b93` candidate, sample-mode URL and walkthrough. Verification is authorized and has proceeded; do not wait for another candidate handoff. Check whether later integration/deployment replaced it, and obtain final technical acceptance after the findings/required checks.
 2. Record current deployment provenance and compare it with exact-target source/CI evidence. Review applicable logs and owner evidence; perform outstanding live walkthrough, visual and capability checks. Preserve the approved r2-final design record while collecting Kelvin/Brian implementation reviews.
 3. Resolve Brian's outstanding evidence/asset scope through owner PR/commit/checks or explicit accepted limitations. Any resulting source change requires a new full SHA and refreshed affected checks, runtime mapping and capability evidence. #59/#62 no longer need integration fixes.
 4. Confirm the official deadline/year/timezone/source and submission rules. Team records say November 10, 2026, 11:59 PM; no official timezone is established. Verify required repository, demo, recording, Figma and form links only as required by those instructions, using the intended judge path.

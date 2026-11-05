@@ -1,6 +1,6 @@
 # Release checklist
 
-Candidate: main `323592aaa6d76f77a0b22eb79b0e269ae8455d93`, supplied by [Agent 1](https://github.com/Jiwoo-Jung-Cal/wayfare/issues/8#issuecomment-6628324849). Agent 3 assembles evidence; Agent 1 owns technical acceptance and Jiwoo owns design. See [source/CI evidence](SETUP_STATUS.md#verified-source-and-ci) and the unchanged [demo walkthrough](DEMO.md).
+Candidate: main `b54eb5e3cd19e5faa21d2f4e8eda310e17dc0b93`, supplied by [Agent 1](https://github.com/Jiwoo-Jung-Cal/wayfare/issues/8#issuecomment-6650056430). Agent 3 assembles evidence; Agent 1 owns technical acceptance and Jiwoo owns design. See [source/CI evidence](SETUP_STATUS.md#verified-source-and-ci) and the unchanged [demo walkthrough](DEMO.md).
 
 ## Established evidence
 
@@ -12,7 +12,9 @@ Candidate: main `323592aaa6d76f77a0b22eb79b0e269ae8455d93`, supplied by [Agent 1
 
 ## Direct local candidate checks
 
-[Actual observations, screenshots and owner routes](releases/323592a-verification.md) distinguish the rebuilt candidate from workflow/live evidence.
+Performed on `323592a`, then reused for `b54eb5e` only after hash verification of identical browser source/build inputs. Current CI/deployment checks independently target `b54eb5e`; no direct live-site observation is inferred.
+
+[Actual observations, screenshots and owner routes](releases/b54eb5e-verification.md) distinguish the rebuilt candidate from workflow/live evidence.
 
 - [x] Local production build identifies supplied full SHA, clean tracked source and sample mode.
 - [x] Reference Overview, intake duplicate/review, itinerary/day highlight/Calendar template, $820-before/$620-at cutoff, explicit acknowledgement and four simulated actions checked.
@@ -20,7 +22,8 @@ Candidate: main `323592aaa6d76f77a0b22eb79b0e269ae8455d93`, supplied by [Agent 1
 - [x] Scripted assistant, credential-free Google demo labels and non-sample AI refusal checked.
 - [x] Six critical pages fit 390px with loaded fonts; selected desktop/390px screenshots compared structurally with r2 exports. This is not final visual approval.
 - [ ] Plan-only labels/post-reload displayed state: owner finding on #4; no stored-data-loss conclusion.
-- [ ] PR42 `dfdbd35` browser CI failed: Agent 1/#8 triage. Local strict clean-console check failed on `/favicon.ico` 404; live impact unverified.
+- [x] Earlier PR42 `dfdbd35` CI race resolved by merged #65; final PR42 head `30c80e3` and replacement `b54eb5e` application CI succeeded.
+- [ ] Local strict clean-console check failed on `/favicon.ico` 404; Agent 1 disposition/live impact unverified.
 
 ## Final acceptance still required
 
