@@ -49,22 +49,66 @@ test.skipIf(!available)('ReRoute actual approval → shell claims → receipts; 
   try {
     await start(page);
     await expect(option(page, 'Keep the trip')).toContainText('−$360');
+    // Keep the pointer still while the real demo controls refresh the clock.
+    // An already-open tooltip must use the refreshed comparison too.
+    await page.locator('.wf-rr-chart svg rect').hover({ position: { x: 1, y: 25 } });
+    await expect(page.locator('.wf-rr-tip')).toContainText('+$820');
+    await button(page, 'At hotel deadline').evaluate(el => (el as HTMLButtonElement).click());
+    await expect(option(page, 'Cancel the whole trip')).toContainText('+$620');
+    // The shell may remount the feature and dismiss the tooltip. Either way,
+    // stale pre-cutoff amounts must disappear; a new hover must use $620.
+    await expect.poll(async () => (await page.locator('.wf-rr-tip').allTextContents()).some(t => t.includes('+$820'))).toBe(false);
+    await page.locator('.wf-rr-chart svg rect').hover({ position: { x: 1, y: 25 } });
+    await expect(page.locator('.wf-rr-tip')).toContainText('+$620');
+    expect((await snapshot(page)).actions).toHaveLength(0);
+    await button(page, 'Reset clock').evaluate(el => (el as HTMLButtonElement).click());
+    await expect(option(page, 'Cancel the whole trip')).toContainText('+$820');
+    await page.locator('.wf-rr-chart svg rect').hover({ position: { x: 1, y: 25 } });
+    await expect(page.locator('.wf-rr-tip')).toContainText('+$820');
+    await page.mouse.move(0, 0);
+
+    const cancelChoice = option(page, 'Cancel the whole trip');
+    const keepChoice = option(page, 'Keep the trip');
+    await expect(cancelChoice).toHaveAttribute('tabindex', '0');
+    await expect(keepChoice).toHaveAttribute('tabindex', '-1');
+    await cancelChoice.focus(); await page.keyboard.press('ArrowRight');
+    await expect(keepChoice).toBeFocused(); await expect(keepChoice).toHaveAttribute('aria-checked', 'true');
+    await page.keyboard.press('ArrowLeft');
+    await expect(cancelChoice).toBeFocused(); await expect(cancelChoice).toHaveAttribute('aria-checked', 'true');
     await button(page, 'Review and confirm').click();
     await expect(page.getByRole('dialog')).toBeVisible();
     await expect(button(page, 'Cancel the trip')).toBeDisabled();
     await page.keyboard.press('Escape');
     await expect(page.getByRole('dialog')).toHaveCount(0);
     await expect(button(page, 'Review and confirm')).toBeFocused();
-    for (const width of [1440, 1023, 767, 390, 320]) {
+    for (const width of [1440, 1023, 1000, 760, 759, 390, 320]) {
       await page.setViewportSize({ width, height: 1000 });
       expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(0);
-      expect(await page.locator('.wf-reroute-options').evaluate(el => getComputedStyle(el).gridTemplateColumns.split(' ').length)).toBe(width < 1024 ? 1 : 2);
+      expect(await page.locator('.wf-reroute-options').evaluate(el => getComputedStyle(el).gridTemplateColumns.split(' ').length)).toBe(width < 760 ? 1 : 2);
     }
+    // A chart can fit until its pointer tooltip opens near an edge.
+    const chart = page.locator('.wf-rr-chart svg');
+    for (const width of [1440, 390, 320]) {
+      await page.setViewportSize({ width, height: 1000 });
+      await chart.scrollIntoViewIfNeeded();
+      const box = (await chart.boundingBox())!;
+      for (const x of [0.96, 0.09]) {
+        await page.mouse.move(box.x + box.width * x, box.y + box.height * 0.4);
+        const tip = page.locator('.wf-rr-tip');
+        await expect(tip).toBeVisible();
+        const bounds = (await tip.boundingBox())!;
+        expect(bounds.x, `tooltip left edge at ${width}px`).toBeGreaterThanOrEqual(0);
+        expect(bounds.x + bounds.width, `tooltip right edge at ${width}px`).toBeLessThanOrEqual(width);
+        expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBe(0);
+      }
+    }
+    await page.mouse.move(0, 0);
     await button(page, 'Review and confirm').click();
     await page.getByLabel('I understand these are simulated actions').check();
     await button(page, 'Cancel the trip').focus(); await page.keyboard.press('Enter');
     await expect(recordedNote(page)).toHaveText('4 cancellations recorded.');
     await expect.poll(async () => (await snapshot(page)).claims.length).toBe(4);
+    await expect(page.locator('.wf-rr-mark')).toHaveCount(0);
     const recorded = await snapshot(page);
     expect(recorded.actions.length).toBe(4);
     expect(recorded.claims.reduce((sum, c) => sum + ('amountMinor' in c.expected ? c.expected.amountMinor : NaN), 0)).toBe(E.cancelTripOption.expectedCashRecovery.amountMinor);
@@ -127,6 +171,7 @@ test.skipIf(!available)('ReRoute actual approval → shell claims → receipts; 
     });
     await button(partial, 'Review and confirm').click(); await partial.getByLabel('I understand these are simulated actions').check(); await button(partial, 'Cancel the trip').click();
     await expect(partial.locator('.wf-rr-result')).toContainText('3 recorded; 1 unfinished.');
+    await expect(partial.locator('.wf-rr-mark')).toHaveText(['Ride −$40']);
     const successes = (await snapshot(partial)).actions;
     await partial.reload(); await button(partial, 'Review and confirm').click();
     await expect(partial.getByRole('dialog')).toContainText('3 already recorded; 1 left to record.');
@@ -134,6 +179,34 @@ test.skipIf(!available)('ReRoute actual approval → shell claims → receipts; 
     await expect(recordedNote(partial)).toHaveText('4 cancellations recorded.');
     await expect.poll(async () => (await snapshot(partial)).claims.length).toBe(4);
     expect((await snapshot(partial)).actions.slice(0, 3)).toEqual(successes);
+    // Review-needed state must offer a working route back to intake.
+    const reviewContext = await browser.newContext(); await prefs(reviewContext); const reviewPage = await reviewContext.newPage();
+    reviewPage.on('pageerror', e => errors.push(e.message)); await start(reviewPage);
+    await reviewPage.evaluate(async () => {
+      const c = await new Function('path', 'return import(path)')('/src/core/index.ts') as typeof import('../../core/index.ts');
+      const repo = c.createLocalRepository({ storage: localStorage, workspaceId: localStorage.getItem(c.ACTIVE_WORKSPACE_KEY)! });
+      const policy = c.unwrap(await repo.getPolicy(c.DEMO_IDS.policies.hotel));
+      c.unwrap(await repo.savePolicy({ ...policy, reviewState: 'needs_review' }, { expectedRevision: policy.revision }));
+    });
+    await reviewPage.reload();
+    await expect(option(reviewPage, 'Cancel the whole trip')).toContainText('Unknown');
+    await expect(button(reviewPage, 'Review and confirm')).toBeDisabled();
+    await reviewPage.getByRole('link', { name: 'Review policy in intake', exact: true }).click();
+    await expect(reviewPage).toHaveURL(new RegExp(trip + '/import$'));
+    await reviewContext.close();
+
+    // The newly selectable continue choice still performs only a replacement.
+    const keepContext = await browser.newContext(); await prefs(keepContext); const keepPage = await keepContext.newPage();
+    keepPage.on('pageerror', e => errors.push(e.message)); await start(keepPage);
+    await option(keepPage, 'Keep the trip').click(); await button(keepPage, 'Keep the trip').click();
+    await expect(keepPage.getByRole('dialog')).toContainText('$940.00');
+    await keepPage.getByLabel('I understand these are simulated actions').check();
+    await keepPage.getByRole('dialog').getByRole('button', { name: 'Keep the trip', exact: true }).click();
+    await expect(recordedNote(keepPage)).toHaveText('1 action recorded.');
+    const kept = await snapshot(keepPage);
+    expect(kept.actions).toHaveLength(1); expect(kept.actions[0]!.action).toBe('replace');
+    expect(kept.bookings.filter(b => b.id !== kept.actions[0]!.bookingId).every(b => b.state === 'confirmed')).toBe(true);
+    await keepContext.close();
     expect(errors).toEqual([]);
     await partialContext.close();
   } catch (error) {

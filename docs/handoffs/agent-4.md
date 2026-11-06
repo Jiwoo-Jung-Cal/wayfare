@@ -1,21 +1,41 @@
-# Agent 4 handoff
+# Agent 4 — ReRoute / CancelClock owner review
 
-Status: functional ReRoute ready for integration review; atomic policy/clock preconditions adopted; visual approval pending.
+Status: r2-final owner review complete in source and local deterministic checks; bounded UI fixes submitted for integration in PR #70. Initial head 906908e passed CI with 187 tests and 38 shared browser tests; the tooltip follow-up has its own final-head evidence in the PR. Issue #6 stays open for final acceptance. The original implementation (#37) is integrated through #39. Agent 1 applied the approved r2 visual layer in #55 and mobile spacing in #60.
+
 Task: https://github.com/Jiwoo-Jung-Cal/wayfare/issues/6
-PR: https://github.com/Jiwoo-Jung-Cal/wayfare/pull/37
-Account: Wildtypers; verified pull/push permission. Branch: agent-4/reroute-v1; merged main 87ad471c413a6fe2370f7a0978a778df79da99a6 without rewriting history. First published milestone: 650d683e47a28ea06ad2c34e01f173794e7ea2a2.
+Integration: https://github.com/Jiwoo-Jung-Cal/wayfare/issues/8
+Review base: main ecd5bbc274c932e7467b2d55f8149b2503aebe1a.
+Account: Wildtypers; connected pull/push permissions verified. Local unpublished work was absent; previous snapshot branch preserved. Publication uses SHA-pinned source and expected-head guards, without force-pushing.
 
-Working: persisted source-backed demo disruption; continue/cancel options; dependency/evidence inspection; shared eligibility for condition/deadline boundaries; unknown handling; r1-draft responsive UI. Explicit native approval dialog; refreshed snapshot/revision/policy/quote/clock checks; renewed confirmation for stale preview; durable per-booking simulated actions; stable operation IDs; partial failure and retry after reload; shell notifications after recorded/replayed success. Completed amounts are preserved at later deadlines. Noncash assets are unchanged.
-Public interface: feature: FeatureModule and triggerDemoDisruption({tripId}, ctx) -> Result<{disruptionId}>. loadComparison persists options; prepareApproval(tripId, kind, ctx) returns a preview; approveRecovery(preview, ctx) returns per-booking outcomes. No direct claim creation. No live AI/provider calls, purchases or cancellations.
-Owned paths: src/features/reroute/**, docs/handoffs/agent-4.md, docs/decisions/agent-4-reroute.md.
-Canonical figures: continue $360/$320/$1,260/$940; cancel $820/$80 before hotel cutoff, $620/$280 at/after. Expected cash is not money received.
-Design: interim r1-draft, formal design_revision null. Jiwoo approval pending. https://www.figma.com/design/ZZS9jEmANeCrjGxWxxCofK?node-id=12-2.
+## Design and scope
 
-Checks: current local typecheck/build/diff-check pass; npm test 172 passed, 1 browser test explicitly skipped (no installed browser), 2 existing TODO. Feature browser journey clicks Open TripWallet and asserts its URL/heading before checking four automatic claims, hotel confirmation and $250/$150 receipts. Final-head GitHub Actions results are recorded in PR #37 and Issue #6.
-Review fixes: all three intake/wallet links use path-relative navigation. Approval passes shared atomic policy revision, exclusive tier deadline, expected clock and replacement quote preconditions. Atomic conflicts become stale outcomes requiring renewed review. New deadline and policy races inject changes after the final read and before the write: no hotel action/booking mutation/notification, earlier flight success preserved; deadline renewal totals $620 and completes remaining actions once.
-Local browser limitation: no installed Chrome; one Playwright install command failed with invalid/truncated ZIP; no repeated install attempts. GitHub Actions has Chrome and runs the feature browser test automatically via npm test. Set PW_EXECUTABLE_PATH locally for a supported installed browser.
+Design revision: **r2-final**, approved in design/approvals.json. Source: design/handoffs/r2-final.md and the current r2 section of design/handoffs/reroute.md. Reference: https://www.figma.com/design/ZZS9jEmANeCrjGxWxxCofK?node-id=68-403. Exports: design/exports/reroute/r2-reroute-desktop.png and r2-reroute-narrow-390.png. Historical r1 pending-approval language is superseded. No Figma access or native design edit is required for Kelvin.
 
-Blockers: no outstanding shared atomic contract blocker. Jiwoo owns visual approval. Agent 1 owns integration PR #39 and shared E2E acceptance.
-Accessible controls: Review cancel-trip actions; Choose continue; I understand these are simulated actions; Approve actions; Cancel; Review unfinished actions for retry; Open TripWallet.
-Next: Agent 1 integrates the updated PR #37 head into #39 and reruns integration checks; Jiwoo reviews visual fidelity. Task stays open.
-Workflow: SHA-pinned connector snapshot, verified blob identities, expected-head guard on publication; old agent-4/reroute branch preserved (no unique work). No root dependencies/configuration or other feature internals changed.
+Owned changes: src/features/reroute/**, this handoff and docs/decisions/agent-4-reroute.md. Shared contracts, shell and wallet remain owner-managed. The recovery calculation and approval transaction code are unchanged by this review.
+
+## Review findings and fixes
+
+| Finding | Reproduction / evidence | Resolution |
+| --- | --- | --- |
+| Chart warns of future losses on already-recorded refunds | Actual approveRecovery followed by chart render shows a flat $820 line but labels Hotel −$200, Ride −$40, Walk −$60. Partial approval with only transfer unfinished still labels hotel and activity losses. Two regressions fail before the fix. | Omit deadlines belonging to successful recorded cancel/replace actions. Preserve the comparison's totals and the unfinished transfer's −$40 marker. Clarify historical policy deadline amounts in Details and sources. |
+| Chart tooltip overflows a narrow viewport | Browser regression on 72e186f fails at 320px: tooltip right edge is 391.6875px. [Reproduction run](https://github.com/Jiwoo-Jung-Cal/wayfare/actions/runs/42145993731). | Bound the tooltip to chart width, wrap its text and shift its anchor with the pointer. Both edges are checked at 1440/390/320px. |
+| Axis currency disagrees with comparison | A single-currency EUR comparison renders €820 in its accessible summary but $300/$600 axis labels. The added render regression fails before the fix. | Format axis ticks with the cancel comparison's currency. No conversion is introduced. |
+| Radio choices lack arrow-key navigation | The two role=radio buttons both had default tab stops and no key handler. | Roving tab stop; arrows select/focus the other choice; Home/End select the first/last. Browser regression checks selection and focus. |
+| Unknown-policy state loses its intake route | r2 shows a warning and disabled confirmation but removed the earlier Review policy in intake link. | Restore the path-relative link outside the radio button, with the selected option's full constraints. Browser regression edits hotel review state, checks Unknown/disabled approval and clicks through to the trip's intake route. |
+| Choice cards use the superseded r1 breakpoint | CSS stacks below 1024px; current r2 feature handoff says below 760px. | Stack below 760px. Browser assertions cover 760/759 as well as desktop and 390/320. Chart/breakdown still stack below 1000px. |
+
+## Preserved behavior and interfaces
+
+- Source-backed simulated disruption; dependency/evidence inspection under Details and sources; continue/cancel comparison; shared policy eligibility and exclusive deadlines.
+- Canonical continue: $360 extra / $320 expected refund / $1,260 paid before refunds / $940 forecast. Cancel: $820 expected / $80 unrecovered before hotel cutoff; $620 / $280 at and after it. Unknown stays unknown.
+- prepareApproval and approveRecovery revalidate persisted state. recordBookingAction checks atomic policy revision, exclusive deadline, clock and replacement quote preconditions. Stale outcomes require renewed acknowledgment. Successful records survive deadlines, partial failure, retry and reload.
+- Public feature module and triggerDemoDisruption remain unchanged. notifyActionRecorded hands successful actions to the shell; ReRoute never creates wallet claims directly. The shell's tripFacts consumes computeComparison, so no new shared feature hook is required by this review.
+- Provider actions remain simulated. Expected refunds, provider promises and received money are distinct; voucher/points remain unchanged and outside cash totals.
+
+## Verification and remaining acceptance
+
+Local npm ci, typecheck, build and diff-check pass. Full npm test: 186 passed, 1 browser test skipped because Chrome is not installed. Feature suite: 29 passed, 1 browser skipped. The two chart defects were reproduced with failing tests before the fix; all three chart tests pass afterward.
+
+Feature-owned browser coverage now adds radio keyboard operation, r2 breakpoint boundaries, completed/partial chart markers, unknown-policy intake navigation and the continue-choice replacement. Clock-refresh coverage verifies that stale pre-cutoff tooltip amounts disappear and renewed hover uses $620 at the cutoff, then $820 after clock reset. The shared shell dismisses the tooltip when it refreshes the feature; this is safe and did not reproduce a stale-amount defect. Existing approval → four automatic claims/$820 → hotel confirmation/$400 → $250/$150 receipts, stale cutoff/$620, partial failure/reload, Escape/focus return and narrow-layout assertions are retained. Final-head GitHub Actions browser results are recorded in the review PR and Issue #6; do not infer local browser or pixel-comparison success.
+
+PR #43's r1 acceptance checklist is superseded by this handoff. Next: Agent 1 reviews/merges the owner-review fixes after CI; Jiwoo/Agent 3 records final issue acceptance through the established workflow. Design approval itself is already recorded as r2-final. Live providers are outside this task.

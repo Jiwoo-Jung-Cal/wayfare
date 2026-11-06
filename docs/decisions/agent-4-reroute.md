@@ -15,3 +15,13 @@ A native dialog supplies focus trapping/Escape and the required simulation ackno
 Shared atomic preconditions from #38 close the final read/write race: pass the reviewed policy identity/revision, exclusive tier deadline, persisted clock and replacement quote identity into recordBookingAction. A precondition conflict is a stale preview, halting subsequent unfinished actions until renewed confirmation; existing successful records remain intact. Feature race regressions inject clock/policy writes immediately before the repository transaction. No shared persistence substitute is introduced.
 
 React Router uses flat trip routes, so sibling intake/wallet links explicitly resolve relative to the URL path. The browser journey clicks Open TripWallet and checks the destination instead of bypassing navigation with page.goto.
+
+## r2-final owner review
+
+Review #55 and #60 against the approved r2 handoff. Keep model.ts and actions.ts unchanged: the chart's amounts correctly preserve recorded recoveries, but its annotations previously used hypothetical policy drops for every booking. Filter successful recorded actions from chart deadlines so annotations agree with the plotted comparison, including partial approvals. Tests use actual approval and an injected single write failure, not fabricated completed actions.
+
+The r2 radio cards retain button semantics for activation but implement radio-group arrow navigation and a single tab stop. Restore the intake review link outside these buttons so unknown-policy recovery remains reachable. Apply r2's below-760px choice-card breakpoint, superseding the old r1 below-1024px test expectation. These changes implement approved behavior without changing shared styling or contracts.
+
+The chart hover tooltip also needs a width bound: a browser reproduction at 320px measured its right edge at 391.6875px. Keep its pointer anchor proportional to the chart and to the tooltip's own width, and allow wrapping within the chart. This avoids DOM measurement, viewport-specific positioning and clipped content. Browser assertions cover both edges at 1440, 390 and 320px.
+
+Axis ticks must use the same comparison currency as the chart values and annotations. A single-currency EUR render exposed hard-coded dollar signs on the axis; reuse the existing formatter without adding currency conversion. The clock-refresh browser audit confirmed the shell dismisses the old tooltip safely; a regression now enforces stale-amount disappearance and correct renewed hover after deadline/reset.

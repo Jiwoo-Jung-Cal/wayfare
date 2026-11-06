@@ -38,7 +38,7 @@
 .wf-rr-mark { font: 600 11px var(--wf-font-sans); fill: var(--wf-color-danger); }
 .wf-rr-cross { stroke: var(--wf-color-text); }
 .wf-rr-dot { fill: var(--wf-color-positive); stroke: var(--wf-color-surface); }
-.wf-rr-tip { position: absolute; padding: 6px 9px; border-radius: 8px; background: var(--wf-color-text); color: var(--wf-color-bg); font-size: 0.82rem; white-space: nowrap; pointer-events: none; transform: translate(-50%, -125%); }
+.wf-rr-tip { position: absolute; width: max-content; max-width: 100%; box-sizing: border-box; overflow-wrap: anywhere; padding: 6px 9px; border-radius: 8px; background: var(--wf-color-text); color: var(--wf-color-bg); font-size: 0.82rem; white-space: normal; pointer-events: none; }
 .wf-rr-kv { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; font-size: 0.92rem; }
 .wf-rr-kv > div { display: flex; justify-content: space-between; gap: 12px; }
 .wf-rr-kv > div > span:first-child { color: var(--wf-color-text-muted); }
@@ -64,5 +64,5 @@
 .wf-rr-ack input { flex-shrink: 0; width: 18px; height: 18px; accent-color: var(--wf-color-text); }
 .wf-rr-rb { justify-content: flex-end; }
 
-@media (max-width: 1023px) { .wf-reroute-options { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 759px) { .wf-reroute-options { grid-template-columns: minmax(0, 1fr); } }
 @media (max-width: 62.49rem) { .wf-rr-chart-card { grid-template-columns: minmax(0, 1fr); } }
