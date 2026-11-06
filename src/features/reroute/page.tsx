@@ -66,7 +66,7 @@ export function MoneyChart({ data, now, tz }: { data: Comparison; now: Instant; 
   path += ` H${X(H)}`;
   const valueAt = (h: number) => [...pts].reverse().find((p) => p.h <= h)!.v;
   const ticks = [0, Math.round(top / 3 / 10000) * 100, Math.round((2 * top) / 3 / 10000) * 100, top / 100];
-  const cur = data.options[0]!.expectedCashRecovery;
+  const cur = data.options.find(o => o.kind === 'cancel_trip')!.expectedCashRecovery;
   const currency = isUnknown(cur) ? 'USD' : cur.currency;
   const m0 = (v: number) => whole({ amountMinor: v, currency });
   const onMove = (e: React.PointerEvent<SVGRectElement>) => {
@@ -89,7 +89,7 @@ export function MoneyChart({ data, now, tz }: { data: Comparison; now: Instant; 
             <g key={v}>
               <line x1={X0} x2={X1} y1={Y(v * 100)} y2={Y(v * 100)} />
               <text x={X0 - 8} y={Y(v * 100) + 4} textAnchor="end">
-                ${v.toLocaleString('en-US')}
+                {m0(v * 100)}
               </text>
             </g>
           ))}

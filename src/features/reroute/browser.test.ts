@@ -55,10 +55,16 @@ test.skipIf(!available)('ReRoute actual approval → shell claims → receipts; 
     await expect(page.locator('.wf-rr-tip')).toContainText('+$820');
     await button(page, 'At hotel deadline').evaluate(el => (el as HTMLButtonElement).click());
     await expect(option(page, 'Cancel the whole trip')).toContainText('+$620');
+    // The shell may remount the feature and dismiss the tooltip. Either way,
+    // stale pre-cutoff amounts must disappear; a new hover must use $620.
+    await expect.poll(async () => (await page.locator('.wf-rr-tip').allTextContents()).some(t => t.includes('+$820'))).toBe(false);
+    await page.locator('.wf-rr-chart svg rect').hover({ position: { x: 1, y: 25 } });
     await expect(page.locator('.wf-rr-tip')).toContainText('+$620');
     expect((await snapshot(page)).actions).toHaveLength(0);
     await button(page, 'Reset clock').evaluate(el => (el as HTMLButtonElement).click());
     await expect(option(page, 'Cancel the whole trip')).toContainText('+$820');
+    await page.locator('.wf-rr-chart svg rect').hover({ position: { x: 1, y: 25 } });
+    await expect(page.locator('.wf-rr-tip')).toContainText('+$820');
     await page.mouse.move(0, 0);
 
     const cancelChoice = option(page, 'Cancel the whole trip');

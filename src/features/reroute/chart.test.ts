@@ -27,6 +27,20 @@ describe('r2 refund chart respects durable outcomes', () => {
     expect(html).toContain('Walk −$60');
     expect(html).toMatch(/aria-label="Money back over the next 72 hours: now \$820, [^"]*\$620[^"]*\$580[^"]*\$520/);
   });
+  it('labels the axis in the same currency as the comparison', async () => {
+    const { repo } = await setup();
+    const snapshot = unwrap(await repo.snapshot());
+    // A supported single-currency trip: no conversion or mixed-currency data.
+    for (const booking of snapshot.bookings) if (!('unknown' in booking.paid)) booking.paid.currency = 'EUR';
+    for (const policy of snapshot.policies) for (const tier of policy.refundTiers)
+      if (!('unknown' in tier.refund)) tier.refund.currency = 'EUR';
+    for (const quote of snapshot.quotes) quote.price.currency = 'EUR';
+    const data = unwrap(computeComparison(snapshot, I.trip, T.clockStart));
+    const html = renderToStaticMarkup(createElement(MoneyChart, { data, now: T.clockStart, tz: 'America/New_York' }));
+    expect(html).toContain('now €820');
+    expect(html).toContain('€300');
+    expect(html).not.toContain('$');
+  });
   it('does not advertise losses at future deadlines after all actions are recorded', async () => {
     const { ctx, render } = await setup();
     unwrap(await approveRecovery(unwrap(await prepareApproval(I.trip, 'cancel_trip', ctx)), ctx));
