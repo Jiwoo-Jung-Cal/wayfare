@@ -79,6 +79,67 @@ try {
   const current = cards(booked).filter({ has: booked.getByRole('heading', { name: 'Nonstop + Midtown hotel', exact: true }) });
   await expect(current).toContainText('Your current trip');
   await expect(current).toContainText('· BOOKED');
+  // Reset while Plan stays mounted: old saved/booked state must disappear before selection.
+  await booked.locator('.wf-demo-panel > summary').click();
+  await button(booked, 'Load sample trip').click();
+  await expect(booked.getByText('This workspace was reset to "planning". Other visitors are unaffected.', { exact: true })).toBeVisible();
+  await expect(booked.locator('.wf-recent')).toHaveCount(0);
+  await expect(booked.getByRole('region', { name: 'Saved plan', exact: true })).toHaveCount(0);
+  await expect(current).not.toContainText('· BOOKED');
+  await expect(choose(current)).toBeEnabled();
+
+  await button(booked.getByRole('group', { name: 'What matters most' }), 'Convenience').click();
+  await button(booked.getByRole('group', { name: 'Saturday morning' }), 'Free time').click();
+  await booked.getByLabel('Budget', { exact: true }).fill('800');
+  const saver = cards(booked).filter({ has: booked.getByRole('heading', { name: 'Red-eye + Brooklyn hotel · free time', exact: true }) });
+  await choose(saver).click();
+  const savedPlan = booked.getByRole('region', { name: 'Saved plan', exact: true });
+  await expect(savedPlan).toContainText('$735');
+  await expect(booked.getByLabel('Budget', { exact: true })).toHaveValue('800');
+  await expect(button(booked.getByRole('group', { name: 'What matters most' }), 'Convenience')).toHaveAttribute('aria-pressed', 'true');
+  await booked.reload();
+  await expect(savedPlan).toContainText('Red-eye + Brooklyn hotel · free time');
+  await expect(savedPlan).toContainText('$735');
+  await expect(booked.getByText('Saved selection restored.', { exact: false })).toContainText('original budget and ranking were not saved');
+  await expect(booked.getByLabel('Budget', { exact: true })).toHaveValue('1000');
+  await expect(button(booked.getByRole('group', { name: 'What matters most' }), 'Price')).toHaveAttribute('aria-pressed', 'true');
+  await expect(button(booked.getByRole('group', { name: 'Saturday morning' }), 'Free time')).toHaveAttribute('aria-pressed', 'true');
+  await expect(saver).toHaveAttribute('data-selected', 'true');
+  await expect(saver).not.toContainText('· BOOKED');
+  expect((await snapshot(booked)).bookings).toHaveLength(0);
+  await screenshot(booked, 'saved-plan-restored');
+  for (const width of [390, 320]) {
+    await booked.setViewportSize({ width, height: 900 });
+    expect(await overflow(booked), `saved-plan overflow at ${width}`).toBeLessThanOrEqual(0);
+  }
+  await screenshot(booked, 'saved-plan-restored-narrow');
+  await booked.setViewportSize({ width: 1440, height: 1000 });
+  await button(booked.getByRole('group', { name: 'Saturday morning' }), 'Skyline walk · $80').click();
+  await expect(savedPlan).toContainText('$735');
+  await expect(cards(booked).filter({ has: booked.getByRole('button', { name: 'Selected plan', exact: true }) })).toHaveCount(0);
+  await button(booked.getByRole('group', { name: 'Saturday morning' }), 'Free time').click();
+  await expect(saver).toHaveAttribute('data-selected', 'true');
+
+  // Unrelated shell refreshes preserve invalid drafts and existing validation.
+  await booked.getByLabel('Budget', { exact: true }).fill('');
+  await expect(booked.getByLabel('Budget', { exact: true })).toHaveAttribute('aria-invalid', 'true');
+  await button(booked, '+1 hour').click();
+  await expect(booked.getByText('Demo clock set to', { exact: false })).toBeVisible();
+  await expect(booked.getByLabel('Budget', { exact: true })).toHaveValue('');
+  await expect(booked.getByLabel('Budget', { exact: true })).toHaveAttribute('aria-invalid', 'true');
+  await expect(choose(saver)).toBeDisabled();
+  await expect(savedPlan).toContainText('$735');
+
+  // An external selection/reset restores the genuinely booked reference state.
+  await button(booked, 'Show the reference scenario').click();
+  await expect(booked.getByText('Reference scenario loaded:', { exact: false })).toBeVisible();
+  await expect(savedPlan).toContainText('Nonstop + Midtown hotel');
+  await expect(savedPlan).not.toContainText('Red-eye');
+  await expect(current).toContainText('· BOOKED');
+  await expect(booked.getByLabel('Budget', { exact: true })).toHaveValue('1000');
+  expect((await snapshot(booked)).bookings).toHaveLength(4);
+  await booked.reload();
+  await expect(current).toContainText('· BOOKED');
   await current.getByRole('link', { name: 'View your trip', exact: true }).click();
   await expect(booked).toHaveURL(new RegExp(`${trip}$`));
   await expect(booked.getByRole('heading', { name: 'NY Trip', exact: true, level: 1 })).toBeVisible();
@@ -331,7 +392,7 @@ try {
   expect(policy.reviewState).toBe('needs_review');
   expect(policy.refundTiers).toHaveLength(0);
   expect(errors).toEqual([]);
-  console.log('PASS: r2-final automatic/booked and unbooked startup; route/date/traveler controls; immediate ranking and budget edits; invalid/unknown/over-budget blocking; one-traveler scope; selection/replay/reload and Import navigation; intake validation, editable evidence, duplicate/reload, preserved errors and Unknown money/policy; 1440–320px grids, pickers and narrow notice/source order; no page errors.');
+  console.log('PASS: saved selection/total/free-time restoration with explicit missing-budget/ranking defaults; mounted reset refresh, genuine booked reference/reload, unrelated refresh preserves invalid drafts; r2-final controls/ranking/validation/unknown/over-budget/scope; selection/replay/reload and Import navigation; intake validation/evidence/duplicates/Unknown money/policy; 1440–320px layouts; no page errors.');
 } finally {
   await browser?.close();
   await server.close();

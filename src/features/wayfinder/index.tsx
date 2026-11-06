@@ -10,7 +10,8 @@ import { appError, isUnknown, type AppError, type FeatureModule, type FeaturePag
 import { ErrorState, Notice } from '../../ui/index.tsx';
 import { Icon, LogoMark } from '../../ui/icons.tsx';
 import { SAMPLE_SCOPE, createPlanGenerator, defaultPreferences, type ComparedPlan, type PlanningResult, type Preferences } from './handler.ts';
-import { selectPlanningOption } from './selection.ts';
+import { samePlan, selectPlanningOption } from './selection.ts';
+import { restoredPreferences } from './restoration.ts';
 import { planArt, type ArtKey } from './planArt.ts';
 import './wayfinder.css';
 
@@ -79,35 +80,50 @@ export function WayfinderPage({ tripId, ctx }: FeaturePageProps) {
   const [draftDates, setDraftDates] = useState({ from: '', to: '' });
   const [dateErr, setDateErr] = useState(false);
   const [budgetText, setBudgetText] = useState<string | null>(null);
+  const [restored, setRestored] = useState(false);
+  const loadedSelection = useRef<string | null>(null);
+  const localSelection = useRef<string | null>(null);
   const busy = useRef(false);
   const retry = useRef<() => void>(() => {});
   const answerRef = useRef<HTMLDivElement>(null);
   const generator = useMemo(() => createPlanGenerator(), [tripId]);
   useEffect(() => {
     let active = true;
-    setInitializing(true); setError(null);
-    retry.current = () => setLoadAttempt((n) => n + 1);
-    Promise.all([ctx.repo.getTrip(tripId), ctx.repo.listPlans(tripId), ctx.repo.snapshot()]).then(([trip, plans, snap]) => {
+    setInitializing(true);
+    retry.current = () => { loadedSelection.current = null; setLoadAttempt((n) => n + 1); };
+    // The shell supplies a new context after shared refreshes (including demo resets).
+    // Read one snapshot so selection and booked state belong to the same read.
+    ctx.repo.snapshot().then(async (snap) => {
       if (!active) return;
       setInitializing(false);
-      if (!trip.ok) { setError(trip.error); return; }
-      if (!plans.ok) { setError(plans.error); return; }
-      setWorkspaceId(trip.value.workspaceId);
-      setTripTitle(trip.value.title);
-      setBooked(snap.ok && snap.value.bookings.some((b) => b.tripId === tripId));
-      setSaved(plans.value.find((p) => p.id === trip.value.selectedPlanId) ?? null);
+      if (!snap.ok) { setError(snap.error); return; }
+      const trip = snap.value.trips.find((t) => t.id === tripId);
+      if (!trip) { setError(appError('not_found', 'Could not find the saved trip')); return; }
+      const selected = snap.value.plans.find((p) => p.tripId === tripId && p.id === trip.selectedPlanId) ?? null;
+      const key = JSON.stringify([trip.workspaceId, trip.id, trip.origin, trip.destination, trip.startDate, trip.endDate, selected]);
+      setWorkspaceId(trip.workspaceId);
+      setTripTitle(trip.title);
+      setBooked(snap.value.bookings.some((b) => b.tripId === tripId));
+      setSaved(selected);
+      if (loadedSelection.current === key) { localSelection.current = null; return; } // Preserve edited drafts and their errors.
+      const ownSave = loadedSelection.current !== null && localSelection.current === selected?.id;
+      localSelection.current = null;
+      if (ownSave) { loadedSelection.current = key; return; } // In-memory preferences describe this selection.
+      generator.invalidate();
+      const next = restoredPreferences(trip, selected, { workspaceId: trip.workspaceId, now: ctx.clock.now() });
+      setPreferences(next); setBudgetText(null); setTrav({ a: 1, c: 0 });
+      setPop(null); setDateErr(false); setDirty(false); setMessage(''); setReplayed(false);
+      setRestored(selected !== null); setResult(null); setLoading(true); setError(null);
+      const response = await generator.generate(next, { tripId, workspaceId: trip.workspaceId, now: ctx.clock.now() });
+      if (!active || !response) return;
+      loadedSelection.current = key;
+      setLoading(false);
+      if (response.ok) setResult(response.value);
+      else setError(response.error);
     }).catch(() => { if (active) { setInitializing(false); setError(appError('unavailable', 'Could not load the saved trip')); } });
-    return () => { active = false; generator.invalidate(); };
-  }, [ctx.repo, tripId, generator, loadAttempt]);
-
-  // Like the reference, the comparison for the trip's sample route is shown on arrival.
-  const autoRan = useRef(false);
-  useEffect(() => {
-    if (!workspaceId || autoRan.current) return;
-    autoRan.current = true;
-    void generate();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [workspaceId]);
+    return () => { active = false; };
+  }, [ctx, tripId, generator, loadAttempt]);
+  useEffect(() => () => generator.invalidate(), [generator]);
   async function generate(next: Preferences = preferences) {
     if (!workspaceId) return;
     retry.current = () => { void generate(next); };
@@ -120,7 +136,7 @@ export function WayfinderPage({ tripId, ctx }: FeaturePageProps) {
   }
   /** Changing what matters re-ranks at once through the same generator (stale results can't be chosen meanwhile). */
   function change(patch: Partial<Preferences>, regenerate = true) {
-    generator.invalidate(); setLoading(false); setDirty(true); setError(null); setMessage('');
+    generator.invalidate(); setLoading(false); setDirty(true); setError(null); setMessage(''); setRestored(false);
     const next = { ...preferences, ...patch };
     setPreferences(next);
     if (regenerate && result) void generate(next);
@@ -133,6 +149,7 @@ export function WayfinderPage({ tripId, ctx }: FeaturePageProps) {
     try {
       const response = await selectPlanningOption(ctx.repo, plan, ctx.clock.now());
       if (!response.ok) { setError(response.error); return; }
+      localSelection.current = response.value.plan.id;
       setSaved({ ...response.value.plan, status: 'selected' });
       // Bookings may have changed since this page loaded (e.g. a demo reset): read them again
       // so a newly selected plan is never labelled booked when the trip has no bookings.
@@ -156,7 +173,7 @@ export function WayfinderPage({ tripId, ctx }: FeaturePageProps) {
   const budgetNum = parseFloat(shownPreferences.budget);
 
   const card = ({ plan, knownSubtotal, budgetStatus }: ComparedPlan, index: number, list: ComparedPlan[]) => {
-    const isSaved = saved ? baseId(saved.id) === baseId(plan.id) && saved.id === plan.id : false;
+    const isSaved = saved ? saved.id === plan.id && samePlan(saved, plan) : false;
     const isCurrent = isSaved && booked;
     const total = plan.total;
     const known = !isUnknown(knownSubtotal) ? knownSubtotal.amountMinor / 100 : 0;
@@ -168,7 +185,7 @@ export function WayfinderPage({ tripId, ctx }: FeaturePageProps) {
     const badge = index === 0 ? { tone: 'ok', icon: 'check' as const, text: { price: 'Best price', convenience: 'Most convenient', flexibility: 'Most flexible' }[result!.preferences.priority] }
       : isSaved ? { tone: 'info', icon: 'spark' as const, text: booked ? 'Your current trip' : 'Your selected plan' } : null;
     const block = budgetStatus === 'unknown' ? 'A price is still unknown. You can choose this once every part is quoted.' : budgetStatus === 'over' ? 'This is over your budget. Raise the budget or pick “Free time” to choose it.' : '';
-    const disabled = dirty || loading || saving !== null || budgetStatus !== 'within';
+    const disabled = initializing || dirty || loading || saving !== null || budgetStatus !== 'within';
     return <article key={plan.id} className="wf-pcard" data-selected={isSaved || undefined} aria-labelledby={`wf-pc-${plan.id}`} style={{ animationDelay: `${index * 70}ms` }}>
       <div className="wf-ph" role="img" aria-label={`Illustration: ${plan.label}`}>
         <span dangerouslySetInnerHTML={{ __html: planArt(ART[baseId(plan.id)] ?? 'hotel') }} />
@@ -272,10 +289,19 @@ export function WayfinderPage({ tripId, ctx }: FeaturePageProps) {
           ))}
         </div>
       </div>
-      {saved && <div className="wf-recent"><span>{tripTitle} · {booked ? 'booked from this plan' : 'plan selected, nothing booked yet'}</span><span>{saved.label}</span></div>}
+      {saved && <div className="wf-recent"><span>{tripTitle} · {booked ? 'booked from this plan' : 'plan selected, nothing booked yet'}</span><span>{saved.label} · {isUnknown(saved.total) ? 'Total not fully quoted' : m0(saved.total)}</span></div>}
     </div>
 
     <div className="wf-answer" ref={answerRef}>
+      {saved && <section className="wf-card wf-stack wf-saved-plan" aria-label="Saved plan">
+        <h2>{booked ? 'Your current trip' : 'Your saved plan'}</h2>
+        <p><b>{saved.label} · {isUnknown(saved.total) ? 'Total not fully quoted' : m0(saved.total)}</b></p>
+        <p>{saved.summary}</p>
+        <p>{booked ? 'This trip has imported sample bookings. View the itinerary for their current states.' : 'Saved to your trip. No reservation was made.'}</p>
+        <Link className="wf-button" data-size="sm" to={`/trips/${tripId}/itinerary`}>View itinerary</Link>
+        <p className="wf-muted">Budget and ranking apply to the comparison below and are not saved with the plan.</p>
+      </section>}
+      {restored && <div className="wf-restored-note"><Notice tone="info">Saved selection restored. The original budget and ranking were not saved; this comparison starts at $1,000, ordered by price.</Notice></div>}
       {error && <ErrorState error={error} onRetry={() => retry.current()} />}
       {message && <div role="status"><Notice tone={replayed ? 'info' : 'success'}>{message}</Notice></div>}
       {loading && !result && <><div className="wf-ah"><span className="wf-spark"><Icon name="spark" /></span><p className="wf-muted">Wayfinder is comparing flights, stays and activities…</p></div><div className="wf-plan-options">{[0, 1, 2].map((i) => <div key={i} className="wf-shimmer" />)}</div></>}
