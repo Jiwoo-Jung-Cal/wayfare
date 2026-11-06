@@ -49,6 +49,18 @@ test.skipIf(!available)('ReRoute actual approval → shell claims → receipts; 
   try {
     await start(page);
     await expect(option(page, 'Keep the trip')).toContainText('−$360');
+    // Keep the pointer still while the real demo controls refresh the clock.
+    // An already-open tooltip must use the refreshed comparison too.
+    await page.locator('.wf-rr-chart svg rect').hover({ position: { x: 1, y: 25 } });
+    await expect(page.locator('.wf-rr-tip')).toContainText('+$820');
+    await button(page, 'At hotel deadline').evaluate(el => (el as HTMLButtonElement).click());
+    await expect(option(page, 'Cancel the whole trip')).toContainText('+$620');
+    await expect(page.locator('.wf-rr-tip')).toContainText('+$620');
+    expect((await snapshot(page)).actions).toHaveLength(0);
+    await button(page, 'Reset clock').evaluate(el => (el as HTMLButtonElement).click());
+    await expect(option(page, 'Cancel the whole trip')).toContainText('+$820');
+    await page.mouse.move(0, 0);
+
     const cancelChoice = option(page, 'Cancel the whole trip');
     const keepChoice = option(page, 'Keep the trip');
     await expect(cancelChoice).toHaveAttribute('tabindex', '0');
