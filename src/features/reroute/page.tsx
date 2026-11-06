@@ -128,7 +128,12 @@ export function MoneyChart({ data, now, tz }: { data: Comparison; now: Instant; 
         <rect x={X0} y={Y0} width={X1 - X0} height={Y1 - Y0} fill="transparent" onPointerMove={onMove} onPointerDown={onMove} onPointerLeave={() => setHover(null)} />
       </svg>
       {hover && hover.v !== null && (
-        <div className="wf-rr-tip" style={{ left: `${(X(hover.h) / 640) * 100}%`, top: `${(Y(hover.v) / 250) * 100}%` }}>
+        <div className="wf-rr-tip" style={{
+          left: `${(X(hover.h) / 640) * 100}%`, top: `${(Y(hover.v) / 250) * 100}%`,
+          // Move the anchor through the tooltip as it moves through the chart.
+          // With max-width:100%, both edges stay within the chart at any width.
+          transform: `translate(-${(X(hover.h) / 640) * 100}%, -125%)`,
+        }}>
           {hover.h < 0.5 ? 'Now' : fmt(new Date(Date.parse(now) + hover.h * 3_600_000).toISOString(), tz, { weekday: 'short', hour: 'numeric', minute: '2-digit' })} · <b>+{m0(hover.v)}</b> back · −{m0(paid - hover.v)} lost
         </div>
       )}

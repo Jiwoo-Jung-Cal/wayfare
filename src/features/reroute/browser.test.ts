@@ -70,16 +70,19 @@ test.skipIf(!available)('ReRoute actual approval → shell claims → receipts; 
     }
     // A chart can fit until its pointer tooltip opens near an edge.
     const chart = page.locator('.wf-rr-chart svg');
-    await chart.scrollIntoViewIfNeeded();
-    const box = (await chart.boundingBox())!;
-    for (const x of [0.96, 0.09]) {
-      await page.mouse.move(box.x + box.width * x, box.y + box.height * 0.4);
-      const tip = page.locator('.wf-rr-tip');
-      await expect(tip).toBeVisible();
-      const bounds = (await tip.boundingBox())!;
-      expect(bounds.x, 'tooltip left edge at 320px').toBeGreaterThanOrEqual(0);
-      expect(bounds.x + bounds.width, 'tooltip right edge at 320px').toBeLessThanOrEqual(320);
-      expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBe(0);
+    for (const width of [1440, 390, 320]) {
+      await page.setViewportSize({ width, height: 1000 });
+      await chart.scrollIntoViewIfNeeded();
+      const box = (await chart.boundingBox())!;
+      for (const x of [0.96, 0.09]) {
+        await page.mouse.move(box.x + box.width * x, box.y + box.height * 0.4);
+        const tip = page.locator('.wf-rr-tip');
+        await expect(tip).toBeVisible();
+        const bounds = (await tip.boundingBox())!;
+        expect(bounds.x, `tooltip left edge at ${width}px`).toBeGreaterThanOrEqual(0);
+        expect(bounds.x + bounds.width, `tooltip right edge at ${width}px`).toBeLessThanOrEqual(width);
+        expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBe(0);
+      }
     }
     await page.mouse.move(0, 0);
     await button(page, 'Review and confirm').click();

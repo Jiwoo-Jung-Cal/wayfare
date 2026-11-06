@@ -1,6 +1,6 @@
 # Agent 4 — ReRoute / CancelClock owner review
 
-Status: r2-final owner review complete in source and local deterministic checks; bounded UI fixes submitted for integration and browser CI. Issue #6 stays open for final acceptance. The original implementation (#37) is integrated through #39. Agent 1 applied the approved r2 visual layer in #55 and mobile spacing in #60.
+Status: r2-final owner review complete in source and local deterministic checks; bounded UI fixes submitted for integration in PR #70. Initial head 906908e passed CI with 187 tests and 38 shared browser tests; the tooltip follow-up has its own final-head evidence in the PR. Issue #6 stays open for final acceptance. The original implementation (#37) is integrated through #39. Agent 1 applied the approved r2 visual layer in #55 and mobile spacing in #60.
 
 Task: https://github.com/Jiwoo-Jung-Cal/wayfare/issues/6
 Integration: https://github.com/Jiwoo-Jung-Cal/wayfare/issues/8
@@ -18,6 +18,7 @@ Owned changes: src/features/reroute/**, this handoff and docs/decisions/agent-4-
 | Finding | Reproduction / evidence | Resolution |
 | --- | --- | --- |
 | Chart warns of future losses on already-recorded refunds | Actual approveRecovery followed by chart render shows a flat $820 line but labels Hotel −$200, Ride −$40, Walk −$60. Partial approval with only transfer unfinished still labels hotel and activity losses. Two regressions fail before the fix. | Omit deadlines belonging to successful recorded cancel/replace actions. Preserve the comparison's totals and the unfinished transfer's −$40 marker. Clarify historical policy deadline amounts in Details and sources. |
+| Chart tooltip overflows a narrow viewport | Browser regression on 72e186f fails at 320px: tooltip right edge is 391.6875px. [Reproduction run](https://github.com/Jiwoo-Jung-Cal/wayfare/actions/runs/42145993731). | Bound the tooltip to chart width, wrap its text and shift its anchor with the pointer. Both edges are checked at 1440/390/320px. |
 | Radio choices lack arrow-key navigation | The two role=radio buttons both had default tab stops and no key handler. | Roving tab stop; arrows select/focus the other choice; Home/End select the first/last. Browser regression checks selection and focus. |
 | Unknown-policy state loses its intake route | r2 shows a warning and disabled confirmation but removed the earlier Review policy in intake link. | Restore the path-relative link outside the radio button, with the selected option's full constraints. Browser regression edits hotel review state, checks Unknown/disabled approval and clicks through to the trip's intake route. |
 | Choice cards use the superseded r1 breakpoint | CSS stacks below 1024px; current r2 feature handoff says below 760px. | Stack below 760px. Browser assertions cover 760/759 as well as desktop and 390/320. Chart/breakdown still stack below 1000px. |
