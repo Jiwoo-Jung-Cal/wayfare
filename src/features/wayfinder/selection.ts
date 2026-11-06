@@ -1,7 +1,7 @@
 import { PlanOptionSchema, compareInstants, err, isUnknown, ok, type PlanOption, type WorkspaceRepository } from '../../core/index.ts';
 import { costBreakdown } from './handler.ts';
 
-function samePlan(a: PlanOption, b: PlanOption) {
+export function samePlan(a: PlanOption, b: PlanOption) {
   const content = (p: PlanOption) => [p.lineItems.map((i) => [i.id, i.kind, i.description, i.price, i.quoteId, i.expiresAt, i.provenance.kind, i.provenance.source]), p.total, p.label, p.assumptions];
   return JSON.stringify(content(a)) === JSON.stringify(content(b));
 }

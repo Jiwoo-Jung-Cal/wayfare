@@ -1,5 +1,48 @@
 # Agent 2 handoff
 
+## Current milestone — saved Plan / reset refresh (November 5, 2026 Pacific)
+
+Status: **PR #71 published; integration CI blocked in ReRoute; complete preference persistence awaits Agent 1's contract**. Branch `agent-2/plan-state-restoration`, based and locally tested on verified main `ecd5bbc274c932e7467b2d55f8149b2503aebe1a`. Main advanced during publication to `0221d90db05ce737d6d9ad611cf0dd48430bc0ff`, merging #70/#67; the compared changes do not overlap this patch. Local test results below retain their actual ecd5bbc-plus-patch identity; combined-head CI is separate. Prior clean PR #59 worktree/branch is preserved. Current publication commit/PR and final CI are linked in the latest [#4 report](https://github.com/Jiwoo-Jung-Cal/wayfare/issues/4).
+
+Read current AGENTS/ownership, own prompt/handoff, project brief/contracts, approved r2-final/feature handoff and latest #4/#8/#9 reports before implementation. The separately named `WayFare_Agent_2_Conversation_Handoff.md` attachment was unavailable in this session and did not resolve through filename search; no full-read claim is made. Current repository/issues were used as authority. Direct HTTPS Git lacked credentials; connected GitHub reads imported hash-verified blobs, trees and signed current-main commit into the existing checkout without resetting prior work. Reference images not needed for implementation remain unmaterialized.
+
+### Behavior and storage findings
+
+- Trip persists route/dates/selectedPlanId. PlanOption persists label, summary, line items/prices, assumptions and status. Neither stores the original budget/ranking preferences.
+- Plan now reads selection and bookings from one repository snapshot on shell-context refresh. A mounted demo reset clears stale saved/current/booked state before the next selection. Existing #69's selection-time re-read and the favicon fix are preserved.
+- On reload, restore stored route/dates and the feature's identifiable free-time variant. Keep a separate saved-plan summary with its actual label/total and itinerary link, even when the comparison changes. Match selected cards by saved content as well as ID.
+- Missing budget/ranking are explicitly disclosed: comparison starts at $1,000/Price rather than claiming those were the original preferences. No budget is inferred from plan cost, no new local-storage silo or schema field is introduced. A local successful save retains current in-memory preferences.
+- Unrelated shell/clock refreshes retain draft inputs and validation. Existing unknown-price, over-budget, unsupported-route/date, stale-result, idempotency and booked-reference behavior remain intact.
+- Shared request: [Agent 1 on #8](https://github.com/Jiwoo-Jung-Cal/wayfare/issues/8#issuecomment-6675822735), for additive validated preference storage/atomic selection and an explicit supported refresh signal. Current shell changes FeatureContext after refresh; this feature consumes that public context rather than importing app internals. Exact original budget/priority restoration remains unavailable until the contract lands. Do not invent shared types while waiting.
+
+### Verification
+
+Node 24.22.1/npm 11.9.0, existing dependencies, external Chromium 153.0.8010.0. No fresh install assertion or dependency changes.
+
+- `npm run typecheck`, `npm run build`, `git diff --check`: pass.
+- `npm test`: 186 passed / 1 browser test skipped because its default Chrome location is absent. That exact test then passed separately with `PW_EXECUTABLE_PATH` (1 passed). Three new restoration unit tests are included; no skipped behavior is claimed executed by the first run.
+- `CI=1 npx playwright test --config=<external executable/path override> --retries=0`: **38 passed**, including sample/connected, production, desktop/mobile journeys. No retries.
+- `PW_EXECUTABLE_PATH=<installed Chromium> node src/features/wayfinder/verify-browser.mjs`: pass. New real-control checks cover mounted reset before selection; $735/free-time selection/reload and explicit missing-preference defaults; saved selection independent of comparison; invalid-budget draft surviving a clock refresh; genuine booked reference/reset/reload; zero bookings for plan-only selection; 390/320px saved-summary overflow. Existing planning/intake validation/evidence/duplicates/Unknown-policy and 1440–320px coverage remains.
+- Before/after proof: with unchanged main's `index.tsx`, the new check fails because `.wf-recent` remains after Load sample trip (expected 0, actual 1). The corrected page passes. Desktop and narrow saved-plan screenshots inspected; no new pixel-identical Figma/runtime claim.
+
+Changed scope is only `src/features/wayfinder/`, this handoff and the Agent 2 decision note. `selection.ts` only exposes its existing comparison predicate; selection validation is unchanged. Intake, shared app/core/styles/config, dependencies, ReRoute, TripWallet and other-owner handoffs are untouched. Design remains approved **r2-final**, [Plan 61:196](https://www.figma.com/design/ZZS9jEmANeCrjGxWxxCofK?node-id=61-196). All prices/extraction in these checks are fictional samples; provider/Google actions simulated, assistant scripted, no live-AI/provider request or reservation.
+
+### Coordination checkpoint / next bounded actions
+
+- **Agent 1:** review this Plan change and provide the missing preference contract; integration/backend remain yours. #70 and #67 progressed during this session: independently read green head checks, then confirmed merges `90c97fe6a378f7507f4813c2fa2bd441a0bd7a7d` and `0221d90db05ce737d6d9ad611cf0dd48430bc0ff`. Neither is awaiting merge now.
+- **Agent 2:** answer focused review feedback, then consume Agent 1's actual preference/refresh contract in owned code/tests. Keep #4 open; no merge, task closure or other-agent takeover.
+- **Kelvin:** reproduce/resolve or explicitly disposition PR #71's combined-source tooltip cutoff assertion at `src/features/reroute/browser.test.ts:60:120`; [specific failure routed to #6](https://github.com/Jiwoo-Jung-Cal/wayfare/issues/6#issuecomment-6675985101). #70 is merged; final #6 acceptance follows the named failure's disposition. No ReRoute code takeover by Agent 2.
+- **Brian:** review merged #56/r2-final and adapt the old-label `src/features/tripwallet/verify-browser.mjs`; publish the bounded evidence/asset/manual-control result or limitation on #7. No later Brian milestone is posted there as of this check.
+- **Agent 3:** preserve merged #67; after Agent 1 supplies a new integrated candidate, refresh only affected Plan/ReRoute evidence and source/CI/deployment identity in a bounded follow-up. Final release remains NOT VERIFIED; direct live/judge access and official submission/deadline/timezone requirements are still separate gates.
+
+
+### Combined-source CI gate (after publication)
+
+PR #71 code head `cee40efe70f12746ffa740d7c7d8cd3c4d4f489c`, test merge `ef4bf659f6237564acbc8a85f9aea024049a419b` onto `0221d90`: [application run42155891110](https://github.com/Jiwoo-Jung-Cal/wayfare/actions/runs/42155891110/job/127689804104) FAILED with **190 passed / 1 failed**. All Wayfinder/restoration tests pass. ReRoute's real-browser test failed at `src/features/reroute/browser.test.ts:60:120`: poll expected no `+$820` tooltip after cutoff refresh, expected false/received true after5000ms. Production build/shared E2E were skipped by the workflow after this failure; local results above retain their original source. Install/typecheck and coordination passed.
+
+Full failure logs read and [routed to Kelvin/#6](https://github.com/Jiwoo-Jung-Cal/wayfare/issues/6#issuecomment-6675985101), [Agent1/#8](https://github.com/Jiwoo-Jung-Cal/wayfare/issues/8#issuecomment-6675986407) and [PR71](https://github.com/Jiwoo-Jung-Cal/wayfare/pull/71#issuecomment-6675987865). No retry, flake diagnosis or green reclassification. Agent1's earlier unidentified failure is not assumed identical. This handoff-only follow-up preserves the failed run; any subsequent automatic CI has a separate source/status. Keep #4 open and do not merge or claim final release acceptance.
+
+## Previous milestone — PR #59 r2 review (historical)
 Status: **r2-final is approved**. Reviewed Agent 1's merged Plan visual layer (#57) on main `ca3974d4a8816f3adf2b46254b41d1d51de0c870`. This follow-up repairs the owned browser check and reproduced budget, picker-overflow and traveler-scope defects. Intake's existing layout and behavior pass review. Two shared findings are routed to Agent 1 below. Earlier r1 approval-pending instructions are superseded.
 
 - Task: https://github.com/Jiwoo-Jung-Cal/wayfare/issues/4

@@ -121,3 +121,4 @@
   .wf-cmp-t { font-size: 0.85rem; }
   .wf-cmp-t th, .wf-cmp-t td { padding: 9px 8px; }
 }
+.wf-saved-plan, .wf-restored-note { margin-bottom: 20px; }
