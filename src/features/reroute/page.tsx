@@ -33,12 +33,18 @@ function lineLabel(data: Comparison, bookingId: string) {
 }
 
 /** Money back if you cancel at time t, from ReRoute's comparison (piecewise constant between deadlines). */
-function MoneyChart({ data, now, tz }: { data: Comparison; now: Instant; tz: string }) {
+export function MoneyChart({ data, now, tz }: { data: Comparison; now: Instant; tz: string }) {
   const H = 72;
   const X0 = 56, X1 = 620, Y0 = 24, Y1 = 206;
   const series = useMemo(() => {
     const t0 = Date.parse(now);
+    // Recorded recoveries survive later cutoffs. Do not label their historical
+    // policy deadlines as future losses on the preserved comparison line.
+    const settled = new Set(data.snapshot.actions.filter(a => a.tripId === data.tripId
+      && a.disruptionId === data.disruption.id && (a.action === 'cancel' || a.action === 'replace')
+      && (a.result.status === 'simulated' || a.result.status === 'provider_confirmed')).map(a => a.bookingId));
     const marks = data.deadlines
+      .filter(d => !settled.has(d.booking.id))
       .filter((d) => d.at && Date.parse(d.at) > t0 && Date.parse(d.at) <= t0 + H * 3_600_000)
       .map((d) => ({ d, h: (Date.parse(d.at!) - t0) / 3_600_000 }));
     const at = (h: number) => {
@@ -209,6 +215,14 @@ export function ReRoutePage({ tripId, ctx }: FeaturePageProps) {
   const chosen = selected === 'cancel_trip' ? cancel : keep;
   const replacement = keep && data ? data.snapshot.quotes.find((q) => q.id === keep.bookingActions.find((a) => a.action === 'replace')?.replacementQuoteId) : undefined;
   const remaining = preview ? preview.option.bookingActions.filter((a) => a.action !== 'keep' && !preview.comparison.snapshot.actions.some((s) => s.bookingId === a.bookingId && s.disruptionId === preview.option.disruptionId && s.action === a.action && s.result.status === 'simulated')).length : 0;
+  const onChoiceKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (done || !['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End'].includes(e.key)) return;
+    e.preventDefault();
+    const next = e.key === 'Home' ? 'cancel_trip' : e.key === 'End' ? 'continue'
+      : selected === 'cancel_trip' ? 'continue' : 'cancel_trip';
+    setChoice(next);
+    e.currentTarget.querySelector<HTMLButtonElement>(`[data-choice="${next}"]`)?.focus();
+  };
   const total = preview ? preview.option.bookingActions.filter((a) => a.action !== 'keep').length : 0;
 
   return <div className="wf-reroute">
@@ -233,8 +247,8 @@ export function ReRoutePage({ tripId, ctx }: FeaturePageProps) {
         </div>
       </div>
 
-      <div className="wf-reroute-options" role="radiogroup" aria-label="Your options">
-        <button type="button" role="radio" className="wf-rr-opt" aria-checked={selected === 'cancel_trip'} disabled={done && selected !== 'cancel_trip'} onClick={() => !done && setChoice('cancel_trip')}>
+      <div className="wf-reroute-options" role="radiogroup" aria-label="Your options" onKeyDown={onChoiceKeyDown}>
+        <button type="button" role="radio" data-choice="cancel_trip" tabIndex={selected === 'cancel_trip' ? 0 : -1} className="wf-rr-opt" aria-checked={selected === 'cancel_trip'} disabled={done && selected !== 'cancel_trip'} onClick={() => !done && setChoice('cancel_trip')}>
           <span className="wf-rr-rad" aria-hidden="true" />
           <h3>Cancel the whole trip</h3>
           <div><span className="wf-big wf-num wf-gain">+{whole(cancel.expectedCashRecovery)}</span> <span className="wf-muted">back to you</span><span className="wf-exp">Expected</span></div>
@@ -244,7 +258,7 @@ export function ReRoutePage({ tripId, ctx }: FeaturePageProps) {
           </ul>
           {cancel.constraints.length > 0 && <span className="wf-rr-warn">Review needed: {cancel.constraints[0]}</span>}
         </button>
-        <button type="button" role="radio" className="wf-rr-opt" aria-checked={selected === 'continue'} disabled={done && selected !== 'continue'} onClick={() => !done && setChoice('continue')}>
+        <button type="button" role="radio" data-choice="continue" tabIndex={selected === 'continue' ? 0 : -1} className="wf-rr-opt" aria-checked={selected === 'continue'} disabled={done && selected !== 'continue'} onClick={() => !done && setChoice('continue')}>
           <span className="wf-rr-rad" aria-hidden="true" />
           <h3>Keep the trip</h3>
           <div><span className="wf-big wf-num wf-loss">−{whole(keep.extraCashNeeded)}</span> <span className="wf-muted">for a new {root.kind === 'flight' ? 'flight' : 'booking'}</span></div>
@@ -256,10 +270,15 @@ export function ReRoutePage({ tripId, ctx }: FeaturePageProps) {
         </button>
       </div>
 
+      {chosen && chosen.constraints.length > 0 && <Notice tone="warning">
+        <p>{chosen.constraints.join(' ')}</p>
+        <Link relative="path" to="../import">Review policy in intake</Link>
+      </Notice>}
+
       <div className="wf-rr-chart-card">
         <div>
           <h3>How much comes back if you cancel later</h3>
-          <p className="wf-muted">Each step down is a refund deadline. Hover or drag along the line to see any moment.</p>
+          <p className="wf-muted">Each step down is a refund deadline for an unrecorded action. Recorded refunds stay unchanged. Hover or drag along the line to see any moment.</p>
           <MoneyChart data={data} now={now} tz="America/New_York" />
         </div>
         <div>
@@ -307,6 +326,7 @@ export function ReRoutePage({ tripId, ctx }: FeaturePageProps) {
           <h3>Bookings</h3>
           <ul>{data.impacts.map((i) => <li key={i.booking.id}><b>{i.booking.title}</b> · {i.affected ? 'may be affected' : 'unaffected'} · {i.reason}</li>)}</ul>
           <h3>Refund deadlines</h3>
+          <p>Policy amounts below describe new cancellations. Previously recorded refunds stay unchanged.</p>
           <ul>{data.deadlines.map((d) => <li key={`${d.booking.id}-${d.at}`}><b>{d.booking.title}</b> · {d.label}{d.at ? ` · ${fmt(d.at, d.timezone, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', timeZoneName: 'short' })}` : ''} · {d.status} · before <MoneyText value={d.before} />, at or after <MoneyText value={d.after} /> · Source: {d.source}</li>)}</ul>
           <h3>Assumptions</h3>
           <ul>{(chosen ?? cancel).assumptions.map((a) => <li key={a}>{a}</li>)}</ul>

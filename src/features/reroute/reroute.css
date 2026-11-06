@@ -64,5 +64,5 @@
 .wf-rr-ack input { flex-shrink: 0; width: 18px; height: 18px; accent-color: var(--wf-color-text); }
 .wf-rr-rb { justify-content: flex-end; }
 
-@media (max-width: 1023px) { .wf-reroute-options { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 759px) { .wf-reroute-options { grid-template-columns: minmax(0, 1fr); } }
 @media (max-width: 62.49rem) { .wf-rr-chart-card { grid-template-columns: minmax(0, 1fr); } }
