@@ -1,0 +1,278 @@
+{
+  "candidate": "323592aaa6d76f77a0b22eb79b0e269ae8455d93",
+  "agent_1_candidate_handoff": "https://github.com/Jiwoo-Jung-Cal/wayfare/issues/8#issuecomment-6628324849",
+  "date": "2026-11-04 America/Los_Angeles",
+  "final_release": "NOT VERIFIED",
+  "direct_target": {
+    "url": "http://127.0.0.1:4173/wayfare/",
+    "kind": "isolated local rebuild, not downloaded Pages artifact",
+    "source_tracked_changes": 0,
+    "node": "v24.19.0",
+    "npm": "11.9.0",
+    "chromium": "154.0.8037.57",
+    "provenance": {
+      "source": "323592aaa6d76f77a0b22eb79b0e269ae8455d93",
+      "dirty": false,
+      "mode": "sample",
+      "builtAt": "2026-11-05T04:45:49.703Z"
+    },
+    "dependencies": "Existing dependencies plus official fontsource/font-files at 5a72889057f592bb0659629e38337359f94d53b2; matching locked 5.3.0 package metadata and 39 hash-verified Git blobs; not a clean npm ci integrity assertion"
+  },
+  "direct_walkthrough": [
+    {
+      "name": "Production provenance and fresh reference Overview",
+      "outcome": "PASS",
+      "detail": {
+        "version": {
+          "source": "323592aaa6d76f77a0b22eb79b0e269ae8455d93",
+          "dirty": false,
+          "mode": "sample",
+          "builtAt": "2026-11-05T04:45:49.703Z"
+        },
+        "font": "Figtree, \"Helvetica Neue\", Arial, system-ui, sans-serif",
+        "first_visit": "booked; airline cancellation; $820/$80/$900"
+      }
+    },
+    {
+      "name": "Plan comparison and preference controls",
+      "outcome": "PASS",
+      "detail": {
+        "cards": 3,
+        "selects": []
+      }
+    },
+    {
+      "name": "Sample intake review, duplicate guard and monospace evidence",
+      "outcome": "PASS",
+      "detail": {
+        "sample": "simulated review",
+        "duplicate": "Already imported (fresh reference already includes hotel)",
+        "font": "\"IBM Plex Mono\", ui-monospace, Menlo, Consolas, monospace"
+      }
+    },
+    {
+      "name": "Itinerary, deadline, day highlight and Calendar template",
+      "outcome": "PASS",
+      "detail": {
+        "bookings": 4,
+        "day": "highlight keeps whole trip",
+        "calendar": "https://calendar.google.com/calendar/render?action=TEMPLATE&text=Harbor+Line+Hotel+Midtown%2C+3+nights&dates=20261120%2F20261123&details=NY+Trip+on+WayFare.+Booking%3A+Harbor+Line+Hotel+Midtown+%C2%B7+HLH-48213.+Refund+deadline%3A+6%3A00+PM+ET+on+November+19%2C+2026.",
+        "external_link": "inspected; not followed"
+      }
+    },
+    {
+      "name": "ReRoute cutoff arithmetic and simulated-approval acknowledgement",
+      "outcome": "PASS",
+      "detail": {
+        "before": 820,
+        "at": 620,
+        "keep": -360,
+        "actions": 4,
+        "claim_sync": "automatic"
+      }
+    },
+    {
+      "name": "TripWallet, separate assets and two receipt allocations",
+      "outcome": "PASS",
+      "detail": {
+        "hotel_claim": 400,
+        "first_receipt": 250,
+        "outstanding": 150,
+        "final_receipt": 150,
+        "final_received": 400,
+        "noncash": "$75 voucher and 8,000 points remain separate"
+      }
+    },
+    {
+      "name": "Scripted assistant, sign-in and calendar demo labels",
+      "outcome": "PASS",
+      "detail": {
+        "assistant": "scripted, no AI",
+        "sign_in": "demo; no credentials",
+        "calendar_sync": "demo; no account contact"
+      }
+    },
+    {
+      "name": "Reload and duplicate receipt do not double money",
+      "outcome": "PASS",
+      "detail": {
+        "received_after_reload_and_duplicate": 400,
+        "cancellations_after_reload": 4
+      }
+    },
+    {
+      "name": "Narrow 390px critical pages and loaded fonts",
+      "outcome": "PASS",
+      "detail": [
+        {
+          "route": "/overview",
+          "viewport": 390,
+          "scrollWidth": 390,
+          "bodyScroll": 390,
+          "figtree": true,
+          "mono": true
+        },
+        {
+          "route": "/plan",
+          "viewport": 390,
+          "scrollWidth": 390,
+          "bodyScroll": 390,
+          "figtree": true,
+          "mono": true
+        },
+        {
+          "route": "/import",
+          "viewport": 390,
+          "scrollWidth": 390,
+          "bodyScroll": 390,
+          "figtree": true,
+          "mono": true
+        },
+        {
+          "route": "/itinerary",
+          "viewport": 390,
+          "scrollWidth": 390,
+          "bodyScroll": 390,
+          "figtree": true,
+          "mono": true
+        },
+        {
+          "route": "/reroute",
+          "viewport": 390,
+          "scrollWidth": 390,
+          "bodyScroll": 390,
+          "figtree": true,
+          "mono": true
+        },
+        {
+          "route": "/wallet",
+          "viewport": 390,
+          "scrollWidth": 390,
+          "bodyScroll": 390,
+          "figtree": true,
+          "mono": true
+        }
+      ]
+    },
+    {
+      "name": "Browser errors and requests",
+      "outcome": "FAIL",
+      "error": "expect(received).toEqual(expected) // deep equality\n\n- Expected  - 1\n+ Received  + 3\n\n- Array []\n+ Array [\n+   \"Failed to load resource: the server responded with a status of 404 (File not found)\",\n+ ]"
+    }
+  ],
+  "page_errors": [],
+  "console_errors": [
+    "Failed to load resource: the server responded with a status of 404 (File not found)"
+  ],
+  "failed_requests": [],
+  "console_failure_resource": "GET /favicon.ico -> HTTP 404 in local static server log",
+  "planning_observations": [
+    {
+      "check": "Convenience reranks",
+      "outcome": "PASS",
+      "first": "Nonstop + Midtown hotel"
+    },
+    {
+      "check": "Price/free-time and blocking",
+      "outcome": "PASS",
+      "price": 735,
+      "budget": 800,
+      "over_budget": "disabled",
+      "unknown_price": "disabled"
+    },
+    {
+      "check": "Selection labels after success",
+      "outcome": "FINDING",
+      "status": "Plan saved. No reservation was made.",
+      "card": "Best price\nOPTION 1 \u00b7 BOOKED\nRed-eye + Brooklyn hotel \u00b7 free time\n\nOvernight connecting flight, 3 nights in Brooklyn, skyline walk, shared shuttle. Paid skyline walk omitted; that time is unscheduled.\n\n$735\n$65 under budget\nConvenience\nlow\nFlexibility\nlow\nWhere the money goes\nView your trip",
+      "selected_label_count": 0
+    },
+    {
+      "check": "After reload",
+      "outcome": "OBSERVED",
+      "card": "Best price\nOPTION 1\nRed-eye + Brooklyn hotel\n\nOvernight connecting flight, 3 nights in Brooklyn, skyline walk, shared shuttle.\n\n$815\n$185 under budget\nConvenience\nlow\nFlexibility\nlow\nWhere the money goes\nChoose this plan",
+      "budget": "1000"
+    },
+    {
+      "check": "Itinerary after plan-only save",
+      "outcome": "OBSERVED",
+      "booking_rows": 0,
+      "body": "Itinerary\n\nYour bookings and their refund deadlines in one calendar. Deadlines are in red. Choose what to show, and tap a day to jump to it in the list below.\n\nNo bookings yet\nA selected plan is not a booking. Import a booking to see it here with its refund deadlines.\n\nWayFare demo \u00b7 sample trip with fictional providers, saved in this browser \u00b7 every provider action is simulated \u00b7 AI extraction is simulated \u00b7 demo clock Nov 18, 2026, 12:00 PM EST\n\nDemo controls\nDemo controls\nDemo clock\n2026-11-18T17:00:00Z (Nov 18, 2026, 12:00 PM EST)\nShow the reference scenario\nLoad sample trip\nImport sample bookings\nTrigger flight cancellation\n+1 hour\n+1 day\n1 s before hotel deadline\nAt hotel deadline\nReset clock\nUse real time\nReset to booked sample\nClear workspace\nWorkspace ws-b670a1af-97f9-4445-bee9-51dc8b1b7695"
+    },
+    {
+      "check": "Non-sample text does not claim AI",
+      "outcome": "PASS",
+      "message": "Live AI extraction is not configured"
+    }
+  ],
+  "verification_attempt_notes": [
+    "Initial planning comparison check did not interact with custom-button preferences; the later focused check did.",
+    "Supplementary capture completed, then verifier timed out waiting for a transient reset status; actual planning state subsequently confirmed by enabled controls. No product reset failure claimed.",
+    "Focused assertion expecting Selected plan failed; captured actual BOOKED wording and post-reload defaults, then routed to Agent 2. No backend data-loss claim."
+  ],
+  "owner_routes": {
+    "planning": "https://github.com/Jiwoo-Jung-Cal/wayfare/issues/4#issuecomment-6650364945",
+    "integration_ci_and_favicon": "https://github.com/Jiwoo-Jung-Cal/wayfare/issues/8#issuecomment-6649878678"
+  },
+  "workflow_reused": {
+    "application": "https://github.com/Jiwoo-Jung-Cal/wayfare/actions/runs/41807515792",
+    "coordination": "https://github.com/Jiwoo-Jung-Cal/wayfare/actions/runs/41807515805",
+    "pages_provenance": "https://github.com/Jiwoo-Jung-Cal/wayfare/actions/runs/41807515876",
+    "target": "323592aaa6d76f77a0b22eb79b0e269ae8455d93",
+    "conclusions": "success, checked through GitHub API; detailed application logs inaccessible"
+  },
+  "separate_pr_failure": {
+    "head": "dfdbd35a2390d24dc38957c0215d3ecb28d90eab",
+    "url": "https://github.com/Jiwoo-Jung-Cal/wayfare/actions/runs/41818793068/job/126536337826",
+    "command": "npm run e2e",
+    "metadata": "install/typecheck/unit tests/build passed; browser step failed; exit 1; browser evidence upload succeeded",
+    "detailed_scenario": "UNVERIFIED: logs/artifacts redirect to blocked Azure storage",
+    "subsequent_disposition": "Resolved by merged #65 and successful final PR42 head 30c80e3/application41969712663; replacement b54eb5e application41970222123 passed. Root-cause/repeat counts attributed to Agent 1."
+  },
+  "direct_access": {
+    "pages_and_version_json": "UNVERIFIED: proxy CONNECT 403 under enforced API-only policy, not origin/application response",
+    "repository": "Authenticated managed GitHub API read passed; private=true. No anonymous or intended-judge access proof.",
+    "pages_admin_api": "403 Resource not accessible by integration; administrative-read permission unavailable, not a hosting failure",
+    "artifact_and_log_downloads": "API redirect destination blocked; no raw signed URLs retained in this record",
+    "figma": "Old Code Layer 24:1182 source 5249cb7; runtime/access unverified",
+    "official_requirements": "Deadline timezone/source, submission portal, mandatory links/formats and judge access rules unconfirmed"
+  },
+  "images": [
+    {
+      "file": "overview-desktop.png",
+      "sha256": "be661ac8e739322ca621dc97ef26ee3ad8311ca121622336152783594434758f",
+      "bytes": 230067
+    },
+    {
+      "file": "overview-390.png",
+      "sha256": "fbb23007382c0677cf80e00dec1c99c669b89b470164ce938a3a7c271a3392d6",
+      "bytes": 175271
+    },
+    {
+      "file": "reroute-390.png",
+      "sha256": "0e042a8931a94a0e3c0b499b982e12fafec63a26786159e412c18e3793667c4c",
+      "bytes": 130462
+    },
+    {
+      "file": "approval-390.png",
+      "sha256": "0bd2e4000242db995cef6330ed2935f1206932b6074e57cb0c7e820641d8ecd6",
+      "bytes": 129580
+    },
+    {
+      "file": "wallet-390.png",
+      "sha256": "7ac6eec8c0a8eb4279992df2e72cc0fca2a5e2e9741ac6a81cdb7b3958d5eace",
+      "bytes": 124576
+    },
+    {
+      "file": "planning-finding.png",
+      "sha256": "f90e1c0c41ae7990c68de2f56cf1c54d2fe95fe6a3d1bfc0ad9397b3e09b6b84",
+      "bytes": 291850
+    }
+  ],
+  "replacement": {
+    "candidate": "b54eb5e3cd19e5faa21d2f4e8eda310e17dc0b93",
+    "record": "../b54eb5e-verification.md",
+    "direct_observations_remain_targeted_to": "323592aaa6d76f77a0b22eb79b0e269ae8455d93",
+    "reuse_basis": "verified identical src tree and tracked browser build inputs"
+  }
+}

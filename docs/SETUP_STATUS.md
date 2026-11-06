@@ -1,27 +1,27 @@
 # Coordination setup — release evidence and remaining gates
 
-Checked November 4, 2026 (America/Los_Angeles), against fetched main `323592aaa6d76f77a0b22eb79b0e269ae8455d93` and current Issues/PRs. This records verified source/CI and workflow deployment evidence. **Final release sign-off remains pending.**
+Rechecked November 5, 2026 (America/Los_Angeles), against latest checked integration `ecd5bbc274c932e7467b2d55f8149b2503aebe1a` and current Issues/PRs. Agent1 supplied new candidate ecd5bbc after #68/#69; affected evidence was refreshed and independently checked; merged PR #42 is preserved. This records refreshed exact-source CI/deployment evidence plus explicitly reused browser observations. **Final release sign-off remains pending.**
 
 - Repository: https://github.com/Jiwoo-Jung-Cal/wayfare
 - Existing dashboard: https://github.com/Jiwoo-Jung-Cal/wayfare/issues/1
 - Design approval: https://github.com/Jiwoo-Jung-Cal/wayfare/issues/2
 - Integration/runtime handoff: https://github.com/Jiwoo-Jung-Cal/wayfare/issues/8
 - Final release record: https://github.com/Jiwoo-Jung-Cal/wayfare/issues/9
-- Existing documentation PR: https://github.com/Jiwoo-Jung-Cal/wayfare/pull/42
+- Merged documentation PR: https://github.com/Jiwoo-Jung-Cal/wayfare/pull/42
 
 CI task #5 and preparation PR #20 are complete. Reuse the existing tracker/reporting workflow; keep #9 open until final acceptance evidence exists.
 
 ## Verified source and CI
 
-[Agent 1's candidate handoff](https://github.com/Jiwoo-Jung-Cal/wayfare/issues/8#issuecomment-6628324849) supersedes older integration and hosting blockers. Agent 3 independently checked GitHub merge/check metadata and fetched hash-verified Git objects; the imported history passes `git fsck --connectivity-only`.
+[Agent 1's candidate handoff](https://github.com/Jiwoo-Jung-Cal/wayfare/issues/8#issuecomment-6672883600) supersedes older integration and hosting blockers. Agent 3 independently checked GitHub merge/check metadata and fetched hash-verified Git objects; the imported history passes `git fsck --connectivity-only`.
 
 | Evidence | Recorded target/result | Verification basis |
 | --- | --- | --- |
-| Current candidate source | Main `323592aaa6d76f77a0b22eb79b0e269ae8455d93` | GitHub main ref and hash-verified Git objects |
-| Application CI | [Run 41807515792](https://github.com/Jiwoo-Jung-Cal/wayfare/actions/runs/41807515792) succeeded at this full SHA | Exact-source check metadata independently read |
-| Coordination CI | [Run 41807515805](https://github.com/Jiwoo-Jung-Cal/wayfare/actions/runs/41807515805) succeeded at the same SHA | Exact-source check metadata independently read |
-| Public sample deployment | [Pages run 41807515876](https://github.com/Jiwoo-Jung-Cal/wayfare/actions/runs/41807515876), run #22: build, provenance, deploy and “Verify the live build matches this commit” succeeded at this SHA | Job/step metadata independently read; live `version.json` source/mode result attributed to the workflow and Agent 1 |
-| Owner application results | Typecheck/build, 177 tests, 36 browser checks with `CI=1 npx playwright test --retries=0`, Node 24.21.0/Chrome | Agent 1 reports these on `07e30db` plus #62/#63 trees; Agent 3 did not rerun or independently recount them |
+| Latest checked integration | `ecd5bbc274c932e7467b2d55f8149b2503aebe1a` | GitHub main ref and hash-verified Git objects |
+| Application CI | [Run 42133762141](https://github.com/Jiwoo-Jung-Cal/wayfare/actions/runs/42133762141) succeeded at this full SHA | Exact-source check metadata independently read |
+| Coordination CI | [Run 42133762483](https://github.com/Jiwoo-Jung-Cal/wayfare/actions/runs/42133762483) succeeded at the same SHA | Exact-source check metadata independently read |
+| Public sample deployment | [Pages run 42133762140](https://github.com/Jiwoo-Jung-Cal/wayfare/actions/runs/42133762140): build, provenance, deploy and “Verify the live build matches this commit” succeeded at this SHA | Job/step metadata independently read; live `version.json` source/mode result attributed to the workflow and Agent 1 |
+| Current owner results | Typecheck, 184 tests, 37 no-retry browser checks | Agent1 reports these for candidate ecd5bbc. Counts are not independently recounted; SDK stand-in tests are not live-provider proof |
 | Agent 2 review | Budget/cent labels, picker overflow, one-traveler scope and standalone browser verification | [#4 review](https://github.com/Jiwoo-Jung-Cal/wayfare/issues/4#issuecomment-6624715078); [Agent 1's reconciliation review](https://github.com/Jiwoo-Jung-Cal/wayfare/pull/59#issuecomment-6626982076) supersedes its open-PR status |
 
 Do not assign owner-reported counts to a different target without evidence. Current-main CI success is independently checked metadata; it is separate from final live walkthrough, visual acceptance and judge access. The cloud container cannot reach `github.io`; this pass does not claim an independent live-site visit.
@@ -35,11 +35,20 @@ Do not assign owner-reported counts to a different target without evidence. Curr
 - **Formal design approval is complete:** [design/approvals.json](../design/approvals.json) records Jiwoo's November 3 approval of `r2-final` for foundation, Wayfinder/intake, ReRoute and TripWallet. The [r2 specification](../design/handoffs/r2-final.md) and [reference prototype](../design/exports/prototype/r2/index.html) apply. Kelvin/Brian implementation reviews remain separate.
 - **Hosting works:** https://jiwoo-jung-cal.github.io/wayfare/ is the public sample demo. Candidate deployment provenance passed as recorded above. #63 prepares Vercel; no Vercel deployment exists, and that optional alternative is not a missing Pages-hosting gate.
 
+## Direct candidate verification
+
+Earlier source-specific observations (later fixes are recorded below): Agent 3 directly ran supplied `323592a`, then fetched replacement `b54eb5e` and verified the entire `src` tree plus index/package/lock/Vite/TypeScript/env-example/DEMO inputs are identical. The direct observations remain labeled `323592a` and are reused for the unchanged browser code; new exact-source CI/deployment evidence above targets `b54eb5e`. No deployed-bundle byte-identity claim. See [the verification record](releases/b54eb5e-verification.md) for the local production walkthrough, desktop/390px screenshots and explicit evidence boundaries. Core recovery/wallet/receipt/reload behavior passed locally. Plan preference reranking passed, but the BOOKED wording and post-reload Plan state require Agent 2 disposition; the local strict console check failed on `/favicon.ico` 404. The earlier PR42 `dfdbd35` failure was resolved by Agent 1's merged #65 test-race fix; final PR42 head `30c80e3` and replacement-main CI are green. The old failure is retained as history, not an active integration gate. These results do not erase candidate-main CI success or establish a remote-site visit.
+
+November 5 continuation directly checked a clean local `b54eb5e` build: unknown price/policy after reload, one hour after cutoff, two browser profiles/reset isolation, and settled dark Overview desktop/390px with theme persistence passed. [The dated continuation](releases/b54eb5e-verification.md#direct-replacement-checks--november-5) retains raw verifier failures and evidence limits. PR67 prior head `615361b` application/coordination/dashboard checks are now successful; any updated head has separate check status. Fresh live Pages/version requests still receive proxy CONNECT403; the current runtime policy state is unknown, so actual responses are used as evidence. Those b54eb5e findings were then addressed by #68/#69 below; remaining product/owner/submission gates stay open.
+
+The source then advanced with #68/#69. [ecd5bbc verification](releases/ecd5bbc-verification.md) checks all six tabs with zero console/network/HTTP errors, the inline icon, corrected Selected plan/unbooked labels, and saved plan visibility on Overview after reload. Main application/coordination/Pages provenance passed at ecd5bbc; the earlier Pages500 is superseded. Prior b54eb5e observations above are kept with their original identities, not treated as new executions.
+
 ## Remaining release gates
 
 | Gate | Actual outstanding evidence / owner |
 | --- | --- |
-| Accepted deployed candidate / final verification | Agent 1 supplied candidate `323592a`, a URL and the [10-step walkthrough](DEMO.md). Final technical acceptance, actual live walkthrough/visual review, current runtime/source match and intended judge access remain to be recorded for the accepted version. This bounded documentation pass pauses before final sign-off |
+| Live/judge-path verification and final acceptance | Original/replacement candidate supply is satisfied; latest checked integration is ecd5bbc with workflow provenance; candidate availability is satisfied and local verification has proceeded. Direct Pages/version requests fail at proxy CONNECT 403, so live walkthrough/current provenance and intended judge path remain unverified here. Final technical/visual acceptance follows findings and required checks |
+| Remaining Plan product decisions | #68/favicon and #69/BOOKED labels are fixed and directly verified at ecd5bbc. The saved plan persists on Overview; Agent2/#4 decides preference restoration and related stale display after demo reset. No backend-data-loss claim. Old #42 race resolved by #65; earlier failures are source-scoped history |
 | Kelvin's r2 implementation review | [#6 r2 review request](https://github.com/Jiwoo-Jung-Cal/wayfare/issues/6#issuecomment-6621476208) for merged #55: confirm ReRoute/CancelClock functionality, implementation and current limitations against approved r2; old code-integration blockers stay resolved |
 | Brian's evidence/asset follow-up | [#7](https://github.com/Jiwoo-Jung-Cal/wayfare/issues/7), including the [#56 r2 review request](https://github.com/Jiwoo-Jung-Cal/wayfare/issues/7#issuecomment-6621477268), feature-owned evidence/review and remaining assets, and stale manual browser-label follow-up. Supply actual PR/commit/checks or explicitly accepted limitations; preserve the integrated cash ledger/shared seams |
 | Live AI and capability verification | No successful live model call or hosted backend is evidenced. `npm run smoke:live-ai` exists; fake-adapter tests/configuration are not live proof. Verify any live claim on the accepted target, or retain explicit sample/scripted/simulated/unverified labels |
@@ -55,7 +64,7 @@ The [prior recorded organizer-page review](https://github.com/Jiwoo-Jung-Cal/way
 
 | Artifact | Current evidence | Remaining confirmation |
 | --- | --- | --- |
-| GitHub source | [Private repository](https://github.com/Jiwoo-Jung-Cal/wayfare), candidate `323592a` | Final accepted SHA, official source/access rules and intended-judge access |
+| GitHub source | [Private repository](https://github.com/Jiwoo-Jung-Cal/wayfare), latest checked source `ecd5bbc` | Supplied candidate SHA recorded; final technical acceptance, official source/access rules and intended-judge access |
 | Runnable demo | [Public Pages sample app](https://jiwoo-jung-cal.github.io/wayfare/); workflow verified candidate provenance; [version.json](https://jiwoo-jung-cal.github.io/wayfare/version.json) identifies current deployment | Accepted deployed version, final walkthrough and intended-judge path; link is mutable on main pushes |
 | Recording/video | No final URL or duration rule supplied | Whether required, official format/duration and viewing permissions |
 | Figma/prototype | [Design file / Code Layer `24:1182`](https://www.figma.com/design/ZZS9jEmANeCrjGxWxxCofK?node-id=24-1182); [DESIGN_MAP.md](DESIGN_MAP.md) | Whether required; old Code Layer source `5249cb7` is not this candidate; running preview/source alignment and judge access unverified |
@@ -78,4 +87,4 @@ An owner's authenticated repository read or Figma editor session does not prove 
 | Design / assets | r2-final approved; Figtree/IBM Plex Mono bundled. Plan illustrations are deliberate while photo licensing is unconfirmed; feature-owner reviews remain outstanding |
 | Hosted demo / judge access | Pages hosting and workflow provenance established; final live acceptance and official intended-judge access unverified |
 
-Technical acceptance belongs to Agent 1/eligible reviewers; Jiwoo owns visual design. Agent 3 assembles evidence and routes failures. For the next accepted-version pass, match the full SHA, runtime and mode; reuse exact-target CI and run only outstanding/change-justified release checks. Record passed/failed/skipped/todo/unrun outcomes and log links. Route Wayfinder/intake to Agent 2/#4, ReRoute to Kelvin/#6, wallet to Brian/#7, and shared/backend/integration to Agent 1/#8. Final evidence remains NOT VERIFIED until the required acceptance exists.
+Technical acceptance belongs to Agent 1/eligible reviewers; Jiwoo owns visual design. Agent 3 assembles evidence and routes failures. For remaining checks, continue with the supplied candidate's full SHA/runtime/mode; reuse exact-target CI and run only outstanding/change-justified release checks. Record passed/failed/skipped/todo/unrun outcomes and log links. Route Wayfinder/intake to Agent 2/#4, ReRoute to Kelvin/#6, wallet to Brian/#7, and shared/backend/integration to Agent 1/#8. Final evidence remains NOT VERIFIED until the required acceptance exists.
