@@ -39,6 +39,12 @@ Later on 2026-11-04 (merged): #58 reference scenario for returning visitors with
 
 Release candidate (posted on #8): main `323592a` — Application checks #114 and demo-pages #22 green (live `version.json` = this SHA, sample mode, per the workflow). #63 added Vercel config, a `VERCEL_GIT_COMMIT_SHA` provenance fallback and `.github/workflows/demo-vercel.yml`; it skips until the `VERCEL_TOKEN` secret exists (Jiwoo will set up Vercel later), so there is no Vercel deployment yet. After the candidate: #64 (this handoff), #65 (e2e race fix: specs navigated before async demo controls finished; flaky on main, 5 of 8 local runs failed) and #66 (adapter error mapping and server tests). None of them changes browser app code.
 
+Candidate `b54eb5e` (posted on #8): Application #124, Coordination #166 and Pages #26 (live provenance) green. Agent 3's verification (#67) routed two findings that I fixed, which changes browser code after `b54eb5e`:
+- **#68:** an inline favicon, because `/favicon.ico` returned 404 and logged a console error. A production-build console-clean check now covers it.
+- **#69:** the r2 Plan layer labelled a newly chosen plan "BOOKED" after a demo reset to planning. That is fixed with a reproduction test.
+
+Plan preferences resetting on reload is Agent 2's (#4). Live AI is still unverified. This session cannot store a credential for `api.anthropic.com`, so the real call has to run where a server key exists.
+
 Remaining: Agent 3 verification of the candidate; owner reviews of #55–#57 (Agents 4/5/2); Vercel token (Jiwoo); a live AI run needs a server key (Jiwoo); Figma Code Layer `24:1182` is an old snapshot (`5249cb7`), not current main; a re-import needs Jiwoo's go-ahead, and a deployed website does not establish Figma runtime sync.
 
 ## For Agent 3 (CI)
