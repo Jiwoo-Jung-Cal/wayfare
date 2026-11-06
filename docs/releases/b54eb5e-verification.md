@@ -4,6 +4,8 @@ Checked November 4, 2026 (America/Los_Angeles). **Final release: NOT VERIFIED.**
 
 [Task #9](https://github.com/Jiwoo-Jung-Cal/wayfare/issues/9) · [Merged PR #42, preserved](https://github.com/Jiwoo-Jung-Cal/wayfare/pull/42) · [Unchanged demo instructions](../DEMO.md) · [Release checklist](../RELEASE_CHECKLIST.md) · [Direct 323592a observations/screenshots](323592a-verification.md) · [Browser input identity](b54eb5e-browser-inputs.json)
 
+**Later integration:** #68/#69 merged during the November5 continuation. [ecd5bbc verification](ecd5bbc-verification.md) directly verifies the favicon and booked-label fixes, records remaining Plan product choices, and refreshes exact-source CI/deployment. Older failures below remain historical evidence for b54eb5e, not current blockers.
+
 ## Refreshed exact-source evidence
 
 | Evidence | Result at full replacement SHA | Basis |
@@ -31,7 +33,7 @@ The [identity record](b54eb5e-browser-inputs.json) contains each hash. Differenc
 
 ## Direct replacement checks — November 5
 
-Main and the supplied replacement remain `b54eb5e3cd19e5faa21d2f4e8eda310e17dc0b93`; no later source was inferred. PR #67's **prior head `615361b`** completed [application](https://github.com/Jiwoo-Jung-Cal/wayfare/actions/runs/41974443378), [coordination](https://github.com/Jiwoo-Jung-Cal/wayfare/actions/runs/41974443329) and [dashboard](https://github.com/Jiwoo-Jung-Cal/wayfare/actions/runs/41974443333) successfully. This closes the earlier pending-check snapshot for that head, not final release sign-off or a future head's check status.
+At the start of this continuation, supplied replacement b54eb5e was still main. Later #68/#69 integration is recorded separately above; these direct checks remain scoped to b54eb5e. PR #67's **prior head `615361b`** completed [application](https://github.com/Jiwoo-Jung-Cal/wayfare/actions/runs/41974443378), [coordination](https://github.com/Jiwoo-Jung-Cal/wayfare/actions/runs/41974443329) and [dashboard](https://github.com/Jiwoo-Jung-Cal/wayfare/actions/runs/41974443333) successfully. This closes the earlier pending-check snapshot for that head, not final release sign-off or a future head's check status.
 
 The outstanding local checks below were run directly on a new clean tracked `b54eb5e` worktree/build, rather than relabeling the old `323592a` run. `version.json` and page meta name the full replacement SHA, `dirty: false`, `mode: sample`. Runtime remains Node 24.19.0/npm 11.9.0/Chromium 154.0.8037.57; the previous dependency caveat still applies. A production build enabled these checks; successful full suites/clean install were not repeated. [Raw attempts, follow-ups, provenance and screenshot hashes](b54eb5e/focused-checks-2026-11-05.json) retain the actual outcomes.
 

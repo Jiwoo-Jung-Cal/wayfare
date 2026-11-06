@@ -1,0 +1,173 @@
+{
+  "date": "2026-11-05 America/Los_Angeles",
+  "source": "ecd5bbc274c932e7467b2d55f8149b2503aebe1a",
+  "last_explicit_candidate_before_integration": "b54eb5e3cd19e5faa21d2f4e8eda310e17dc0b93",
+  "direct_fix_verification": {
+    "source": "ecd5bbc274c932e7467b2d55f8149b2503aebe1a",
+    "basis": "New direct local production check of merged #68/#69; not a live-site visit",
+    "results": [
+      {
+        "name": "Merged-fix provenance and inline icon",
+        "outcome": "PASS",
+        "detail": {
+          "version": {
+            "source": "ecd5bbc274c932e7467b2d55f8149b2503aebe1a",
+            "dirty": false,
+            "mode": "sample",
+            "builtAt": "2026-11-06T00:08:12.524Z"
+          },
+          "icon": "inline SVG data URL; no network icon asset"
+        }
+      },
+      {
+        "name": "All six tabs clean for #68 resource regression",
+        "outcome": "PASS",
+        "detail": {
+          "routes": [
+            "/overview",
+            "/plan",
+            "/import",
+            "/itinerary",
+            "/reroute",
+            "/wallet"
+          ],
+          "console_errors": 0,
+          "page_errors": 0,
+          "failed_requests": 0,
+          "http_4xx_5xx": 0,
+          "favicon_ico_requests": 0
+        }
+      },
+      {
+        "name": "Plan labels fixed after reference -> reset -> selection",
+        "outcome": "PASS",
+        "detail": {
+          "card": "Best price\nOPTION 1\nRed-eye + Brooklyn hotel \u00b7 free time\n\nOvernight connecting flight, 3 nights in Brooklyn, skyline walk, shared shuttle. Paid skyline walk omitted; that time is unscheduled.\n\n$735\n$65 under budget\nConvenience\nlow\nFlexibility\nlow\nWhere the money goes\nSelected plan\n\nSaved to your trip. Nothing is booked or paid until you confirm.",
+          "header": "plan selected, nothing booked yet"
+        }
+      },
+      {
+        "name": "Saved plan survives; no booking created",
+        "outcome": "PASS",
+        "detail": {
+          "overview": "Red-eye + Brooklyn hotel \u00b7 free time remains visible after reload",
+          "bookings": 0,
+          "reload_preferences": {
+            "budget": "1000",
+            "first_card": "Best price\nOPTION 1\nRed-eye + Brooklyn hotel\n\nOvernight connecting flight, 3 nights in Brooklyn, skyline walk, shared shuttle.\n\n$815\n$185 under budget\nConvenience\nlow\nFlexibility\nlow\nWhere the money goes\nChoose this plan",
+            "basis": "Observed only; Agent2 product decision remains open, not a backend data-loss claim"
+          }
+        }
+      }
+    ],
+    "console_errors": [],
+    "page_errors": [],
+    "failed_requests": [],
+    "bad_responses": [],
+    "favicon_http_requests": [],
+    "browser": "154.0.8037.57",
+    "reload_display": {
+      "budget": "1000",
+      "first_card": "Best price\nOPTION 1\nRed-eye + Brooklyn hotel\n\nOvernight connecting flight, 3 nights in Brooklyn, skyline walk, shared shuttle.\n\n$815\n$185 under budget\nConvenience\nlow\nFlexibility\nlow\nWhere the money goes\nChoose this plan",
+      "basis": "Observed only; Agent2 product decision remains open, not a backend data-loss claim"
+    },
+    "stored_selection_visible_on_overview": true,
+    "outcome": "PASS"
+  },
+  "build": {
+    "candidate": "ecd5bbc274c932e7467b2d55f8149b2503aebe1a",
+    "node": "v24.19.0",
+    "npm": "11.9.0",
+    "provenance": {
+      "source": "ecd5bbc274c932e7467b2d55f8149b2503aebe1a",
+      "dirty": false,
+      "mode": "sample",
+      "builtAt": "2026-11-06T00:08:12.524Z"
+    },
+    "tracked_source_clean": true
+  },
+  "unchanged_input_groups": [
+    {
+      "path": "src/app",
+      "same_git_object": "f1aac66f69e432503485548a257e238987c457e1"
+    },
+    {
+      "path": "src/styles",
+      "same_git_object": "213541de19696f70a9e2bded23e6b635871dc24e"
+    },
+    {
+      "path": "src/core",
+      "same_git_object": "f2fb87c7a61d46b9e3923e49040c5e9c5efc9db8"
+    },
+    {
+      "path": "src/features/intake",
+      "same_git_object": "2cf9d05fd2e2e3be5457242a1e803fb891eff8e7"
+    },
+    {
+      "path": "src/features/reroute",
+      "same_git_object": "24d6eb69eeae8f603ea9f8326b16e8268ba5d85e"
+    },
+    {
+      "path": "src/features/tripwallet",
+      "same_git_object": "a9a23c7db11fac44d29604aaf26823aac3087076"
+    },
+    {
+      "path": "server",
+      "same_git_object": "0d5a7f1f956730746991823ae6bdca8dbaabf103"
+    },
+    {
+      "path": "package.json",
+      "same_git_object": "acc5e9278b6b415404c68c041a225e4e2cdc031f"
+    },
+    {
+      "path": "package-lock.json",
+      "same_git_object": "ca4606fd001521c1ab33a369653bc78e1459700d"
+    },
+    {
+      "path": "vite.config.ts",
+      "same_git_object": "5e97d93f538a9d86210667389b72fdd20f747b36"
+    },
+    {
+      "path": "tsconfig.json",
+      "same_git_object": "62b47bd71250bbe6655f1a4980487a7be5f95748"
+    },
+    {
+      "path": "docs/DEMO.md",
+      "same_git_object": "e546d4510bc00ca727cbaee5a480f8c22f678db4"
+    }
+  ],
+  "workflow_evidence": {
+    "application": "https://github.com/Jiwoo-Jung-Cal/wayfare/actions/runs/42133762141",
+    "coordination": "https://github.com/Jiwoo-Jung-Cal/wayfare/actions/runs/42133762483",
+    "pages_and_live_source_step": "https://github.com/Jiwoo-Jung-Cal/wayfare/actions/runs/42133762140",
+    "conclusions": "success at full ecd5bbc source, metadata independently read; no direct origin visit"
+  },
+  "vercel": "Token check success; checkout/build/deploy/live-check steps skipped; no deployment inferred",
+  "historical_pages_failure": {
+    "source": "948617bac1da9895cfb6ee03089aa292e7b7d831",
+    "run": "https://github.com/Jiwoo-Jung-Cal/wayfare/actions/runs/42132871129",
+    "error": "Failed to create deployment: HTTP500 from GitHub Pages; live verification skipped",
+    "current_disposition": "Later ecd5bbc deployment and live-source step succeeded; retained as history, not current blocker"
+  },
+  "remaining_plan_decisions": {
+    "direct": "Plan restores default budget1000/options after reload, but saved $735 plan is visible on Overview and no booking created",
+    "owner_reported": "Previous selected-plan label can remain stale after demo reset until selection/reload; Agent1 left refresh behavior for Agent2",
+    "owner": "Agent2 / Issue4",
+    "not_claimed": "Backend selected-plan data loss"
+  },
+  "images": [
+    {
+      "file": "plan-labels-fixed.png",
+      "sha256": "916e67614f6f823cdea84aa3770c735ca8c6d72b059bad8f520becd28d218440",
+      "bytes": 292487
+    }
+  ],
+  "final_release": "NOT VERIFIED",
+  "accepted_candidate_handoff": "https://github.com/Jiwoo-Jung-Cal/wayfare/issues/8#issuecomment-6672883600",
+  "current_owner_report": {
+    "source": "ecd5bbc274c932e7467b2d55f8149b2503aebe1a",
+    "unit_tests": 184,
+    "browser_checks": 37,
+    "basis": "owner-reported local checks; not independently recounted"
+  }
+}
