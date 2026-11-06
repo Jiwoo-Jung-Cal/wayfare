@@ -2,7 +2,7 @@
 
 ## Current milestone — saved Plan / reset refresh (November 5, 2026 Pacific)
 
-Status: **ready for focused technical review; complete preference persistence awaits Agent 1's contract**. Branch `agent-2/plan-state-restoration`, based and locally tested on verified main `ecd5bbc274c932e7467b2d55f8149b2503aebe1a`. Main advanced during publication to `0221d90db05ce737d6d9ad611cf0dd48430bc0ff`, merging #70/#67; the compared changes do not overlap this patch. Local test results below retain their actual ecd5bbc-plus-patch identity; combined-head CI is separate. Prior clean PR #59 worktree/branch is preserved. Current publication commit/PR and final CI are linked in the latest [#4 report](https://github.com/Jiwoo-Jung-Cal/wayfare/issues/4).
+Status: **PR #71 published; integration CI blocked in ReRoute; complete preference persistence awaits Agent 1's contract**. Branch `agent-2/plan-state-restoration`, based and locally tested on verified main `ecd5bbc274c932e7467b2d55f8149b2503aebe1a`. Main advanced during publication to `0221d90db05ce737d6d9ad611cf0dd48430bc0ff`, merging #70/#67; the compared changes do not overlap this patch. Local test results below retain their actual ecd5bbc-plus-patch identity; combined-head CI is separate. Prior clean PR #59 worktree/branch is preserved. Current publication commit/PR and final CI are linked in the latest [#4 report](https://github.com/Jiwoo-Jung-Cal/wayfare/issues/4).
 
 Read current AGENTS/ownership, own prompt/handoff, project brief/contracts, approved r2-final/feature handoff and latest #4/#8/#9 reports before implementation. The separately named `WayFare_Agent_2_Conversation_Handoff.md` attachment was unavailable in this session and did not resolve through filename search; no full-read claim is made. Current repository/issues were used as authority. Direct HTTPS Git lacked credentials; connected GitHub reads imported hash-verified blobs, trees and signed current-main commit into the existing checkout without resetting prior work. Reference images not needed for implementation remain unmaterialized.
 
@@ -31,12 +31,18 @@ Changed scope is only `src/features/wayfinder/`, this handoff and the Agent 2 de
 
 - **Agent 1:** review this Plan change and provide the missing preference contract; integration/backend remain yours. #70 and #67 progressed during this session: independently read green head checks, then confirmed merges `90c97fe6a378f7507f4813c2fa2bd441a0bd7a7d` and `0221d90db05ce737d6d9ad611cf0dd48430bc0ff`. Neither is awaiting merge now.
 - **Agent 2:** answer focused review feedback, then consume Agent 1's actual preference/refresh contract in owned code/tests. Keep #4 open; no merge, task closure or other-agent takeover.
-- **Kelvin:** #70 is merged. Verify its chart/approval behavior on Agent 1's new integrated candidate, report final #6 acceptance or concrete remaining defects, then pause. His owner-reported final-head counts are 188 tests/38 shared browser checks, distinct from this branch's results.
+- **Kelvin:** reproduce/resolve or explicitly disposition PR #71's combined-source tooltip cutoff assertion at `src/features/reroute/browser.test.ts:60:120`; [specific failure routed to #6](https://github.com/Jiwoo-Jung-Cal/wayfare/issues/6#issuecomment-6675985101). #70 is merged; final #6 acceptance follows the named failure's disposition. No ReRoute code takeover by Agent 2.
 - **Brian:** review merged #56/r2-final and adapt the old-label `src/features/tripwallet/verify-browser.mjs`; publish the bounded evidence/asset/manual-control result or limitation on #7. No later Brian milestone is posted there as of this check.
 - **Agent 3:** preserve merged #67; after Agent 1 supplies a new integrated candidate, refresh only affected Plan/ReRoute evidence and source/CI/deployment identity in a bounded follow-up. Final release remains NOT VERIFIED; direct live/judge access and official submission/deadline/timezone requirements are still separate gates.
 
-## Previous milestone — PR #59 r2 review (historical)
 
+### Combined-source CI gate (after publication)
+
+PR #71 code head `cee40efe70f12746ffa740d7c7d8cd3c4d4f489c`, test merge `ef4bf659f6237564acbc8a85f9aea024049a419b` onto `0221d90`: [application run42155891110](https://github.com/Jiwoo-Jung-Cal/wayfare/actions/runs/42155891110/job/127689804104) FAILED with **190 passed / 1 failed**. All Wayfinder/restoration tests pass. ReRoute's real-browser test failed at `src/features/reroute/browser.test.ts:60:120`: poll expected no `+$820` tooltip after cutoff refresh, expected false/received true after5000ms. Production build/shared E2E were skipped by the workflow after this failure; local results above retain their original source. Install/typecheck and coordination passed.
+
+Full failure logs read and [routed to Kelvin/#6](https://github.com/Jiwoo-Jung-Cal/wayfare/issues/6#issuecomment-6675985101), [Agent1/#8](https://github.com/Jiwoo-Jung-Cal/wayfare/issues/8#issuecomment-6675986407) and [PR71](https://github.com/Jiwoo-Jung-Cal/wayfare/pull/71#issuecomment-6675987865). No retry, flake diagnosis or green reclassification. Agent1's earlier unidentified failure is not assumed identical. This handoff-only follow-up preserves the failed run; any subsequent automatic CI has a separate source/status. Keep #4 open and do not merge or claim final release acceptance.
+
+## Previous milestone — PR #59 r2 review (historical)
 Status: **r2-final is approved**. Reviewed Agent 1's merged Plan visual layer (#57) on main `ca3974d4a8816f3adf2b46254b41d1d51de0c870`. This follow-up repairs the owned browser check and reproduced budget, picker-overflow and traveler-scope defects. Intake's existing layout and behavior pass review. Two shared findings are routed to Agent 1 below. Earlier r1 approval-pending instructions are superseded.
 
 - Task: https://github.com/Jiwoo-Jung-Cal/wayfare/issues/4
