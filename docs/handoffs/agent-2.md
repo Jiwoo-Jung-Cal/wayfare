@@ -1,5 +1,19 @@
 # Agent 2 handoff
 
+## Current checkpoint — November 6, 2026 (Pacific)
+
+Jiwoo requested a recording-ready demo, the `wayfare-ramp.vercel.app` alias, and a slightly longer Plan typing animation. Main `0ad287457d06f467f596764f78d551a71fe315e7` merges Agent 1 PR #74; its source is identical to the previously verified `06ea885` snapshot. The existing Agent 2 PR #71 remains separate and is not included in this branch.
+
+This focused change increases the default scripted Plan response pause from 650 to 1500 ms; the typing indicator, disabled send button, retry/error handling, abort handling and explicit “No AI model is used” label remain. Plan introduction now says it compares listed costs and helps choose a plan, matching the actual save-only behavior. No reservation or payment is made by selection.
+
+Vercel accepted and verified `wayfare-ramp.vercel.app` for the existing project. The exact published source SHA, deployment ID and final checks are recorded in the latest structured report on [#4](https://github.com/Jiwoo-Jung-Cal/wayfare/issues/4). Only `src/features/wayfinder/assistant.ts`, `src/features/wayfinder/index.tsx` and this handoff change. Build output and browser artifacts remain outside commits. Agent 1 retains integration/merge ownership; Agent 3 retains release-evidence ownership.
+
+Recording sequence: Overview → Plan (NY group price, then Chicago selection) → return to NY → hotel intake review/duplicate → Itinerary → ReRoute cutoff and reset → explicit simulated cancellation → Ask WayFare → TripWallet confirmation and two receipts → reload. Show Ask before receipt matching: its current shared reply uses the $820 total expected recovery, not the $420 still outstanding after $400 is received. This wording finding was routed to Agent 1 in #8. Wallet totals should be narrated as $820 total recovery, $400 received and $420 outstanding, with vouchers/points separate. `Start over` in intake clears the review and retains pasted text. Optional Tokyo/Paris, simulated Google, reminder and dark/mobile steps are covered by the existing demo script/tests.
+
+Current capabilities supersede the historical scope below: group sample pricing for 1–9 travelers and Chicago/Tokyo sample plans were added by Agent 1 in #72; Plan/Ask remain scripted, extraction recognizes sample confirmations, and provider actions are simulated. This is not live AI or live booking search. Current approvals remain r2-final; no Figma edit or canvas comparison is claimed.
+
+## Historical review checkpoint (superseded where noted above)
+
 Status: **r2-final is approved**. Reviewed Agent 1's merged Plan visual layer (#57) on main `ca3974d4a8816f3adf2b46254b41d1d51de0c870`. This follow-up repairs the owned browser check and reproduced budget, picker-overflow and traveler-scope defects. Intake's existing layout and behavior pass review. Two shared findings are routed to Agent 1 below. Earlier r1 approval-pending instructions are superseded.
 
 - Task: https://github.com/Jiwoo-Jung-Cal/wayfare/issues/4

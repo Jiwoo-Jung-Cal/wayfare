@@ -94,7 +94,7 @@ export interface PlanAssistant {
 }
 
 /** The demo assistant: the rules above, with a short "thinking" pause so the reply reads naturally. */
-export function scriptedAssistant(thinkMs = 650): PlanAssistant {
+export function scriptedAssistant(thinkMs = 1500): PlanAssistant {
   return {
     capability: 'scripted',
     label: 'Demo assistant: it reads your message with simple rules and answers from sample quotes. No AI model is used.',

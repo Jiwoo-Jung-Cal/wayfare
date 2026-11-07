@@ -302,7 +302,7 @@ export function WayfinderPage({ tripId, ctx }: FeaturePageProps) {
     <div className="wf-plan-hero">
       <LogoMark className="wf-plan-wm" />
       <h1>Where to next?</h1>
-      <p>Describe the trip you want. WayFare compares options, shows every cost, and books it for you.</p>
+      <p>Describe the trip you want. WayFare compares options, shows listed costs, and helps you choose a plan.</p>
       <form className="wf-composer" onSubmit={(e) => { e.preventDefault(); ask(prompt.trim()); }}>
         <label htmlFor="wf-prompt" className="wf-visually-hidden">Describe your trip</label>
         <textarea id="wf-prompt" rows={2} placeholder="3 nights in New York from San Francisco, under $1,000, with a skyline walk" value={prompt} onChange={(e) => setPrompt(e.target.value)}
