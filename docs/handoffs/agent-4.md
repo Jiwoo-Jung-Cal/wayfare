@@ -1,10 +1,10 @@
 # Agent 4 — ReRoute / CancelClock owner review
 
-Status: r2-final owner review complete in source and local deterministic checks; bounded UI fixes submitted for integration in PR #70. Initial head 906908e passed CI with 187 tests and 38 shared browser tests; the tooltip follow-up has its own final-head evidence in the PR. Issue #6 stays open for final acceptance. The original implementation (#37) is integrated through #39. Agent 1 applied the approved r2 visual layer in #55 and mobile spacing in #60.
+PR #70 is merged. This follow-up fixes the open ReRoute tooltip on current main after a clock change. Issue #6 remains open for final acceptance.
 
 Task: https://github.com/Jiwoo-Jung-Cal/wayfare/issues/6
 Integration: https://github.com/Jiwoo-Jung-Cal/wayfare/issues/8
-Review base: main ecd5bbc274c932e7467b2d55f8149b2503aebe1a.
+Follow-up base is main `8132ea290df75af21bbc3d34c1a0cd0e578051fb`.
 Account: Wildtypers; connected pull/push permissions verified. Local unpublished work was absent; previous snapshot branch preserved. Publication uses SHA-pinned source and expected-head guards, without force-pushing.
 
 ## Design and scope
@@ -36,6 +36,6 @@ Owned changes: src/features/reroute/**, this handoff and docs/decisions/agent-4-
 
 Local npm ci, typecheck, build and diff-check pass. Full npm test: 186 passed, 1 browser test skipped because Chrome is not installed. Feature suite: 29 passed, 1 browser skipped. The two chart defects were reproduced with failing tests before the fix; all three chart tests pass afterward.
 
-Feature-owned browser coverage now adds radio keyboard operation, r2 breakpoint boundaries, completed/partial chart markers, unknown-policy intake navigation and the continue-choice replacement. Clock-refresh coverage verifies that stale pre-cutoff tooltip amounts disappear and renewed hover uses $620 at the cutoff, then $820 after clock reset. The shared shell dismisses the tooltip when it refreshes the feature; this is safe and did not reproduce a stale-amount defect. Existing approval → four automatic claims/$820 → hotel confirmation/$400 → $250/$150 receipts, stale cutoff/$620, partial failure/reload, Escape/focus return and narrow-layout assertions are retained. Final-head GitHub Actions browser results are recorded in the review PR and Issue #6; do not infer local browser or pixel-comparison success.
+Feature-owned browser coverage now adds radio keyboard operation, r2 breakpoint boundaries, completed/partial chart markers, unknown-policy intake navigation and the continue-choice replacement. A clock refresh can leave the tooltip open. On main, the comparison updated to $620 while a stationary pointer still showed $820 in the tooltip. The browser regression holds the chart in place through the real clock controls and checks $820 before the cutoff, $620 at the cutoff, and $820 after reset without moving the pointer. The tooltip now derives its amount from the current chart series. The updated suite passed all 197 tests with portable Chromium 153, and the production build passed. Existing approval → four automatic claims/$820 → hotel confirmation/$400 → $250/$150 receipts, stale cutoff/$620, partial failure/reload, Escape/focus return and narrow-layout assertions are retained. Final-head GitHub Actions browser results are recorded in the review PR and Issue #6; do not infer local browser or pixel-comparison success.
 
-PR #43's r1 acceptance checklist is superseded by this handoff. Next: Agent 1 reviews/merges the owner-review fixes after CI; Jiwoo/Agent 3 records final issue acceptance through the established workflow. Design approval itself is already recorded as r2-final. Live providers are outside this task.
+PR #43's r1 acceptance checklist is superseded by this handoff. Agent 1 reviews the tooltip follow-up after CI. Jiwoo and Agent 3 record final issue acceptance through the established workflow. Design approval itself is already recorded as r2-final. Live providers are outside this task.
