@@ -2,17 +2,23 @@
 // Visual layer by Agent 1 under Jiwoo's design-implementation scope. Logic is Agent 2's and
 // unchanged: createPlanGenerator / generatePlans (validation, unsupported inputs, ranking,
 // budget fit, unknown price never free) and selectPlanningOption (idempotent selection).
-// The composer's free text is not interpreted in this sample build; the trip's route and
-// dates come from the route and date chips, and the answer says so.
+// The composer is a scripted demo assistant (assistant.ts): it reads destination, travelers,
+// budget and priority from the message with simple rules; no AI model is used. Chicago and Tokyo
+// plans create their own workspace trip when chosen (catalog.ts).
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { appError, isUnknown, type AppError, type FeatureModule, type FeaturePageProps, type MaybeMoney, type PlanOption } from '../../core/index.ts';
 import { ErrorState, Notice } from '../../ui/index.tsx';
 import { Icon, LogoMark } from '../../ui/icons.tsx';
 import { SAMPLE_SCOPE, createPlanGenerator, defaultPreferences, type ComparedPlan, type PlanningResult, type Preferences } from './handler.ts';
+import { DESTINATIONS, destinationFor, destinationOfTrip, tripFor, type Destination } from './catalog.ts';
+import { applyRequest, parsePlanRequest, replyTo } from './assistant.ts';
 import { selectPlanningOption } from './selection.ts';
 import { planArt, type ArtKey } from './planArt.ts';
 import './wayfinder.css';
+import photoMidtown from './photos/plan-midtown.jpg';
+import photoBrooklyn from './photos/plan-brooklyn.jpg';
+import photoFlex from './photos/plan-flex.jpg';
 
 const CAT: Record<string, [string, string]> = {
   flight: ['Flight', 'var(--wf-color-cat-flight)'],
@@ -22,8 +28,18 @@ const CAT: Record<string, [string, string]> = {
   other: ['Other', 'var(--wf-color-text-muted)'],
 };
 const LEVEL = { low: 0, medium: 1, high: 2 } as const;
-const ART: Record<string, ArtKey> = { 'plan-demo-nonstop': 'hotel', 'plan-demo-saver': 'brooklyn', 'plan-demo-flex': 'walk' };
-const baseId = (id: string) => id.replace(/-free-time$/, '');
+const ART: Record<string, ArtKey> = {
+  'plan-demo-nonstop': 'hotel', 'plan-demo-saver': 'brooklyn', 'plan-demo-flex': 'walk',
+  'plan-chi-nonstop': 'flight', 'plan-chi-saver': 'hotel', 'plan-chi-flex': 'walk',
+  'plan-tyo-nonstop': 'flight', 'plan-tyo-saver': 'brooklyn', 'plan-tyo-flex': 'hotel',
+};
+/** Stock photos for the New York plans, supplied by Jiwoo (prototype r2 photos/). Other trips keep the illustrations. */
+const PHOTO: Record<string, [src: string, alt: string]> = {
+  'plan-demo-nonstop': [photoMidtown, 'Midtown Manhattan'],
+  'plan-demo-saver': [photoBrooklyn, 'Brooklyn'],
+  'plan-demo-flex': [photoFlex, 'Lower Manhattan'],
+};
+const baseId = (id: string) => id.replace(/-x\d+$/, '').replace(/-free-time$/, '');
 const m0 = (m: MaybeMoney | undefined | null) => {
   if (!m || isUnknown(m)) return '?';
   return new Intl.NumberFormat('en-US', { style: 'currency', currency: m.currency, maximumFractionDigits: m.amountMinor % 100 === 0 ? 0 : 2 }).format(Math.abs(m.amountMinor) / 100);
@@ -44,21 +60,30 @@ const Dots = ({ n, label }: { n: number; label: string }) => (
 
 function Pop({ open, label, onClose, children, left }: { open: boolean; label: string; onClose: () => void; children: React.ReactNode; left: number }) {
   const ref = useRef<HTMLDivElement>(null);
+  const closeRef = useRef(onClose);
+  closeRef.current = onClose;
+  // Focus the first control once when the popover opens. (Running this on every render moved
+  // focus back to the first field after each keystroke, so the destination couldn't be typed.)
+  useEffect(() => {
+    if (open) ref.current?.querySelector<HTMLElement>('button,input')?.focus();
+  }, [open]);
   useEffect(() => {
     if (!open) return;
-    ref.current?.querySelector<HTMLElement>('button,input')?.focus();
-    const out = (e: MouseEvent) => { if (!(e.target as HTMLElement).closest('.wf-pop,.wf-chipb')) onClose(); };
-    const esc = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
+    const out = (e: MouseEvent) => { if (!(e.target as HTMLElement).closest('.wf-pop,.wf-chipb')) closeRef.current(); };
+    const esc = (e: KeyboardEvent) => e.key === 'Escape' && closeRef.current();
     document.addEventListener('mousedown', out); document.addEventListener('keydown', esc);
     return () => { document.removeEventListener('mousedown', out); document.removeEventListener('keydown', esc); };
-  }, [open, onClose]);
+  }, [open]);
   if (!open) return null;
   return <div ref={ref} className="wf-pop" role="dialog" aria-label={label} style={{ left }}>{children}</div>;
 }
 
 export function WayfinderPage({ tripId, ctx }: FeaturePageProps) {
   const navigate = useNavigate();
-  const [preferences, setPreferences] = useState<Preferences>(() => defaultPreferences({ workspaceId: 'pending', now: ctx.clock.now() }));
+  const home = destinationOfTrip(tripId) ?? DESTINATIONS.nyc;
+  const [preferences, setPreferences] = useState<Preferences>(() => defaultPreferences({ workspaceId: 'pending', now: ctx.clock.now() }, home.key));
+  const [thread, setThread] = useState<{ from: 'you' | 'wayfare'; text: string }[]>([]);
+  const [addedTrip, setAddedTrip] = useState<{ id: string; title: string } | null>(null);
   const [workspaceId, setWorkspaceId] = useState<string | null>(null);
   const [tripTitle, setTripTitle] = useState('your trip');
   const [booked, setBooked] = useState(false);
@@ -73,7 +98,6 @@ export function WayfinderPage({ tripId, ctx }: FeaturePageProps) {
   const [replayed, setReplayed] = useState(false);
   const [loadAttempt, setLoadAttempt] = useState(0);
   const [prompt, setPrompt] = useState('');
-  const [asked, setAsked] = useState('');
   const [pop, setPop] = useState<null | 'trav' | 'date' | 'route'>(null);
   const [trav, setTrav] = useState({ a: 1, c: 0 });
   const [draftDates, setDraftDates] = useState({ from: '', to: '' });
@@ -95,7 +119,15 @@ export function WayfinderPage({ tripId, ctx }: FeaturePageProps) {
       setWorkspaceId(trip.value.workspaceId);
       setTripTitle(trip.value.title);
       setBooked(snap.ok && snap.value.bookings.some((b) => b.tripId === tripId));
-      setSaved(plans.value.find((p) => p.id === trip.value.selectedPlanId) ?? null);
+      const chosen = plans.value.find((p) => p.id === trip.value.selectedPlanId) ?? null;
+      setSaved(chosen);
+      // Re-open on the saved plan's group size and activity choice, so the saved card shows as chosen.
+      const group = Number(/-x(\d+)$/.exec(chosen?.id ?? '')?.[1] ?? 1);
+      if (chosen && (group > 1 || /-free-time(-x\d+)?$/.test(chosen.id))) {
+        setTrav({ a: group, c: 0 });
+        setPreferences((p) => ({ ...p, travelers: group, interest: /-free-time(-x\d+)?$/.test(chosen.id) ? 'free_time' : p.interest,
+          budget: String(Math.max(Number(p.budget), Math.ceil((chosen.total as { amountMinor?: number }).amountMinor ?? 0) / 100)) }));
+      }
     }).catch(() => { if (active) { setInitializing(false); setError(appError('unavailable', 'Could not load the saved trip')); } });
     return () => { active = false; generator.invalidate(); };
   }, [ctx.repo, tripId, generator, loadAttempt]);
@@ -112,7 +144,8 @@ export function WayfinderPage({ tripId, ctx }: FeaturePageProps) {
     if (!workspaceId) return;
     retry.current = () => { void generate(next); };
     setLoading(true); setError(null); setMessage('');
-    const response = await generator.generate(next, { tripId, workspaceId, now: ctx.clock.now() });
+    const target = destinationFor(next.destination);
+    const response = await generator.generate(next, { tripId: target?.tripId ?? tripId, workspaceId, now: ctx.clock.now() });
     if (!response) return;
     setLoading(false);
     if (response.ok) { setResult(response.value); setDirty(false); }
@@ -131,22 +164,52 @@ export function WayfinderPage({ tripId, ctx }: FeaturePageProps) {
     retry.current = () => { void select(plan); };
     busy.current = true; setSaving(plan.id); setError(null); setMessage('');
     try {
+      // A plan for another destination (Chicago, Tokyo) belongs to its own trip: add it first.
+      const target = destinationOfTrip(plan.tripId);
+      let created: { id: string; title: string } | null = null;
+      if (plan.tripId !== tripId && target) {
+        const exists = await ctx.repo.getTrip(plan.tripId);
+        if (!exists.ok) {
+          const made = await ctx.repo.saveTrip(tripFor(target.key, { workspaceId: plan.workspaceId, now: ctx.clock.now() }), { expectedRevision: null });
+          if (!made.ok) { setError(made.error); return; }
+          created = { id: target.tripId, title: target.title };
+        }
+      }
       const response = await selectPlanningOption(ctx.repo, plan, ctx.clock.now());
       if (!response.ok) { setError(response.error); return; }
       setSaved({ ...response.value.plan, status: 'selected' });
       // Bookings may have changed since this page loaded (e.g. a demo reset): read them again
       // so a newly selected plan is never labelled booked when the trip has no bookings.
       const snap = await ctx.repo.snapshot();
-      setBooked(snap.ok && snap.value.bookings.some((b) => b.tripId === tripId));
+      setBooked(snap.ok && snap.value.bookings.some((b) => b.tripId === plan.tripId));
       setReplayed(response.value.replayed);
-      setMessage(response.value.replayed ? 'This plan is already selected. No reservation was made.' : 'Plan saved. No reservation was made.');
+      setAddedTrip(plan.tripId !== tripId && target ? { id: target.tripId, title: target.title } : null);
+      setMessage(created ? `Added ${created.title} to your trips. Plan saved. No reservation was made.`
+        : response.value.replayed ? 'This plan is already selected. No reservation was made.' : 'Plan saved. No reservation was made.');
       try { await ctx.refresh(); } catch { setError(appError('unavailable', 'Plan saved, but the dashboard could not refresh. Reload to see it.')); }
     } catch { setError(appError('unavailable', 'Could not select the plan. Your options are preserved.')); }
     finally { busy.current = false; setSaving(null); }
   }
   function ask(q: string) {
-    setAsked(q || 'the sample trip');
-    void generate().then(() => answerRef.current?.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' }));
+    const req = parsePlanRequest(q);
+    const next = applyRequest(preferences, req);
+    const current = destinationFor(preferences.destination) ?? home;
+    setThread((t) => [...t, ...(q ? [{ from: 'you' as const, text: q }] : []), { from: 'wayfare' as const, text: replyTo(req, next, current) }]);
+    setPrompt('');
+    if (req.unknownPlace) return;
+    if (req.travelers) setTrav({ a: req.travelers, c: 0 });
+    if (req.budget) setBudgetText(null);
+    setAddedTrip(null);
+    generator.invalidate(); setDirty(false); setPreferences(next);
+    void generate(next).then(() => answerRef.current?.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' }));
+  }
+  /** Route popover Done: a known city name picks that destination, its sample dates and budget. */
+  function applyRoute() {
+    const d = destinationFor(preferences.destination);
+    const next = d ? { ...preferences, destination: d.name, ...(d.name !== (result?.preferences.destination ?? '') ? { startDate: d.startDate, endDate: d.endDate, budget: d.defaultBudget } : {}) } : preferences;
+    setBudgetText(null); setAddedTrip(null);
+    generator.invalidate(); setPreferences(next);
+    void generate(next);
   }
   const fieldError = (key: keyof Preferences) => error?.issues?.find((entry) => entry.path === key)?.message
     ?? (error?.code === 'unsupported' && (key === 'destination' || key === 'origin') ? 'Use the supported SFO–New York route and November 20–23 dates.' : undefined);
@@ -154,6 +217,7 @@ export function WayfinderPage({ tripId, ctx }: FeaturePageProps) {
   const shownPreferences = result?.preferences ?? preferences;
   const nights = nightsBetween(shownPreferences.startDate, shownPreferences.endDate);
   const budgetNum = parseFloat(shownPreferences.budget);
+  const shownDest: Destination = destinationFor(shownPreferences.destination) ?? home;
 
   const card = ({ plan, knownSubtotal, budgetStatus }: ComparedPlan, index: number, list: ComparedPlan[]) => {
     const isSaved = saved ? baseId(saved.id) === baseId(plan.id) && saved.id === plan.id : false;
@@ -170,8 +234,9 @@ export function WayfinderPage({ tripId, ctx }: FeaturePageProps) {
     const block = budgetStatus === 'unknown' ? 'A price is still unknown. You can choose this once every part is quoted.' : budgetStatus === 'over' ? 'This is over your budget. Raise the budget or pick “Free time” to choose it.' : '';
     const disabled = dirty || loading || saving !== null || budgetStatus !== 'within';
     return <article key={plan.id} className="wf-pcard" data-selected={isSaved || undefined} aria-labelledby={`wf-pc-${plan.id}`} style={{ animationDelay: `${index * 70}ms` }}>
-      <div className="wf-ph" role="img" aria-label={`Illustration: ${plan.label}`}>
-        <span dangerouslySetInnerHTML={{ __html: planArt(ART[baseId(plan.id)] ?? 'hotel') }} />
+      <div className="wf-ph" role="img" aria-label={PHOTO[baseId(plan.id)] ? `Photo: ${PHOTO[baseId(plan.id)]![1]}` : `Illustration: ${plan.label}`}>
+        {PHOTO[baseId(plan.id)] ? <img className="wf-photo" src={PHOTO[baseId(plan.id)]![0]} alt="" loading="lazy" />
+          : <span dangerouslySetInnerHTML={{ __html: planArt(ART[baseId(plan.id)] ?? 'hotel') }} />}
         {badge && <span className="wf-tag wf-ph-badge" data-tone={badge.tone}><Icon name={badge.icon} />{badge.text}</span>}
       </div>
       <span className="wf-rank">OPTION {index + 1}{isCurrent ? ' · BOOKED' : ''}</span>
@@ -230,8 +295,8 @@ export function WayfinderPage({ tripId, ctx }: FeaturePageProps) {
             </div>
             <p className="wf-muted wf-pop-note">{SAMPLE_SCOPE}</p>
             <div className="wf-pf">
-              <button type="button" className="wf-button" data-size="sm" onClick={() => { setBudgetText(null); change(defaultPreferences({ workspaceId: workspaceId ?? 'pending', now: ctx.clock.now() }), false); }}>Use supported sample</button>
-              <button type="button" className="wf-button" data-variant="dark" data-size="sm" onClick={() => { setPop(null); if (result) void generate(); }}>Done</button>
+              <button type="button" className="wf-button" data-size="sm" onClick={() => { setBudgetText(null); change(defaultPreferences({ workspaceId: workspaceId ?? 'pending', now: ctx.clock.now() }, home.key), false); }}>Use supported sample</button>
+              <button type="button" className="wf-button" data-variant="dark" data-size="sm" onClick={() => { setPop(null); applyRoute(); }}>Done</button>
             </div>
           </Pop>
           <Pop open={pop === 'trav'} label="Travelers" left={210} onClose={() => setPop(null)}>
@@ -244,8 +309,8 @@ export function WayfinderPage({ tripId, ctx }: FeaturePageProps) {
                 <button type="button" aria-label={k === 'a' ? 'More adults' : 'More children'} disabled={travelers >= 9} onClick={() => setTrav((t) => ({ ...t, [k]: t[k] + 1 }))}>+</button>
               </div>
             </div>)}
-            <p className="wf-muted wf-pop-note">Sample quotes are priced for one traveler.</p>
-            <div className="wf-pf"><button type="button" className="wf-button" data-variant="dark" data-size="sm" onClick={() => setPop(null)}>Done</button></div>
+            <p className="wf-muted wf-pop-note">Group pricing: flights and tickets per person, one hotel room per two, one car per four.</p>
+            <div className="wf-pf"><button type="button" className="wf-button" data-variant="dark" data-size="sm" onClick={() => { setPop(null); if (travelers !== preferences.travelers) change({ travelers }); }}>Done</button></div>
           </Pop>
           <Pop open={pop === 'date'} label="Dates" left={330} onClose={() => setPop(null)}>
             <h4>When are you going?</h4>
@@ -262,6 +327,13 @@ export function WayfinderPage({ tripId, ctx }: FeaturePageProps) {
           </Pop>
         </div>
       </form>
+      {thread.length > 0 && <div className="wf-thread" aria-label="Conversation with WayFare" role="log">
+        {thread.map((m, i) => <div key={i} className="wf-msg" data-from={m.from}>
+          {m.from === 'wayfare' && <span className="wf-spark" aria-hidden="true"><Icon name="spark" /></span>}
+          <p><span className="wf-visually-hidden">{m.from === 'you' ? 'You: ' : 'WayFare: '}</span>{m.text}</p>
+        </div>)}
+        <p className="wf-thread-note">Demo assistant: it reads your message with simple rules and answers from sample quotes. No AI model is used.</p>
+      </div>}
       <div className="wf-examples">
         <div className="wf-eh">Or start from an example</div>
         <div className="wf-ex-grid">
@@ -277,12 +349,12 @@ export function WayfinderPage({ tripId, ctx }: FeaturePageProps) {
 
     <div className="wf-answer" ref={answerRef}>
       {error && <ErrorState error={error} onRetry={() => retry.current()} />}
-      {message && <div role="status"><Notice tone={replayed ? 'info' : 'success'}>{message}</Notice></div>}
+      {message && <div role="status"><Notice tone={replayed ? 'info' : 'success'}>{message}{addedTrip && <> <Link to={`/trips/${addedTrip.id}`}>Open {addedTrip.title}</Link></>}</Notice></div>}
       {loading && !result && <><div className="wf-ah"><span className="wf-spark"><Icon name="spark" /></span><p className="wf-muted">Wayfinder is comparing flights, stays and activities…</p></div><div className="wf-plan-options">{[0, 1, 2].map((i) => <div key={i} className="wf-shimmer" />)}</div></>}
       {result && <section aria-label="Plan comparison">
         <div className="wf-ah"><span className="wf-spark"><Icon name="spark" /></span><div>
-          <b>I found {result.options.length} plans for {result.preferences.destination}, {dateLabel(result.preferences.startDate, result.preferences.endDate)} · {result.preferences.travelers} traveler.</b>
-          <p className="wf-muted">Sample quotes for {nights} night{nights === 1 ? '' : 's'}, one traveler and the listed parts only.{travelers > 1 ? ` You chose ${travelers} travelers; group pricing is not supported.` : ''} Change what matters to you and Wayfinder re-ranks them.{asked && !/new york|nyc|jfk/i.test(asked) ? ' This demo only has sample candidates for San Francisco → New York, Nov 20–23.' : ''}</p>
+          <b>I found {result.options.length} plans for {result.preferences.destination}, {dateLabel(result.preferences.startDate, result.preferences.endDate)} · {result.preferences.travelers} traveler{result.preferences.travelers === 1 ? '' : 's'}.</b>
+          <p className="wf-muted">Sample quotes for {nights} night{nights === 1 ? '' : 's'}, {result.preferences.travelers === 1 ? 'one traveler' : `${result.preferences.travelers} travelers (group pricing)`} and the listed parts only. Change what matters to you and Wayfinder re-ranks them.</p>
         </div></div>
         <div className="wf-wfbox">
           <div className="wf-wfk"><Icon name="compass" />Wayfinder<span className="wf-label-mono">Compare your options</span></div>
@@ -296,8 +368,8 @@ export function WayfinderPage({ tripId, ctx }: FeaturePageProps) {
           <div><span className="wf-lbl">What matters most</span><div className="wf-seg" role="group" aria-label="What matters most">
             {(['price', 'convenience', 'flexibility'] as const).map((k) => <button key={k} type="button" aria-pressed={preferences.priority === k} onClick={() => change({ priority: k })}>{k[0]!.toUpperCase() + k.slice(1)}</button>)}
           </div></div>
-          <div><span className="wf-lbl">Saturday morning</span><div className="wf-seg" role="group" aria-label="Saturday morning">
-            {([['skyline', 'Skyline walk · $80'], ['free_time', 'Free time']] as const).map(([k, l]) => <button key={k} type="button" aria-pressed={preferences.interest === k} onClick={() => change({ interest: k })}>{l}</button>)}
+          <div><span className="wf-lbl">{shownDest.interest.when}</span><div className="wf-seg" role="group" aria-label={shownDest.interest.when}>
+            {([['skyline', shownDest.interest.label], ['free_time', 'Free time']] as const).map(([k, l]) => <button key={k} type="button" aria-pressed={preferences.interest === k} onClick={() => change({ interest: k })}>{l}</button>)}
           </div></div>
           <p className="wf-why"><Icon name="info" />{result.preferences.priority === 'price' ? 'Ordered by listed cost. A plan with a missing price goes last.' : `Ordered by ${result.preferences.priority}, then by price. Budget checks stay the same.`}</p>
         </div>

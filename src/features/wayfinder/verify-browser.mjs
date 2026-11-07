@@ -169,17 +169,17 @@ try {
     await expect(choose(cards(page).first())).toBeEnabled();
   }
 
-  // Picker limits work; quotes remain one-traveler samples at every group size.
+  // Picker limits work; more travelers re-price the sample quotes as a group (Jiwoo, Nov 7).
   await button(page, '1 traveler').click();
   const travelers = page.getByRole('dialog', { name: 'Travelers', exact: true });
   await expect(button(travelers, 'Fewer adults')).toBeDisabled();
   await expect(button(travelers, 'Fewer children')).toBeDisabled();
   await button(travelers, 'More children').click();
   await button(travelers, 'Done').click();
-  await expect(page.locator('.wf-ah')).toContainText('one traveler');
-  await expect(page.locator('.wf-ah')).toContainText('group pricing is not supported');
+  await expect(page.locator('.wf-ah')).toContainText('2 travelers (group pricing)');
   await expect(page.locator('.wf-ah')).not.toContainText('the final price updates for your group');
-  await expect(cards(page).first()).toContainText('$815');
+  // Saver for two: flights and walk per person, one room, one shuttle: $580 + $380 + $160 + $65.
+  await expect(cards(page).first()).toContainText('$1,185');
   await button(page, '2 travelers').click();
   for (let n = 2; n < 9; n++) await button(travelers, 'More adults').click();
   await expect(button(travelers, 'More adults')).toBeDisabled();
@@ -194,7 +194,8 @@ try {
   // Prompt text cannot silently invent a different destination.
   await page.getByLabel('Describe your trip', { exact: true }).fill('A weekend in Paris');
   await button(page, 'Plan it').click();
-  await expect(page.locator('.wf-ah')).toContainText('only has sample candidates for San Francisco → New York');
+  await expect(page.getByRole('log', { name: 'Conversation with WayFare' })).toContainText('I don’t have sample trips for Paris yet');
+  await expect(page.locator('.wf-ah')).toContainText('plans for New York');
   await expect(cards(page).first()).toContainText('$815');
   const nonstop = cards(page).filter({ has: page.getByRole('heading', { name: 'Nonstop + Midtown hotel', exact: true }) });
   await choose(nonstop).click();
@@ -331,7 +332,7 @@ try {
   expect(policy.reviewState).toBe('needs_review');
   expect(policy.refundTiers).toHaveLength(0);
   expect(errors).toEqual([]);
-  console.log('PASS: r2-final automatic/booked and unbooked startup; route/date/traveler controls; immediate ranking and budget edits; invalid/unknown/over-budget blocking; one-traveler scope; selection/replay/reload and Import navigation; intake validation, editable evidence, duplicate/reload, preserved errors and Unknown money/policy; 1440–320px grids, pickers and narrow notice/source order; no page errors.');
+  console.log('PASS: r2-final automatic/booked and unbooked startup; route/date/traveler controls; immediate ranking and budget edits; invalid/unknown/over-budget blocking; group pricing and unsupported-destination replies; selection/replay/reload and Import navigation; intake validation, editable evidence, duplicate/reload, preserved errors and Unknown money/policy; 1440–320px grids, pickers and narrow notice/source order; no page errors.');
 } finally {
   await browser?.close();
   await server.close();

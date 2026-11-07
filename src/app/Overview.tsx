@@ -188,6 +188,29 @@ function useTick(ms: number) {
   }, [ms]);
 }
 
+/**
+ * "29h 59m 58s", counting down every second. In sample mode the demo clock is fixed (deadline
+ * math stays deterministic), so the display runs from the clock's value in real time and restarts
+ * whenever the clock is set again. Refund amounts still change only when the clock passes a deadline.
+ */
+function Countdown({ now, until }: { now: Instant; until: Instant }) {
+  const [base, setBase] = useState(() => ({ now, at: Date.now() }));
+  const [, tick] = useState(0);
+  if (base.now !== now) setBase({ now, at: Date.now() });
+  useEffect(() => {
+    const id = window.setInterval(() => tick((n) => n + 1), 1000);
+    return () => window.clearInterval(id);
+  }, []);
+  const left = Math.max(0, msUntil(now, until) - (Date.now() - base.at));
+  const h = Math.floor(left / 3_600_000), m = Math.floor((left % 3_600_000) / 60_000), sec = Math.floor((left % 60_000) / 1000);
+  const two = (n: number) => String(n).padStart(2, '0');
+  return (
+    <div className="wf-big wf-num wf-loss wf-countdown" role="timer" aria-label={`${h} hours ${m} minutes left`}>
+      {h}h {two(m)}m <span className="wf-countdown-s">{two(sec)}s</span>
+    </div>
+  );
+}
+
 const NOUN: Record<string, string> = { flight: 'flight', hotel: 'hotel', activity: 'activity', transfer: 'ride', other: 'booking' };
 /** "Thursday 6:00 PM ET" */
 const whenGeneric = (at: Instant, tz: string) =>
@@ -251,9 +274,7 @@ export function OverviewHero({ s, tripId, now }: { s: WorkspaceSnapshot; tripId:
             <span className="wf-label-mono wf-loss">
               <Icon name="clock" className="wf-icon wf-icon-sm" /> Decide within
             </span>
-            <div className="wf-big wf-num wf-loss">
-              {Math.floor(msUntil(now, open.d.at) / 3_600_000)}h {String(Math.floor((msUntil(now, open.d.at) % 3_600_000) / 60_000)).padStart(2, '0')}m
-            </div>
+            <Countdown now={now} until={open.d.at} />
             <p className="wf-muted">
               By {whenGeneric(open.d.at, open.d.displayTimezone)}. After that, the {NOUN[open.booking.kind]} refunds less.
             </p>
@@ -370,7 +391,7 @@ function Passes({ s, bookings, now }: { s: WorkspaceSnapshot; bookings: Booking[
         Your passes <span className="wf-label-mono">Tap one to open it</span>
       </h2>
       <div className="wf-passes">
-        {order.map((b) => {
+        {order.map((b, i) => {
           const cat = CAT[b.kind] ?? CAT.other;
           const open = openId === b.id;
           const [rk, rv] = passMeta(b);
@@ -380,7 +401,7 @@ function Passes({ s, bookings, now }: { s: WorkspaceSnapshot; bookings: Booking[
               key={b.id}
               type="button"
               className={`wf-pass${open ? ' wf-pass-open' : ''}`}
-              style={{ background: cat.color }}
+              style={{ background: cat.color, zIndex: i + 1 }}
               aria-expanded={open}
               onClick={() => setOpenId(open ? null : b.id)}
             >

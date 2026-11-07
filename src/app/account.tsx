@@ -50,7 +50,7 @@ export function AccountProvider({ children, tripTitle, bookingCount, deadlineCou
     setTimeout(
       () => {
         close();
-        if (!user) setUser({ name: 'Sample Traveler', initials: 'ST' });
+        if (!user) setUser({ name: 'Jiwoo Jung', initials: 'JJ' });
         if (kind === 'cal') {
           setCalendarOn(true);
           toast(

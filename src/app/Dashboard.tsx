@@ -53,12 +53,14 @@ export function TripDashboard({ tripId }: { tripId: Id }) {
   const now = clock.now();
 
   const booked = bookings.length > 0;
+  // Group plans carry their size in the plan ID (Wayfinder group pricing: "<plan>-x<travelers>").
+  const travelers = Number(/-x(\d+)$/.exec(plan?.id ?? '')?.[1] ?? 1);
   return (
     <div className="wf-stack-lg">
       <header className="wf-page-header">
         <h1>{trip.title}</h1>
         <p>
-          {trip.origin.name} to {trip.destination.name} · {tripDates(trip.startDate, trip.endDate)} · 1 traveler
+          {trip.origin.name} to {trip.destination.name} · {tripDates(trip.startDate, trip.endDate)} · {travelers} traveler{travelers === 1 ? '' : 's'}
         </p>
       </header>
 

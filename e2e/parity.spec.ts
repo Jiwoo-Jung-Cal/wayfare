@@ -42,7 +42,7 @@ test('sign-in and calendar sync are simulated demo states that say nothing is se
   await expect(dialog).toContainText('no Google account is contacted');
   await expect(dialog.locator('input')).toHaveCount(0);
   await dialog.getByRole('button', { name: 'Continue with Google' }).click();
-  await expect(page.getByRole('button', { name: /Account: Sample Traveler \(demo\)/ })).toBeVisible();
+  await expect(page.getByRole('button', { name: /Account: Jiwoo Jung \(demo\)/ })).toBeVisible();
   await expect(page.getByRole('status').filter({ hasText: 'Signed in' })).toBeVisible();
   await page.goto('/#/trips/trip-demo-nyc/itinerary');
   await page.getByRole('button', { name: 'Connect Google Calendar' }).click();
@@ -50,7 +50,7 @@ test('sign-in and calendar sync are simulated demo states that say nothing is se
   await expect(page.getByRole('button', { name: 'Synced with Google Calendar (demo)' })).toBeVisible();
 });
 
-test('bell lists the cancellation and the next decision; the trip menu offers the reference’s sample trips', async ({ page }) => {
+test('bell lists the cancellation and the next decision; the trip menu lists only this workspace’s trips', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('button', { name: /^Notifications/ }).click();
   const inbox = page.getByRole('region', { name: 'Notifications' });
@@ -60,11 +60,73 @@ test('bell lists the cancellation and the next decision; the trip menu offers th
   await page.keyboard.press('Escape');
 
   await page.getByRole('button', { name: 'Trip: NY Trip' }).click();
-  await page.getByRole('menuitemradio', { name: /Chicago Weekend/ }).click();
+  const menu = page.getByRole('menu', { name: 'Trips' });
+  await expect(menu.getByRole('menuitemradio')).toHaveCount(1);
+  await expect(menu).not.toContainText('Chicago');
+  await expect(menu).not.toContainText('Tokyo');
+});
+
+test('the Plan assistant plans Chicago for two and Tokyo; choosing a plan adds each trip @mobile', async ({ page }) => {
+  await page.goto('/#/trips/trip-demo-nyc/plan');
+  await expect(page.getByRole('region', { name: 'Plan comparison' }).getByRole('article')).toHaveCount(3);
+  await page.getByLabel('Describe your trip').fill('A weekend in Chicago for 2 people under $1,200');
+  await page.keyboard.press('Enter');
+  const log = page.getByRole('log', { name: 'Conversation with WayFare' });
+  await expect(log).toContainText('Here are 3 plans for Chicago, Dec 11 – Dec 13, for 2 travelers');
+  await expect(log).toContainText('No AI model is used');
+  const plans = page.getByRole('region', { name: 'Plan comparison' });
+  await expect(plans).toContainText('I found 3 plans for Chicago');
+  // Group pricing: the cheapest Chicago plan for one is $573; for two it is $836.
+  const first = plans.getByRole('article').first();
+  await expect(first).toContainText('One stop + River North stay · 2 travelers');
+  await expect(first).toContainText('$836');
+  await first.getByRole('button', { name: 'Choose this plan' }).click();
+  await expect(page.getByRole('status').filter({ hasText: 'Added Chicago Weekend to your trips. Plan saved. No reservation was made.' })).toBeVisible();
+
+  await page.getByLabel('Describe your trip').fill('Tokyo in spring, just me, budget $3,000');
+  await page.keyboard.press('Enter');
+  await expect(plans).toContainText('I found 3 plans for Tokyo');
+  await plans.getByRole('article').first().getByRole('button', { name: 'Choose this plan' }).click();
+  await expect(page.getByRole('status').filter({ hasText: 'Added Tokyo in Spring to your trips.' })).toBeVisible();
+
+  await page.getByRole('button', { name: 'Trip: NY Trip' }).click();
+  const menu = page.getByRole('menu', { name: 'Trips' });
+  await expect(menu).toContainText('Chicago Weekend');
+  await expect(menu).toContainText('Dec 11 – 13, 2026 · Plan selected');
+  await expect(menu).toContainText('Tokyo in Spring');
+  await menu.getByRole('menuitemradio', { name: /Chicago Weekend/ }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'Chicago Weekend' })).toBeVisible();
-  await expect(page.getByText('This is a short sample.')).toBeVisible();
-  await page.getByRole('link', { name: 'Back to NY Trip' }).click();
-  await expect(page.getByRole('heading', { level: 1, name: 'NY Trip' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Trip: Chicago Weekend' })).toBeVisible();
+  // Added trips survive a reload.
+  await page.reload();
+  await expect(page.getByRole('heading', { level: 1, name: 'Chicago Weekend' })).toBeVisible();
+});
+
+test('the destination can be typed in the route popover, and travelers re-price the plans', async ({ page }) => {
+  await page.goto('/#/trips/trip-demo-nyc/plan');
+  await expect(page.getByRole('region', { name: 'Plan comparison' }).getByRole('article')).toHaveCount(3);
+  await page.getByRole('button', { name: /^Route:/ }).click();
+  const dest = page.getByLabel('Destination');
+  await dest.fill('');
+  await dest.pressSequentially('Tokyo');
+  await expect(dest).toHaveValue('Tokyo');
+  await page.getByRole('dialog', { name: 'Route' }).getByRole('button', { name: 'Done' }).click();
+  const plans = page.getByRole('region', { name: 'Plan comparison' });
+  await expect(plans).toContainText('I found 3 plans for Tokyo, Mar 27 – Apr 3 · 1 traveler.');
+  await page.getByRole('button', { name: /1 traveler/ }).click();
+  await page.getByRole('button', { name: 'More adults' }).click();
+  await page.getByRole('button', { name: 'More adults' }).click();
+  await page.getByRole('dialog', { name: 'Travelers' }).getByRole('button', { name: 'Done' }).click();
+  await expect(plans).toContainText('3 travelers (group pricing)');
+});
+
+test('the decision countdown ticks every second on the Overview', async ({ page }) => {
+  await page.goto('/');
+  const timer = page.getByRole('timer');
+  await expect(timer).toContainText(/^30h 00m 00s|^29h 59m \d\ds/);
+  const first = await timer.innerText();
+  await expect.poll(() => timer.innerText(), { timeout: 4000 }).not.toBe(first);
+  await expect(timer).toContainText(/29h 59m \d\ds/);
 });
 
 test('a browser that kept an empty workspace from an earlier visit also opens on the reference scenario, once', async ({ page }) => {
