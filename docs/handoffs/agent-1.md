@@ -4,6 +4,23 @@ Status (2026-11-04): the demo implements design **r2-final** and matches the App
 Task Issue: https://github.com/Jiwoo-Jung-Cal/wayfare/issues/3 (foundation, closed). Integration is tracked on #8.
 Work goes on short-lived `agent-1/<slug>` branches cut from main.
 
+## 2026-11-07: demo feedback from Jiwoo (Vercel review)
+
+Jiwoo reviewed the Vercel deployment (https://wayfare-henna.vercel.app) and asked for the following. Their status:
+- **Overview countdown:** ticks every second from the demo clock's value. The demo clock itself stays fixed, so deadline amounts are unchanged.
+- **Your passes:** overlap as in the r2 prototype (64 px peek, later passes on top, hover lift).
+- **NY plan cards:** use Jiwoo's stock photos (`design/exports/prototype/r2/photos/`).
+- **Icons:** Phosphor (`@phosphor-icons/react` 2.1.10, MIT) behind the existing `Icon` names.
+- **Demo sign-in:** shows Jiwoo Jung / JJ. No Google account is contacted.
+- **ReRoute chart:** deadline labels are placed beside their dotted line and clear of neighbouring lines and labels (`placeMarks`, with tests).
+- **Plan (Agent 2's feature, at Jiwoo's direction):**
+  - The route popover's destination field can be typed. A focus effect had re-run on every render.
+  - The composer is a scripted demo assistant (`assistant.ts`, no AI model). It reads destination, group size, budget and priority.
+  - Group pricing for 1–9 travellers: flights and tickets per person, one room per two, one car per four.
+  - Chicago and Tokyo are sample destinations (`catalog.ts`). Choosing one of their plans creates that trip in the workspace.
+  - The static Chicago/Tokyo sample pages are removed. The trip menu lists only workspace trips, with each trip's own status, and the shell follows the trip in the URL.
+- **Not done:** a live Claude chatbot. It needs a server key and a hosted backend, and a key must never be in the browser build.
+
 ## 2026-11-04: r2-final design implementation and parity
 
 Merged (each green in CI and locally: typecheck, `npm test` 174, build, `CI=1 npx playwright test` 29):

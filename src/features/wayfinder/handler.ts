@@ -1,10 +1,11 @@
 // Feature-owned planning handler. Safe to call on the server; no model or browser dependencies.
 import { z } from 'zod';
 import {
-  DEMO_TRIP_ID, PlanOptionSchema, demoPlans, demoTrip, err, fromZodError,
+  PlanOptionSchema, err, fromZodError,
   isUnknown, ok, parseMajorUnits, sum, sumMaybe, unknownValue,
   type DemoContext, type MaybeMoney, type Money, type PlanOption, type Result,
 } from '../../core/index.ts';
+import { DESTINATIONS, catalogPlans, groupQuantity, type DestinationKey } from './catalog.ts';
 
 const date = z.string().regex(/^\d{4}-\d{2}-\d{2}$/).refine((s) => {
   const d = new Date(`${s}T00:00:00Z`);
@@ -16,7 +17,7 @@ export const PreferencesSchema = z.strictObject({
   origin: z.string().trim().min(1), destination: z.string().trim().min(1),
   startDate: date, endDate: date,
   budget: z.string().regex(/^\d+(?:\.\d{1,2})?$/, 'Enter a positive USD amount with at most two decimal places'),
-  currency: z.literal('USD'), travelers: z.literal(1),
+  currency: z.literal('USD'), travelers: z.number().int().min(1, 'At least one traveler').max(9, 'Up to nine travelers'),
   interest: z.enum(['skyline', 'free_time']),
   priority: z.enum(['price', 'convenience', 'flexibility']),
 }).superRefine((p, ctx) => {
@@ -29,20 +30,21 @@ export type Preferences = z.infer<typeof PreferencesSchema>;
 export function budgetForDisplay(text: string): MaybeMoney {
   return parseMajorUnits(text, 'USD') ?? unknownValue('Budget could not be read as a USD amount');
 }
-export const SAMPLE_SCOPE = 'Sample only: San Francisco (SFO) to New York (JFK), November 20–23, 2026, one traveler, USD.';
+export const SAMPLE_SCOPE = 'Sample only: from San Francisco (SFO) to New York (Nov 20–23), Chicago (Dec 11–13) or Tokyo (Mar 27–Apr 3), 1–9 travelers, USD.';
 
-export function defaultPreferences(ctx: DemoContext): Preferences {
-  const trip = demoTrip(ctx);
-  return { origin: trip.origin.name, destination: trip.destination.name, startDate: trip.startDate, endDate: trip.endDate,
-    budget: '1000', currency: 'USD', travelers: 1, interest: 'skyline', priority: 'price' };
+export function defaultPreferences(ctx: DemoContext, key: DestinationKey = 'nyc'): Preferences {
+  void ctx;
+  const d = DESTINATIONS[key];
+  return { origin: 'San Francisco', destination: d.name, startDate: d.startDate, endDate: d.endDate,
+    budget: d.defaultBudget, currency: 'USD', travelers: 1, interest: 'skyline', priority: 'price' };
 }
 
 export type CandidateProvider = {
   capability: 'simulated';
-  candidates(ctx: DemoContext): Promise<Result<PlanOption[]>>;
+  candidates(ctx: DemoContext, destination?: DestinationKey): Promise<Result<PlanOption[]>>;
 };
 export const sampleProvider: CandidateProvider = {
-  capability: 'simulated', candidates: async (ctx) => ok(demoPlans(ctx)),
+  capability: 'simulated', candidates: async (ctx, destination = 'nyc') => ok(catalogPlans(destination, ctx)),
 };
 export type ComparedPlan = {
   plan: PlanOption; knownSubtotal: Money; budgetStatus: 'within' | 'over' | 'unknown'; explanation: string;
@@ -66,19 +68,20 @@ export async function generatePlans(input: unknown, ctx: DemoContext & { tripId:
   const parsed = PreferencesSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: fromZodError(parsed.error, 'Check your trip preferences') };
   const p = parsed.data;
-  const trip = demoTrip(ctx);
-  const origin = p.origin.toLowerCase(), destination = p.destination.toLowerCase();
-  if (ctx.tripId !== DEMO_TRIP_ID || !['san francisco', 'sfo'].includes(origin) || !['new york', 'nyc', 'jfk'].includes(destination)
-    || p.startDate !== trip.startDate || p.endDate !== trip.endDate) {
+  const origin = p.origin.trim().toLowerCase();
+  const wanted = p.destination.trim().toLowerCase();
+  const dest = Object.values(DESTINATIONS).find((d) => d.name.toLowerCase() === wanted || d.aliases.includes(wanted));
+  if (!dest || ctx.tripId !== dest.tripId || !['san francisco', 'sfo'].includes(origin)
+    || p.startDate !== dest.startDate || p.endDate !== dest.endDate) {
     return err('unsupported', `No sample candidates match these inputs. ${SAMPLE_SCOPE}`);
   }
   let candidates: Result<PlanOption[]>;
-  try { candidates = await provider.candidates(ctx); }
+  try { candidates = await provider.candidates(ctx, dest.key); }
   catch { return err('provider_error', 'Planning provider failed; your previous results are still available'); }
   if (!candidates.ok) return candidates;
   // Only the canonical candidate set is permitted in this sample handler.
   // No adapter/model may invent an ID, price, source, or workspace.
-  const allowed = demoPlans(ctx);
+  const allowed = catalogPlans(dest.key, ctx);
   const received = candidates.value;
   if (received.length !== allowed.length || new Set(received.map((c) => c.id)).size !== allowed.length
     || received.some((c) => !PlanOptionSchema.safeParse(c).success || !allowed.some((a) => JSON.stringify(a) === JSON.stringify(c)))) {
@@ -93,6 +96,7 @@ export async function generatePlans(input: unknown, ctx: DemoContext & { tripId:
       lineItems: candidate.lineItems.filter((i) => i.kind !== 'activity'),
       assumptions: [...candidate.assumptions, 'No paid activity selected; free time has no booked service.'],
     } : candidate;
+    if (p.travelers > 1) Object.assign(plan, groupPriced(plan, p.travelers));
     const costs = costBreakdown(plan);
     if (!costs.ok) return costs;
     plan.total = costs.value.total;
@@ -111,6 +115,19 @@ export async function generatePlans(input: unknown, ctx: DemoContext & { tripId:
     return isUnknown(x) ? isUnknown(y) ? a.plan.id.localeCompare(b.plan.id) : 1 : isUnknown(y) ? -1 : x.amountMinor - y.amountMinor;
   });
   return ok({ preferences: p, options, capability: 'simulated' });
+}
+
+/** The same plan priced for a group (catalog.groupQuantity); a distinct, stable plan ID per group size. */
+function groupPriced(plan: PlanOption, travelers: number): PlanOption {
+  const lineItems = plan.lineItems.map((i) => {
+    const q = groupQuantity(i.kind, travelers);
+    const unit = i.kind === 'hotel' ? 'room' : i.kind === 'transfer' ? 'vehicle' : 'traveler';
+    return { ...i, id: `${i.id}-x${travelers}`,
+      description: q > 1 ? `${i.description} · ${q} ${unit}s` : i.description,
+      price: isUnknown(i.price) ? i.price : { ...i.price, amountMinor: i.price.amountMinor * q } };
+  });
+  return { ...plan, id: `${plan.id}-x${travelers}`, label: `${plan.label} · ${travelers} travelers`, lineItems,
+    assumptions: [...plan.assumptions, `Group pricing for ${travelers} travelers: flights and tickets per person, one room per two, one car per four.`] };
 }
 
 /** Invalidating also cancels the right to commit a response; the provider need not support abort. */

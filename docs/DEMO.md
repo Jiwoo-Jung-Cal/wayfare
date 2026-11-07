@@ -6,13 +6,13 @@ What is real and what is simulated:
 
 | Part | Status in this demo |
 | --- | --- |
-| Data | **Sample.** A fictional San Francisco → New York trip, "NY Trip" (Nov 20–23, 2026), one traveler, USD. It's stored only in this browser. The page footer says so on every screen. |
+| Data | **Sample.** A fictional San Francisco → New York trip, "NY Trip" (Nov 20–23, 2026), USD. Plan can add sample Chicago (Dec 11–13) and Tokyo (Mar 27–Apr 3, 2027) trips and prices plans for 1–9 travelers (group pricing). Everything is stored only in this browser. The page footer says so on every screen. |
 | Booking extraction | **Simulated.** It recognizes the bundled sample confirmations only ("AI extraction is simulated" in the footer). Other pasted text returns "Live AI extraction is not configured". Live AI has never been run. |
 | Disruption, cancellations, refunds | **Simulated.** No provider is contacted and no money moves ("every provider action is simulated"). |
-| Ask WayFare | **Scripted demo replies** written from this trip's stored data and ReRoute's comparison. No AI model is used, and the panel says so. |
-| Google sign-in / Calendar sync | **Designed demo states.** The dialog has no credential fields and states that no Google account is contacted. "Add to Google Calendar" in the Itinerary is Google's public template link. |
-| Clock | **Demo clock** (shown in the footer; set it under **Demo controls**), so deadlines can be shown exactly. |
-| Visual design | **r2-final** (Jiwoo, 2026-11-03), matching `design/exports/prototype/r2/index.html`. Plan cards use the reference's illustrations because the photo licence is not confirmed. |
+| Ask WayFare and the Plan composer | **Scripted demo replies.** Ask WayFare answers from this trip's stored data and ReRoute's comparison. The Plan composer reads the destination, group size, budget and priority from your message with simple rules. No AI model is used, and both say so. |
+| Google sign-in / Calendar sync | **Designed demo states.** The dialog has no credential fields and states that no Google account is contacted; the demo account shows as Jiwoo Jung (JJ). "Add to Google Calendar" in the Itinerary is Google's public template link. |
+| Clock | **Demo clock** (shown in the footer; set it under **Demo controls**), so deadlines can be shown exactly. The Overview countdown runs in real time from the demo clock's value; refund amounts change only when the demo clock passes a deadline. |
+| Visual design | **r2-final** (Jiwoo, 2026-11-03), matching `design/exports/prototype/r2/index.html`. New York plan cards use the stock photos Jiwoo supplied (`design/exports/prototype/r2/photos/`); Chicago and Tokyo plans use the reference illustrations. Icons are Phosphor (MIT). |
 
 The demo journey in this guide is automated in `e2e/demo.spec.ts`. That test runs it against the production build served under `/wayfare/`, so the steps below are checked on every CI run.
 

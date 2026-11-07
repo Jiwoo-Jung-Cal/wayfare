@@ -564,16 +564,13 @@ blockquote {
   }
 }
 
-/* Icons: 24 px grid, 1.6 stroke, round caps (r2 Foundations 55:39). */
+/* Icons: Phosphor regular weight (filled glyphs on a 256 grid). */
 .wf-icon {
   width: 20px;
   height: 20px;
   flex: none;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 1.6;
-  stroke-linecap: round;
-  stroke-linejoin: round;
+  fill: currentColor;
+  stroke: none;
 }
 
 /* Colour mode toggle (56:72) */

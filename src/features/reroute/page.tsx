@@ -32,6 +32,37 @@ function lineLabel(data: Comparison, bookingId: string) {
   return b.title.replace(/^Lower Manhattan /, '');
 }
 
+/**
+ * Deadline labels sit beside their dotted line, never across it or across a neighbour's line or
+ * label: right of the line when there is room, otherwise left, otherwise one row lower.
+ */
+type MarkIn = { key: string; x: number; y: number; text: string };
+export function placeMarks(marks: MarkIn[], minX: number, maxX: number) {
+  const GAP = 6, ROW = 16, CHAR = 6.4; // 600 11px Figtree is about 6.4 px per character
+  const lines = marks.map((m) => m.x);
+  const boxes: { l: number; r: number; y: number }[] = [];
+  const clear = (l: number, r: number, y: number) =>
+    l >= minX - 50 && r <= maxX + 14
+    && lines.every((x) => x < l - 2 || x > r + 2)
+    && boxes.every((b) => Math.abs(b.y - y) >= 14 || b.r + 4 < l || r + 4 < b.l);
+  return marks.map((m) => {
+    const w = m.text.length * CHAR;
+    for (let row = 0; row < 4; row++) {
+      const y = m.y + row * ROW;
+      const right = { l: m.x + GAP, r: m.x + GAP + w };
+      const left = { l: m.x - GAP - w, r: m.x - GAP };
+      for (const [side, b] of [['start', right], ['end', left]] as const) {
+        if (clear(b.l, b.r, y)) {
+          boxes.push({ ...b, y });
+          return { ...m, lineX: m.x, textX: side === 'start' ? b.l : b.r, y, anchor: side };
+        }
+      }
+    }
+    boxes.push({ l: m.x + GAP, r: m.x + GAP + w, y: m.y });
+    return { ...m, lineX: m.x, textX: m.x + GAP, y: m.y, anchor: 'start' as const };
+  });
+}
+
 /** Money back if you cancel at time t, from ReRoute's comparison (piecewise constant between deadlines). */
 export function MoneyChart({ data, now, tz }: { data: Comparison; now: Instant; tz: string }) {
   const H = 72;
@@ -104,20 +135,16 @@ export function MoneyChart({ data, now, tz }: { data: Comparison; now: Instant; 
         </text>
         <path d={`${path} V${Y(0)} H${X(0)}Z`} fill="url(#wf-rr-ga)" />
         <path d={path} fill="none" className="wf-rr-line" strokeWidth="2.5" strokeLinejoin="round" />
-        {series.marks.map((m, i) => {
-          const x = X(m.h);
+        {placeMarks(series.marks.map((m) => {
           const drop = (minor(m.d.before) ?? 0) - (minor(m.d.after) ?? 0);
-          const y = Y(valueAt(m.h + 0.001));
           const name = m.d.booking.kind === 'hotel' ? 'Hotel' : m.d.booking.kind === 'transfer' ? 'Ride' : m.d.booking.kind === 'activity' ? 'Walk' : 'Flight';
-          return (
-            <g key={`${m.d.booking.id}-${m.d.at}`}>
-              <line x1={x} x2={x} y1={Y(top) + 4} y2={Y1} className="wf-rr-dl" strokeDasharray="3 4" />
-              <text x={x + (i === 1 ? -6 : i === 2 ? 6 : 0)} y={y + 18 + (i === 2 ? 16 : 0)} textAnchor={i === 1 ? 'end' : i === 2 ? 'start' : 'middle'} className="wf-rr-mark">
-                {name} −{m0(drop)}
-              </text>
-            </g>
-          );
-        })}
+          return { key: `${m.d.booking.id}-${m.d.at}`, x: X(m.h), y: Y(valueAt(m.h + 0.001)) + 18, text: `${name} −${m0(drop)}` };
+        }), X0, X1).map((l) => (
+          <g key={l.key}>
+            <line x1={l.lineX} x2={l.lineX} y1={Y(top) + 4} y2={Y1} className="wf-rr-dl" strokeDasharray="3 4" />
+            <text x={l.textX} y={l.y} textAnchor={l.anchor} className="wf-rr-mark">{l.text}</text>
+          </g>
+        ))}
         {hover && (
           <g>
             <line x1={X(hover.h)} x2={X(hover.h)} y1={Y(top)} y2={Y1} className="wf-rr-cross" />

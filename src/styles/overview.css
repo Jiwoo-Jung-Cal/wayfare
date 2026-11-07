@@ -353,12 +353,16 @@
 .wf-passes {
   display: flex;
   flex-direction: column;
+  padding-top: 18px; /* room for the hover lift of the first pass */
+  margin-top: -18px;
 }
+/* Reference stack (prototype r2 renderWallet): passes overlap and peek 64 px apart; later passes sit
+   on top. A closed pass keeps an 18 px tail in its own colour that the next pass covers. */
 .wf-pass {
+  position: relative;
   display: flex;
   flex-direction: column;
   width: 100%;
-  margin-top: 2px; /* reference: closed passes peek 64 px apart */
   padding: 0;
   overflow: hidden;
   border: 0;
@@ -367,11 +371,14 @@
   font: inherit;
   text-align: left;
   cursor: pointer;
-  box-shadow: 0 1px 0 rgb(255 255 255 / 0.18) inset, 0 4px 12px rgb(0 0 0 / 0.14);
+  box-shadow: 0 1px 0 rgb(255 255 255 / 0.18) inset, 0 -2px 10px rgb(0 0 0 / 0.12), 0 4px 12px rgb(0 0 0 / 0.14);
   transition: transform 0.45s cubic-bezier(0.2, 0.9, 0.25, 1.2), box-shadow 0.3s;
 }
-.wf-pass:first-child {
-  margin-top: 0;
+.wf-pass:not(.wf-pass-open):not(:last-child) {
+  padding-bottom: 18px;
+}
+.wf-pass + .wf-pass {
+  margin-top: -16px;
 }
 .wf-pass-open + .wf-pass {
   margin-top: 12px;

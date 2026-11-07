@@ -47,7 +47,7 @@ describe('sample planning behavior', () => {
   it.each([
     { startDate: '2026-11-24' }, { startDate: '2026-02-30' }, { endDate: '2026-11-20' },
     { budget: '0' }, { budget: '-1' }, { budget: '10.001' }, { budget: 'USD 900' },
-    { budget: '9999999999999999999999' }, { currency: 'EUR' }, { travelers: 2 }, { priority: 'anything' },
+    { budget: '9999999999999999999999' }, { currency: 'EUR' }, { travelers: 0 }, { travelers: 10 }, { travelers: 1.5 }, { priority: 'anything' },
   ])('rejects invalid input %j', async (change) => {
     expect((await generatePlans({ ...defaults(), ...change }, context)).ok).toBe(false);
   });
@@ -55,6 +55,31 @@ describe('sample planning behavior', () => {
   it.each([{ destination: 'Paris' }, { origin: 'LAX' }, { startDate: '2026-11-19' }, { endDate: '2026-11-24' }])('rejects unsupported inputs instead of silently returning NYC: %j', async (change) => {
     const result = await generatePlans({ ...defaults(), ...change }, context);
     expect(!result.ok && result.error.code).toBe('unsupported');
+  });
+
+  it('prices a group: flights and tickets per traveler, one room per two, one car per four; unknown stays unknown', async () => {
+    const result = unwrap(await generate({ ...defaults(), travelers: 3, budget: '5000' }));
+    const saver = result.options.find((o) => o.plan.id === `${DEMO_IDS.plans.saver}-x3`)!.plan;
+    // Saver for one: flight $290, hotel $380, walk $80, shuttle $65 = $815.
+    expect(saver.lineItems.map((i) => [i.kind, (i.price as { amountMinor: number }).amountMinor / 100])).toEqual([['flight', 870], ['hotel', 760], ['activity', 240], ['transfer', 65]]);
+    expect(saver.total).toEqual(usd(1935));
+    expect(saver.label).toBe('Red-eye + Brooklyn hotel · 3 travelers');
+    const flex = result.options.find((o) => o.plan.id === `${DEMO_IDS.plans.flex}-x3`)!;
+    expect(isUnknown(flex.plan.total)).toBe(true);
+    expect(flex.budgetStatus).toBe('unknown');
+    // One traveler keeps the canonical IDs and prices.
+    expect(unwrap(await generate()).options[0]!.plan.id).toBe(DEMO_IDS.plans.saver);
+  });
+
+  it('plans Chicago and Tokyo on their own sample trips and dates, and refuses them on the NY trip', async () => {
+    const chi = { workspaceId: context.workspaceId, tripId: 'trip-demo-chi', now: context.now };
+    const result = unwrap(await generatePlans(defaultPreferences(chi, 'chi'), chi));
+    expect(result.options.map((o) => o.plan.label)).toEqual(['One stop + River North stay', 'Nonstop + Loop hotel', 'Refundable fare + flexible hotel']);
+    expect(result.options.every((o) => o.plan.tripId === 'trip-demo-chi')).toBe(true);
+    const tyo = { workspaceId: context.workspaceId, tripId: 'trip-demo-tyo', now: context.now };
+    expect(unwrap(await generatePlans({ ...defaultPreferences(tyo, 'tyo'), travelers: 2 }, tyo)).options[0]!.plan.total).toEqual(usd(3215));
+    const wrongTrip = await generatePlans(defaultPreferences(chi, 'chi'), context);
+    expect(!wrongTrip.ok && wrongTrip.error.code).toBe('unsupported');
   });
 
   it('checks every currency even when another line is unknown', () => {

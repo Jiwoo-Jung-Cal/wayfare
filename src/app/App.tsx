@@ -11,7 +11,6 @@ import { DemoControls } from './DemoControls.tsx';
 import { BottomTabs, TopBar, type ShellAlert } from './TopBar.tsx';
 import { AccountProvider } from './account.tsx';
 import { AskWayFare } from './AskWayFare.tsx';
-import { SampleTrip } from './SampleTrip.tsx';
 import { ToastProvider } from './toasts.tsx';
 import { tripFacts, wholeMoney } from './tripFacts.ts';
 import { ClaimSyncNotice } from './ClaimSyncNotice.tsx';
@@ -41,11 +40,12 @@ function Layout() {
   const { load, repo, extraction, refresh, clock } = useAppServices();
   const { pathname } = useLocation();
   const trips = load.status === 'ready' ? load.snapshot.trips : [];
-  const tripId = trips[0]?.id ?? null;
-  const sampleKey = /^\/samples\/(\w+)/.exec(pathname)?.[1] ?? null;
+  // The current trip is the one in the URL; otherwise the sample NY trip (or the first trip).
+  const urlTrip = /^\/trips\/([^/]+)/.exec(pathname)?.[1];
+  const tripId = (urlTrip && trips.some((t) => t.id === urlTrip) ? urlTrip : null) ?? trips.find((t) => t.id === DEMO_TRIP_ID)?.id ?? trips[0]?.id ?? null;
   const now = clock.now();
   const facts = load.status === 'ready' && tripId ? tripFacts(load.snapshot, tripId, now) : null;
-  const trip = trips[0];
+  const trip = trips.find((t) => t.id === tripId);
   const alerts: ShellAlert[] = [];
   if (facts?.disrupted) {
     const d = facts.disrupted;
@@ -67,16 +67,21 @@ function Layout() {
         to: `/trips/${tripId}/reroute`,
       });
   }
-  const status = !facts?.disrupted ? (facts?.bookings.length ? 'Booked' : 'Planning') : facts.approved ? 'Refunds in progress' : 'Needs attention';
+  const statusOf = (id: string) => {
+    if (load.status !== 'ready') return '';
+    const f = tripFacts(load.snapshot, id, now);
+    const t = load.snapshot.trips.find((x) => x.id === id);
+    return !f.disrupted ? (f.bookings.length ? 'Booked' : t?.selectedPlanId ? 'Plan selected' : 'Planning') : f.approved ? 'Refunds in progress' : 'Needs attention';
+  };
   const deadlineCount = load.status === 'ready' ? load.snapshot.policies.filter((p) => p.tripId === tripId).reduce((n, p) => n + p.deadlines.length, 0) : 0;
   const sample = repo.capabilities.mode === 'sample';
   return (
     <AccountProvider tripTitle={trip?.title ?? 'your trip'} bookingCount={facts?.bookings.length ?? 0} deadlineCount={deadlineCount}>
-      <div className="wf-shell" data-sample-trip={sampleKey ? 'true' : undefined}>
+      <div className="wf-shell">
         <a href="#wf-content" className="wf-visually-hidden">
           Skip to content
         </a>
-        <TopBar trips={trips} tripId={tripId} alerts={alerts} status={status} sampleKey={sampleKey} />
+        <TopBar trips={trips} tripId={tripId} alerts={alerts} statusOf={statusOf} />
         <main id="wf-content" className="wf-main">
           {load.status === 'loading' && <LoadingState label="Loading your workspace…" />}
           {load.status === 'error' && (
@@ -182,7 +187,6 @@ const router = createHashRouter([
       { index: true, element: <Home /> },
       { path: 'trips/:tripId', element: <TripHome /> },
       { path: 'trips/:tripId/itinerary', element: <ItineraryRoute /> },
-      { path: 'samples/:key', element: <SampleTrip /> },
       ...ROUTE_TABLE.map((r) => ({ path: `trips/:tripId/${r.path}`, element: <FeatureRoute path={r.path} /> })),
       { path: '*', element: <Navigate to="/" replace /> },
     ],

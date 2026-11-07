@@ -67,6 +67,7 @@
 @keyframes wf-fadein { from { opacity: 0; transform: translateY(6px); } }
 .wf-ph { position: relative; display: grid; place-items: center; aspect-ratio: 3 / 2; overflow: hidden; border-radius: 12px; background: linear-gradient(135deg, var(--wf-color-surface-muted), var(--wf-color-border-soft)); }
 .wf-ph > span:first-child, .wf-ph .wf-art { position: absolute; inset: 0; width: 100%; height: 100%; }
+.wf-ph .wf-photo { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 .wf-ph-badge { position: absolute; top: 12px; left: 12px; z-index: 1; }
 .wf-pcard[data-selected] .wf-ph { outline: 2px solid var(--wf-color-accent); outline-offset: 3px; }
 .wf-rank { color: var(--wf-color-text-faint); font-family: var(--wf-font-mono); font-size: 0.7rem; letter-spacing: 0.08em; }
@@ -121,3 +122,12 @@
   .wf-cmp-t { font-size: 0.85rem; }
   .wf-cmp-t th, .wf-cmp-t td { padding: 9px 8px; }
 }
+
+/* Composer conversation (demo assistant) */
+.wf-thread { display: flex; flex-direction: column; gap: 10px; width: min(720px, 100%); margin: 14px auto 0; text-align: left; }
+.wf-msg { display: flex; gap: 10px; align-items: flex-start; }
+.wf-msg p { margin: 0; padding: 10px 14px; border-radius: 14px; line-height: 1.45; font-size: 0.95rem; }
+.wf-msg[data-from='you'] { justify-content: flex-end; }
+.wf-msg[data-from='you'] p { max-width: 80%; background: var(--wf-color-text); color: var(--wf-color-bg); border-bottom-right-radius: 4px; }
+.wf-msg[data-from='wayfare'] p { max-width: 88%; background: var(--wf-color-surface); border: 1px solid var(--wf-color-border-soft); border-bottom-left-radius: 4px; }
+.wf-thread-note { margin: 0; color: var(--wf-color-text-muted); font-size: 0.78rem; text-align: center; }

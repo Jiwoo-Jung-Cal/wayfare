@@ -29,11 +29,8 @@ export function shellTabs(tripId: string | null): ShellTab[] {
 /** Trip name for the trip button ("NY Trip"). */
 export const tripShortName = (trip: Trip) => trip.title;
 
-/** The reference page's short sample trips (design r2-final trip menu); see SampleTrip.tsx. */
-export const SAMPLE_TRIPS = [
-  { key: 'chi', name: 'Chicago Weekend', sub: 'Aug 14 – 16, 2026 · Completed', dot: 'var(--wf-color-cat-ride)' },
-  { key: 'tyo', name: 'Tokyo in Spring', sub: 'Mar 27 – Apr 3, 2027 · Draft', dot: 'var(--wf-color-cat-stay)' },
-] as const;
+/** Trip colour dot: the sample NY trip keeps the accent; added trips get their own colour. */
+const tripDot = (id: string) => (id === 'trip-demo-chi' ? 'var(--wf-color-cat-ride)' : id === 'trip-demo-tyo' ? 'var(--wf-color-cat-stay)' : undefined);
 
 const shortRange = (a: string, b: string) => {
   const f = (d: string, o: Intl.DateTimeFormatOptions) => new Intl.DateTimeFormat('en-US', { timeZone: 'UTC', ...o }).format(new Date(`${d}T12:00:00Z`));
@@ -52,14 +49,13 @@ function useScrolled(threshold = 12) {
   return scrolled;
 }
 
-function TripMenu({ trips, currentId, status, sampleKey }: { trips: Trip[]; currentId: string | null; status: string; sampleKey: string | null }) {
+function TripMenu({ trips, currentId, statusOf }: { trips: Trip[]; currentId: string | null; statusOf: (tripId: string) => string }) {
   const [open, setOpen] = useState(false);
   const menuId = useId();
   const buttonRef = useRef<HTMLButtonElement>(null);
   const itemsRef = useRef<HTMLElement[]>([]);
   const navigate = useNavigate();
   const current = trips.find((t) => t.id === currentId) ?? trips[0];
-  const sample = SAMPLE_TRIPS.find((x) => x.key === sampleKey);
 
   useEffect(() => {
     if (!open) return;
@@ -90,11 +86,11 @@ function TripMenu({ trips, currentId, status, sampleKey }: { trips: Trip[]; curr
         aria-haspopup="menu"
         aria-expanded={open}
         aria-controls={menuId}
-        aria-label={`Trip: ${sample ? sample.name : tripShortName(current)}`}
+        aria-label={`Trip: ${tripShortName(current)}`}
         onClick={() => setOpen((v) => !v)}
       >
-        <span className="wf-trip-dot" aria-hidden="true" style={sample ? { background: sample.dot } : undefined} />
-        <span className="wf-trip-name">{sample ? sample.name : tripShortName(current)}</span>
+        <span className="wf-trip-dot" aria-hidden="true" style={{ background: tripDot(current.id) }} />
+        <span className="wf-trip-name">{tripShortName(current)}</span>
         <Icon name="chev" className="wf-icon wf-trip-chev" />
       </button>
       {open && (
@@ -106,39 +102,22 @@ function TripMenu({ trips, currentId, status, sampleKey }: { trips: Trip[]; curr
               ref={(el) => { if (el) itemsRef.current[i] = el; }}
               type="button"
               role="menuitemradio"
-              aria-checked={!sample && t.id === current.id}
+              aria-checked={t.id === current.id}
               onClick={() => go(`/trips/${t.id}`)}
             >
-              <span className="wf-trip-dot" aria-hidden="true" />
+              <span className="wf-trip-dot" aria-hidden="true" style={{ background: tripDot(t.id) }} />
               <span>
                 <b>{tripShortName(t)}</b>
                 <small>
-                  {shortRange(t.startDate, t.endDate)} · {status}
+                  {shortRange(t.startDate, t.endDate)} · {statusOf(t.id)}
                 </small>
               </span>
-              {!sample && t.id === current.id ? <Icon name="check" className="wf-icon wf-tmenu-ck" /> : <span />}
-            </button>
-          ))}
-          {SAMPLE_TRIPS.map((x, i) => (
-            <button
-              key={x.key}
-              ref={(el) => { if (el) itemsRef.current[trips.length + i] = el; }}
-              type="button"
-              role="menuitemradio"
-              aria-checked={sampleKey === x.key}
-              onClick={() => go(`/samples/${x.key}`)}
-            >
-              <span className="wf-trip-dot" aria-hidden="true" style={{ background: x.dot }} />
-              <span>
-                <b>{x.name}</b>
-                <small>{x.sub}</small>
-              </span>
-              {sampleKey === x.key ? <Icon name="check" className="wf-icon wf-tmenu-ck" /> : <span />}
+              {t.id === current.id ? <Icon name="check" className="wf-icon wf-tmenu-ck" /> : <span />}
             </button>
           ))}
           <hr />
           <button
-            ref={(el) => { if (el) itemsRef.current[trips.length + SAMPLE_TRIPS.length] = el; }}
+            ref={(el) => { if (el) itemsRef.current[trips.length] = el; }}
             type="button"
             role="menuitem"
             className="wf-tmenu-new"
@@ -225,7 +204,7 @@ function Bell({ alerts }: { alerts: ShellAlert[] }) {
   );
 }
 
-export function TopBar({ trips, tripId, alerts, status, sampleKey }: { trips: Trip[]; tripId: string | null; alerts: ShellAlert[]; status: string; sampleKey: string | null }) {
+export function TopBar({ trips, tripId, alerts, statusOf }: { trips: Trip[]; tripId: string | null; alerts: ShellAlert[]; statusOf: (tripId: string) => string }) {
   const scrolled = useScrolled();
   const tabs = shellTabs(tripId);
   return (
@@ -236,7 +215,7 @@ export function TopBar({ trips, tripId, alerts, status, sampleKey }: { trips: Tr
             <LogoMark />
             <span>WayFare</span>
           </Link>
-          <TripMenu trips={trips} currentId={tripId} status={status} sampleKey={sampleKey} />
+          <TripMenu trips={trips} currentId={tripId} statusOf={statusOf} />
         </div>
         <nav className="wf-tabs" aria-label="Main">
           {tabs.map((t) => (
