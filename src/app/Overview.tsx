@@ -18,7 +18,7 @@ import {
   type PolicyEvidence,
   type WorkspaceSnapshot,
 } from '../core/index.ts';
-import { Icon, type IconName } from '../ui/icons.tsx';
+import { Icon, PlaneGlyph, type IconName } from '../ui/icons.tsx';
 import { MoneyText } from '../ui/index.tsx';
 import { tripFacts } from './tripFacts.ts';
 
@@ -123,7 +123,7 @@ export function BoardingPass({ s, flight, now }: { s?: WorkspaceSnapshot; flight
               </span>
             )}
             <span className="wf-bp-fly" aria-hidden="true">
-              <Icon name="plane" />
+              <PlaneGlyph />
             </span>
           </div>
           <div style={{ textAlign: 'right' }}>
@@ -413,7 +413,9 @@ function Passes({ s, bookings, now }: { s: WorkspaceSnapshot; bookings: Booking[
                   {rv}
                 </span>
               </span>
-              {open && (
+              {/* Always rendered so opening and closing can animate (reference renderWallet slide). */}
+              <span className="wf-pass-bw" aria-hidden={!open} inert={!open}>
+                <span className="wf-pass-bi">
                 <span className="wf-pass-b">
                   <span className="wf-pass-hero">{passHero(s, b)}</span>
                   {passFields(s, b).map(([k, v]) => (
@@ -425,7 +427,8 @@ function Passes({ s, bookings, now }: { s: WorkspaceSnapshot; bookings: Booking[
                   {note && <span className="wf-pass-note">{note}</span>}
                   <span className="wf-pass-bc" aria-hidden="true" />
                 </span>
-              )}
+                </span>
+              </span>
             </button>
           );
         })}

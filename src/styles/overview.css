@@ -372,7 +372,38 @@
   text-align: left;
   cursor: pointer;
   box-shadow: 0 1px 0 rgb(255 255 255 / 0.18) inset, 0 -2px 10px rgb(0 0 0 / 0.12), 0 4px 12px rgb(0 0 0 / 0.14);
-  transition: transform 0.45s cubic-bezier(0.2, 0.9, 0.25, 1.2), box-shadow 0.3s;
+  transition:
+    transform 0.45s cubic-bezier(0.2, 0.9, 0.25, 1.2),
+    box-shadow 0.3s,
+    margin-top 0.5s cubic-bezier(0.2, 0.9, 0.25, 1),
+    padding-bottom 0.5s cubic-bezier(0.2, 0.9, 0.25, 1);
+}
+/* Opening slides the pass open and the passes below it down (reference: top/height 0.5s). */
+.wf-pass-bw {
+  display: grid;
+  grid-template-rows: 0fr;
+  overflow: hidden;
+  transition: grid-template-rows 0.5s cubic-bezier(0.2, 0.9, 0.25, 1);
+}
+.wf-pass-open .wf-pass-bw {
+  grid-template-rows: 1fr;
+}
+.wf-pass-bi {
+  min-height: 0;
+  overflow: hidden;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.wf-pass-open .wf-pass-bi {
+  opacity: 1;
+  transition-delay: 0.1s;
+}
+@media (prefers-reduced-motion: reduce) {
+  .wf-pass,
+  .wf-pass-bw,
+  .wf-pass-bi {
+    transition: none;
+  }
 }
 .wf-pass:not(.wf-pass-open):not(:last-child) {
   padding-bottom: 18px;

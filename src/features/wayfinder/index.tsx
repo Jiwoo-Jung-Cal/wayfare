@@ -12,7 +12,7 @@ import { ErrorState, Notice } from '../../ui/index.tsx';
 import { Icon, LogoMark } from '../../ui/icons.tsx';
 import { SAMPLE_SCOPE, createPlanGenerator, defaultPreferences, type ComparedPlan, type PlanningResult, type Preferences } from './handler.ts';
 import { DESTINATIONS, destinationFor, destinationOfTrip, tripFor, type Destination } from './catalog.ts';
-import { applyRequest, parsePlanRequest, replyTo } from './assistant.ts';
+import { applyRequest, scriptedAssistant, type PlanAssistant } from './assistant.ts';
 import { selectPlanningOption } from './selection.ts';
 import { planArt, type ArtKey } from './planArt.ts';
 import './wayfinder.css';
@@ -78,11 +78,18 @@ function Pop({ open, label, onClose, children, left }: { open: boolean; label: s
   return <div ref={ref} className="wf-pop" role="dialog" aria-label={label} style={{ left }}>{children}</div>;
 }
 
+/** The composer's assistant. Swap for a server-backed one once a live model is configured. */
+export const planAssistant: PlanAssistant = scriptedAssistant();
+
 export function WayfinderPage({ tripId, ctx }: FeaturePageProps) {
   const navigate = useNavigate();
   const home = destinationOfTrip(tripId) ?? DESTINATIONS.nyc;
   const [preferences, setPreferences] = useState<Preferences>(() => defaultPreferences({ workspaceId: 'pending', now: ctx.clock.now() }, home.key));
-  const [thread, setThread] = useState<{ from: 'you' | 'wayfare'; text: string }[]>([]);
+  const [thread, setThread] = useState<{ from: 'you' | 'wayfare' | 'error'; text: string; retry?: string }[]>([]);
+  const [thinking, setThinking] = useState(false);
+  const assistant = useRef<PlanAssistant>(planAssistant).current;
+  const askAbort = useRef<AbortController | null>(null);
+  const threadEnd = useRef<HTMLDivElement>(null);
   const [addedTrip, setAddedTrip] = useState<{ id: string; title: string } | null>(null);
   const [workspaceId, setWorkspaceId] = useState<string | null>(null);
   const [tripTitle, setTripTitle] = useState('your trip');
@@ -190,12 +197,27 @@ export function WayfinderPage({ tripId, ctx }: FeaturePageProps) {
     } catch { setError(appError('unavailable', 'Could not select the plan. Your options are preserved.')); }
     finally { busy.current = false; setSaving(null); }
   }
-  function ask(q: string) {
-    const req = parsePlanRequest(q);
-    const next = applyRequest(preferences, req);
+  async function ask(q: string, retrying = false) {
+    if (thinking) return;
     const current = destinationFor(preferences.destination) ?? home;
-    setThread((t) => [...t, ...(q ? [{ from: 'you' as const, text: q }] : []), { from: 'wayfare' as const, text: replyTo(req, next, current) }]);
+    if (!retrying) setThread((t) => [...t.filter((m) => m.from !== 'error'), ...(q ? [{ from: 'you' as const, text: q }] : [])]);
+    else setThread((t) => t.filter((m) => m.from !== 'error'));
     setPrompt('');
+    setThinking(true);
+    askAbort.current?.abort();
+    const abort = (askAbort.current = new AbortController());
+    let res;
+    try { res = await assistant.respond({ text: q, preferences, current }, abort.signal); }
+    catch { res = { ok: false as const, error: { message: 'WayFare couldn’t reply. Your plans are unchanged.', retryable: true } }; }
+    if (abort.signal.aborted) return;
+    setThinking(false);
+    if (!res.ok) {
+      setThread((t) => [...t, { from: 'error', text: res.error.message, ...(res.error.retryable ? { retry: q } : {}) }]);
+      return;
+    }
+    const req = res.value.request;
+    const next = applyRequest(preferences, req);
+    setThread((t) => [...t, { from: 'wayfare', text: res.value.reply }]);
     if (req.unknownPlace) return;
     if (req.travelers) setTrav({ a: req.travelers, c: 0 });
     if (req.budget) setBudgetText(null);
@@ -203,6 +225,10 @@ export function WayfinderPage({ tripId, ctx }: FeaturePageProps) {
     generator.invalidate(); setDirty(false); setPreferences(next);
     void generate(next).then(() => answerRef.current?.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' }));
   }
+  useEffect(() => {
+    if (thread.length || thinking) threadEnd.current?.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'nearest' });
+  }, [thread.length, thinking]);
+  useEffect(() => () => askAbort.current?.abort(), []);
   /** Route popover Done: a known city name picks that destination, its sample dates and budget. */
   function applyRoute() {
     const d = destinationFor(preferences.destination);
@@ -286,7 +312,7 @@ export function WayfinderPage({ tripId, ctx }: FeaturePageProps) {
           <button type="button" className="wf-chipb wf-chip-route" aria-haspopup="dialog" aria-expanded={pop === 'route'} aria-label={`Route: ${preferences.origin} → ${preferences.destination}`} title={`${preferences.origin} → ${preferences.destination}`} onClick={() => setPop(pop === 'route' ? null : 'route')}><Icon name="route" /><span>{preferences.origin} → {preferences.destination}</span></button>
           <button type="button" className="wf-chipb" aria-haspopup="dialog" aria-expanded={pop === 'trav'} onClick={() => setPop(pop === 'trav' ? null : 'trav')}><Icon name="user" /><span>{travelers} traveler{travelers > 1 ? 's' : ''}</span></button>
           <button type="button" className="wf-chipb" aria-haspopup="dialog" aria-expanded={pop === 'date'} onClick={() => { setDraftDates({ from: preferences.startDate, to: preferences.endDate }); setDateErr(false); setPop(pop === 'date' ? null : 'date'); }}><Icon name="cal" /><span>{dateLabel(preferences.startDate, preferences.endDate)}</span></button>
-          <button type="submit" className="wf-send" aria-label="Plan it" disabled={!workspaceId || loading || initializing}><Icon name="send" /></button>
+          <button type="submit" className="wf-send" aria-label={thinking ? 'WayFare is replying' : 'Plan it'} data-busy={thinking || loading || undefined} disabled={!workspaceId || loading || initializing || thinking}>{thinking || loading ? <span className="wf-send-spin" aria-hidden="true" /> : <Icon name="send" />}</button>
           <Pop open={pop === 'route'} label="Route" left={52} onClose={() => setPop(null)}>
             <h4>Where from and to?</h4>
             <div className="wf-dates">
@@ -327,12 +353,18 @@ export function WayfinderPage({ tripId, ctx }: FeaturePageProps) {
           </Pop>
         </div>
       </form>
-      {thread.length > 0 && <div className="wf-thread" aria-label="Conversation with WayFare" role="log">
+      {(thread.length > 0 || thinking) && <div className="wf-thread" aria-label="Conversation with WayFare" role="log" aria-busy={thinking}>
         {thread.map((m, i) => <div key={i} className="wf-msg" data-from={m.from}>
-          {m.from === 'wayfare' && <span className="wf-spark" aria-hidden="true"><Icon name="spark" /></span>}
-          <p><span className="wf-visually-hidden">{m.from === 'you' ? 'You: ' : 'WayFare: '}</span>{m.text}</p>
+          {m.from !== 'you' && <span className="wf-spark" aria-hidden="true"><Icon name={m.from === 'error' ? 'alert' : 'spark'} /></span>}
+          <p><span className="wf-visually-hidden">{m.from === 'you' ? 'You: ' : 'WayFare: '}</span>{m.text}
+            {m.retry !== undefined && <button type="button" className="wf-msg-retry" onClick={() => void ask(m.retry!, true)}>Try again</button>}</p>
         </div>)}
-        <p className="wf-thread-note">Demo assistant: it reads your message with simple rules and answers from sample quotes. No AI model is used.</p>
+        {thinking && <div className="wf-msg wf-msg-typing" data-from="wayfare" aria-label="WayFare is typing">
+          <span className="wf-spark" aria-hidden="true"><Icon name="spark" /></span>
+          <p><i /><i /><i /></p>
+        </div>}
+        <div ref={threadEnd} />
+        <p className="wf-thread-note">{assistant.label}</p>
       </div>}
       <div className="wf-examples">
         <div className="wf-eh">Or start from an example</div>
@@ -374,7 +406,7 @@ export function WayfinderPage({ tripId, ctx }: FeaturePageProps) {
           <p className="wf-why"><Icon name="info" />{result.preferences.priority === 'price' ? 'Ordered by listed cost. A plan with a missing price goes last.' : `Ordered by ${result.preferences.priority}, then by price. Budget checks stay the same.`}</p>
         </div>
         {dirty && <Notice tone="warning">Preferences changed. These are previous results; they update when the new comparison is ready.</Notice>}
-        <div className="wf-plan-options">{result.options.map((o, i, l) => card(o, i, l))}</div>
+        <div className="wf-plan-options" data-busy={loading || thinking || undefined} aria-busy={loading || thinking}>{result.options.map((o, i, l) => card(o, i, l))}</div>
         <div className="wf-cmp">
           <h3>Side by side</h3>
           <p>Every listed cost, in one place. The lowest price in each row is green. Return travel, meals and unlisted fees aren’t included.</p>
