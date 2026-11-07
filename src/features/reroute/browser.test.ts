@@ -49,22 +49,22 @@ test.skipIf(!available)('ReRoute actual approval → shell claims → receipts; 
   try {
     await start(page);
     await expect(option(page, 'Keep the trip')).toContainText('−$360');
-    // Keep the pointer still while the real demo controls refresh the clock.
-    // An already-open tooltip must use the refreshed comparison too.
+    // Hold the chart in place while loading and quote warnings change the layout.
+    // This keeps the pointer over the same chart through the real clock refresh.
+    const chartPosition = await page.addStyleTag({
+      content: '.wf-rr-chart { position: fixed; top: 160px; left: 40px; width: 640px; z-index: 100; }',
+    });
     await page.locator('.wf-rr-chart svg rect').hover({ position: { x: 1, y: 25 } });
-    await expect(page.locator('.wf-rr-tip')).toContainText('+$820');
+    const tooltip = page.locator('.wf-rr-tip');
+    await expect(tooltip).toContainText('+$820');
     await button(page, 'At hotel deadline').evaluate(el => (el as HTMLButtonElement).click());
     await expect(option(page, 'Cancel the whole trip')).toContainText('+$620');
-    // The shell may remount the feature and dismiss the tooltip. Either way,
-    // stale pre-cutoff amounts must disappear; a new hover must use $620.
-    await expect.poll(async () => (await page.locator('.wf-rr-tip').allTextContents()).some(t => t.includes('+$820'))).toBe(false);
-    await page.locator('.wf-rr-chart svg rect').hover({ position: { x: 1, y: 25 } });
-    await expect(page.locator('.wf-rr-tip')).toContainText('+$620');
+    await expect(tooltip).toContainText('+$620');
     expect((await snapshot(page)).actions).toHaveLength(0);
     await button(page, 'Reset clock').evaluate(el => (el as HTMLButtonElement).click());
     await expect(option(page, 'Cancel the whole trip')).toContainText('+$820');
-    await page.locator('.wf-rr-chart svg rect').hover({ position: { x: 1, y: 25 } });
-    await expect(page.locator('.wf-rr-tip')).toContainText('+$820');
+    await expect(tooltip).toContainText('+$820');
+    await chartPosition.evaluate(el => (el as HTMLStyleElement).remove());
     await page.mouse.move(0, 0);
 
     const cancelChoice = option(page, 'Cancel the whole trip');

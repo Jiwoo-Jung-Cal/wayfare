@@ -85,7 +85,7 @@ export function MoneyChart({ data, now, tz }: { data: Comparison; now: Instant; 
     const points = [{ h: 0, v: at(0) }, ...marks.map((m) => ({ h: m.h, v: at(m.h) }))];
     return { marks, points };
   }, [data, now]);
-  const [hover, setHover] = useState<{ h: number; v: number | null } | null>(null);
+  const [hoveredHour, setHoveredHour] = useState<number | null>(null);
   const paid = minor(data.options.find((o) => o.kind === 'cancel_trip')?.cashPaidBeforeRefunds) ?? 0;
   const top = Math.max(paid, 1);
   const X = (h: number) => X0 + (h / H) * (X1 - X0);
@@ -96,6 +96,7 @@ export function MoneyChart({ data, now, tz }: { data: Comparison; now: Instant; 
   for (const p of pts.slice(1)) path += ` H${X(p.h).toFixed(1)} V${Y(p.v).toFixed(1)}`;
   path += ` H${X(H)}`;
   const valueAt = (h: number) => [...pts].reverse().find((p) => p.h <= h)!.v;
+  const hover = hoveredHour === null ? null : { h: hoveredHour, v: valueAt(hoveredHour) };
   const ticks = [0, Math.round(top / 3 / 10000) * 100, Math.round((2 * top) / 3 / 10000) * 100, top / 100];
   const cur = data.options.find(o => o.kind === 'cancel_trip')!.expectedCashRecovery;
   const currency = isUnknown(cur) ? 'USD' : cur.currency;
@@ -104,7 +105,7 @@ export function MoneyChart({ data, now, tz }: { data: Comparison; now: Instant; 
     const r = (e.currentTarget.ownerSVGElement as SVGSVGElement).getBoundingClientRect();
     const sx = ((e.clientX - r.left) / r.width) * 640;
     const h = Math.max(0, Math.min(H, ((sx - X0) / (X1 - X0)) * H));
-    setHover({ h, v: valueAt(h) });
+    setHoveredHour(h);
   };
   return (
     <div className="wf-rr-chart">
@@ -148,13 +149,13 @@ export function MoneyChart({ data, now, tz }: { data: Comparison; now: Instant; 
         {hover && (
           <g>
             <line x1={X(hover.h)} x2={X(hover.h)} y1={Y(top)} y2={Y1} className="wf-rr-cross" />
-            <circle cx={X(hover.h)} cy={Y(hover.v ?? 0)} r="5" className="wf-rr-dot" strokeWidth="2" />
+            <circle cx={X(hover.h)} cy={Y(hover.v)} r="5" className="wf-rr-dot" strokeWidth="2" />
           </g>
         )}
         <circle cx={X(0)} cy={Y(pts[0]!.v)} r="5" className="wf-rr-dot" strokeWidth="2" />
-        <rect x={X0} y={Y0} width={X1 - X0} height={Y1 - Y0} fill="transparent" onPointerMove={onMove} onPointerDown={onMove} onPointerLeave={() => setHover(null)} />
+        <rect x={X0} y={Y0} width={X1 - X0} height={Y1 - Y0} fill="transparent" onPointerMove={onMove} onPointerDown={onMove} onPointerLeave={() => setHoveredHour(null)} />
       </svg>
-      {hover && hover.v !== null && (
+      {hover && (
         <div className="wf-rr-tip" style={{
           left: `${(X(hover.h) / 640) * 100}%`, top: `${(Y(hover.v) / 250) * 100}%`,
           // Move the anchor through the tooltip as it moves through the chart.
