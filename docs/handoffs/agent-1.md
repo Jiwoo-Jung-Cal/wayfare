@@ -20,6 +20,15 @@ Jiwoo reviewed the Vercel deployment (https://wayfare-henna.vercel.app) and aske
   - Chicago and Tokyo are sample destinations (`catalog.ts`). Choosing one of their plans creates that trip in the workspace.
   - The static Chicago/Tokyo sample pages are removed. The trip menu lists only workspace trips, with each trip's own status, and the shell follows the trip in the URL.
 - **Not done:** a live Claude chatbot. It needs a server key and a hosted backend, and a key must never be in the browser build.
+- **Ready for a live assistant:** the Plan page talks only to the `PlanAssistant` interface (`wayfinder/assistant.ts`). The page already shows a typing indicator, a spinning send button, dimmed plan cards with a progress sweep, and an error bubble with "Try again".
+
+  To go live:
+  1. Add a server endpoint that calls `ModelAdapter.generateStructured` with a `PlanRequest` schema.
+  2. Implement `respond()` as a fetch to that endpoint, with `capability: 'live'` and a label that names the model.
+  3. Assign it to `planAssistant`.
+
+  The API key stays in the server environment (`ANTHROPIC_API_KEY`), never in `VITE_*` or the Pages/Vercel static build.
+- **Follow-up:** the pass stack animates opening and closing again, and the boarding-pass plane uses the original r2 glyph (`PlaneGlyph`). `docs/DEMO_VIDEO.md` is the video script, checked by `e2e/demo-video.spec.ts`.
 
 ## 2026-11-04: r2-final design implementation and parity
 

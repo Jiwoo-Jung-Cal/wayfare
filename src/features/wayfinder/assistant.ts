@@ -77,3 +77,32 @@ export function replyTo(req: PlanRequest, prefs: Preferences, current: Destinati
   else parts.push('Choose one to save it to your trip. Nothing is booked or paid.');
   return parts.join(' ');
 }
+
+// ---------------------------------------------------------------------------
+// The assistant behind the Plan composer. The page only talks to this interface, so a live model
+// (called through the server's ModelAdapter, never from the browser) can replace the scripted
+// rules without UI changes: the page already shows a typing indicator while a reply is pending,
+// a retry on failure, and labels the reply with the assistant's capability.
+
+export type AssistantTurn = { request: PlanRequest; reply: string };
+export type AssistantResult = { ok: true; value: AssistantTurn } | { ok: false; error: { message: string; retryable: boolean } };
+export interface PlanAssistant {
+  capability: 'scripted' | 'live';
+  /** Shown under the conversation. */
+  label: string;
+  respond(input: { text: string; preferences: Preferences; current: Destination }, signal?: AbortSignal): Promise<AssistantResult>;
+}
+
+/** The demo assistant: the rules above, with a short "thinking" pause so the reply reads naturally. */
+export function scriptedAssistant(thinkMs = 650): PlanAssistant {
+  return {
+    capability: 'scripted',
+    label: 'Demo assistant: it reads your message with simple rules and answers from sample quotes. No AI model is used.',
+    async respond({ text, preferences, current }, signal) {
+      if (thinkMs > 0) await new Promise((r) => setTimeout(r, thinkMs));
+      if (signal?.aborted) return { ok: false, error: { message: 'Cancelled', retryable: true } };
+      const request = parsePlanRequest(text);
+      return { ok: true, value: { request, reply: replyTo(request, applyRequest(preferences, request), current) } };
+    },
+  };
+}

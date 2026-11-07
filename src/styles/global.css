@@ -572,6 +572,14 @@ blockquote {
   fill: currentColor;
   stroke: none;
 }
+/* Outline glyphs kept from r2 (e.g. the boarding-pass plane): 24 px grid, 1.6 stroke, round caps. */
+.wf-icon.wf-icon-stroke {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
 
 /* Colour mode toggle (56:72) */
 .wf-mode {

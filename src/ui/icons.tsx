@@ -21,6 +21,18 @@ export function Icon({ name, className = 'wf-icon', label }: { name: IconName; c
   return <Glyph className={className} weight={name === 'spark' ? 'fill' : 'regular'} aria-hidden={label ? undefined : true} role={label ? 'img' : undefined} aria-label={label} />;
 }
 
+/**
+ * The r2 boarding-pass plane (prototype <symbol id="i-plane">): an outline glyph that sits level on
+ * the route line once rotated 45° in .wf-bp-fly. Kept for the pass animation; other icons are Phosphor.
+ */
+export function PlaneGlyph({ className = 'wf-icon wf-icon-stroke' }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} aria-hidden="true">
+      <path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z" />
+    </svg>
+  );
+}
+
 /** Logo / w mark (55:271): rounded lowercase "w" with a separate destination dot, in accent. No hover effect. */
 export function LogoMark({ className = 'wf-logo-mark' }: { className?: string }) {
   return (

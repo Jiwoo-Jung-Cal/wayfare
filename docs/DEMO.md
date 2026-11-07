@@ -43,6 +43,8 @@ npx vite preview --port 4173        # open http://localhost:4173/
 
 ## Walkthrough (about 5 minutes)
 
+Recording a video? [DEMO_VIDEO.md](DEMO_VIDEO.md) is a scene-by-scene script with exact inputs and expected outputs. It covers the Plan assistant, Chicago and Tokyo, and group pricing, and `e2e/demo-video.spec.ts` checks it.
+
 A **first visit** opens like the design reference: NY Trip is booked and Bayline Air has cancelled flight BL 214 (simulated). A browser that kept an empty workspace from an earlier visit is moved to this scenario once. **Show the reference scenario** under **Demo controls** (bottom of the page) brings it back at any time; **Load sample trip** starts before any booking; **Clear workspace** removes everything. Amounts are for the canonical sample trip.
 
 1. **Overview**: the boarding pass is stamped *Cancelled by airline*, the stub shows the +$320 refund owed, and **Decide within** counts down to Thursday 6:00 PM ET, when the hotel refund drops. Money tiles: **+$820** back if you cancel, **−$80** you can't get back, **$900** paid for 4 bookings. **Your passes** opens each booking.

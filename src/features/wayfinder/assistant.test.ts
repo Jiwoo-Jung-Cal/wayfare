@@ -32,3 +32,17 @@ describe('Plan demo assistant', () => {
     expect(reply).toContain('I’ll add Chicago Weekend to your trips');
   });
 });
+
+describe('PlanAssistant interface', () => {
+  it('the scripted assistant answers asynchronously, labels itself, and honours an abort', async () => {
+    const { scriptedAssistant } = await import('./assistant.ts');
+    const a = scriptedAssistant(0);
+    expect(a.capability).toBe('scripted');
+    expect(a.label).toContain('No AI model is used');
+    const r = await a.respond({ text: 'Chicago for 2', preferences: defaultPreferences(ctx), current: DESTINATIONS.nyc });
+    expect(r.ok && r.value.request.destination?.key).toBe('chi');
+    expect(r.ok && r.value.reply).toContain('Chicago Weekend');
+    const abort = new AbortController(); abort.abort();
+    expect((await a.respond({ text: 'Tokyo', preferences: defaultPreferences(ctx), current: DESTINATIONS.nyc }, abort.signal)).ok).toBe(false);
+  });
+});

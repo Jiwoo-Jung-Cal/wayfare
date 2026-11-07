@@ -131,3 +131,27 @@
 .wf-msg[data-from='you'] p { max-width: 80%; background: var(--wf-color-text); color: var(--wf-color-bg); border-bottom-right-radius: 4px; }
 .wf-msg[data-from='wayfare'] p { max-width: 88%; background: var(--wf-color-surface); border: 1px solid var(--wf-color-border-soft); border-bottom-left-radius: 4px; }
 .wf-thread-note { margin: 0; color: var(--wf-color-text-muted); font-size: 0.78rem; text-align: center; }
+
+/* Conversation motion: messages ease in, WayFare "types" while a reply is pending (scripted now,
+   a live model later), the send button spins, and plan cards dim with a progress sweep while they update. */
+.wf-msg { animation: wf-msg-in 0.28s cubic-bezier(0.2, 0.9, 0.25, 1) both; }
+@keyframes wf-msg-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.wf-msg-typing p { display: inline-flex; gap: 5px; align-items: center; min-height: 1.45em; }
+.wf-msg-typing i { width: 7px; height: 7px; border-radius: 50%; background: var(--wf-color-text-muted); animation: wf-typing 1.1s ease-in-out infinite; }
+.wf-msg-typing i:nth-child(2) { animation-delay: 0.15s; }
+.wf-msg-typing i:nth-child(3) { animation-delay: 0.3s; }
+@keyframes wf-typing { 0%, 60%, 100% { opacity: 0.35; transform: translateY(0); } 30% { opacity: 1; transform: translateY(-4px); } }
+.wf-msg[data-from='error'] p { border-color: var(--wf-color-danger); color: var(--wf-color-text); }
+.wf-msg[data-from='error'] .wf-spark { background: var(--wf-color-danger-subtle, var(--wf-color-surface-muted)); color: var(--wf-color-danger); }
+.wf-msg-retry { margin-left: 10px; padding: 2px 10px; border: 1px solid var(--wf-color-border); border-radius: 999px; background: var(--wf-color-surface); color: inherit; font: inherit; font-size: 0.85rem; cursor: pointer; }
+.wf-send[data-busy] { cursor: progress; }
+.wf-send-spin { width: 16px; height: 16px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: wf-spin 0.7s linear infinite; }
+@keyframes wf-spin { to { transform: rotate(360deg); } }
+.wf-plan-options { position: relative; transition: opacity 0.25s, filter 0.25s; }
+.wf-plan-options[data-busy] { opacity: 0.55; filter: saturate(0.85); pointer-events: none; }
+.wf-plan-options[data-busy]::before { content: ''; position: absolute; z-index: 2; top: -10px; left: 0; height: 3px; width: 30%; border-radius: 3px; background: var(--wf-color-accent); animation: wf-sweep 1s ease-in-out infinite; }
+@keyframes wf-sweep { from { left: 0; } to { left: 70%; } }
+@media (prefers-reduced-motion: reduce) {
+  .wf-msg, .wf-msg-typing i, .wf-send-spin, .wf-plan-options[data-busy]::before { animation: none; }
+  .wf-plan-options { transition: none; }
+}

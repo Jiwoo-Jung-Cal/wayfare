@@ -71,6 +71,10 @@ test('the Plan assistant plans Chicago for two and Tokyo; choosing a plan adds e
   await expect(page.getByRole('region', { name: 'Plan comparison' }).getByRole('article')).toHaveCount(3);
   await page.getByLabel('Describe your trip').fill('A weekend in Chicago for 2 people under $1,200');
   await page.keyboard.press('Enter');
+  // While the reply is pending WayFare shows a typing indicator and the send button spins.
+  await expect(page.getByLabel('WayFare is typing')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'WayFare is replying' })).toBeDisabled();
+  await expect(page.getByLabel('WayFare is typing')).toBeHidden();
   const log = page.getByRole('log', { name: 'Conversation with WayFare' });
   await expect(log).toContainText('Here are 3 plans for Chicago, Dec 11 – Dec 13, for 2 travelers');
   await expect(log).toContainText('No AI model is used');

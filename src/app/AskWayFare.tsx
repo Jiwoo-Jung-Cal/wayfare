@@ -51,6 +51,10 @@ export function reply(q: string, s: WorkspaceSnapshot, tripId: string, now: Inst
   }
   if (/refund|money|back|how much/.test(x)) {
     if (!ct) return { body: 'Nothing needs refunding: there’s no active disruption on this trip.', acts: [['Open TripWallet', `${base}/wallet`]] };
+    if (f.approved) return {
+      body: <>You cancelled the trip, so <G m={ct.expectedCashRecovery} /> is coming back and <L m={ct.forecastCost} /> was lost to fees. TripWallet tracks each refund until it arrives.</>,
+      acts: [['Open TripWallet', `${base}/wallet`]],
+    };
     return {
       body: (
         <>
@@ -68,7 +72,9 @@ export function reply(q: string, s: WorkspaceSnapshot, tripId: string, now: Inst
     };
   }
   if (/deadline|when|time|hurry/.test(x)) {
-    if (!nx) return { body: 'All refund deadlines have passed.' };
+    if (f.approved) return { body: 'You already cancelled, so refund deadlines no longer apply. TripWallet tracks each refund until it arrives.', acts: [['Open TripWallet', `${base}/wallet`]] };
+    if (!f.bookings.length) return { body: `Nothing is booked on ${name} yet, so there are no refund deadlines. A plan you choose isn’t a booking.`, acts: [['Compare plans', `${base}/plan`]] };
+    if (!nx) return { body: `There are no upcoming refund deadlines on ${name}.` };
     const drop = nx.before && nx.after && !isUnknown(nx.before) && !isUnknown(nx.after) ? { ...nx.before, amountMinor: nx.before.amountMinor - nx.after.amountMinor } : undefined;
     return {
       body: (
