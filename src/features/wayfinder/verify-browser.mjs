@@ -82,6 +82,18 @@ try {
   await current.getByRole('link', { name: 'View your trip', exact: true }).click();
   await expect(booked).toHaveURL(new RegExp(`${trip}$`));
   await expect(booked.getByRole('heading', { name: 'NY Trip', exact: true, level: 1 })).toBeVisible();
+  // Plan's message styles must not turn shared Ask bubbles into flex columns.
+  await expect(booked.locator('.wf-money-tiles')).toContainText('+$820');
+  await button(booked, 'Ask WayFare').click();
+  const assistantPanel = booked.getByRole('region', { name: 'WayFare assistant' });
+  await button(assistantPanel, 'How much will I get back?').click();
+  const refundReply = assistantPanel.locator('.wf-msg[data-who="ai"]').last();
+  await expect(refundReply).toContainText('That’s +$820 back');
+  await expect(refundReply).toHaveCSS('display', 'block');
+  for (const width of [1440, 390, 320]) {
+    await booked.setViewportSize({ width, height: 1000 });
+    expect(await refundReply.evaluate(el => el.scrollWidth - el.clientWidth), `Ask refund reply overflow after Plan at ${width}`).toBeLessThanOrEqual(1);
+  }
   await booked.close();
 
   const page = await planningPage();
