@@ -117,7 +117,8 @@ export const DEMO_TIMES = {
   flightArrives: '2026-11-20T20:30:00Z', // 3:30 PM ET
   replacementDeparts: '2026-11-20T17:15:00Z', // 9:15 AM PT
   replacementArrives: '2026-11-20T22:45:00Z', // 5:45 PM ET
-  replacementQuoteValidUntil: '2026-11-19T23:00:00Z',
+  /** 10:00 PM ET Nov 19: four hours after the hotel deadline, so the quote is still valid at that cutoff. */
+  replacementQuoteValidUntil: '2026-11-20T03:00:00Z',
   hotelCheckIn: '2026-11-20T20:00:00Z',
   hotelCheckOut: '2026-11-23T16:00:00Z',
   /** Hotel recovery is $400 when actionTime < this instant, $200 at or after it. */

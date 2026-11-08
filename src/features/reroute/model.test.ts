@@ -34,6 +34,15 @@ describe('ReRoute comparison and CancelClock', () => {
     const delta = subtract(E.hotelDeadline.recoveryBefore, E.hotelDeadline.recoveryAtOrAfter);
     expect(r.options[1]!.expectedCashRecovery).toEqual(offset < 0 ? E.cancelTripOption.expectedCashRecovery : subtract(E.cancelTripOption.expectedCashRecovery, delta));
     expect(r.deadlines[0]!.status).toBe(offset < 0 ? 'Closing soon' : 'Passed');
+    // The sample replacement quote outlives the hotel cutoff, so keeping the trip stays priced there.
+    expect(r.options[0]).toMatchObject({ extraCashNeeded: E.continueOption.extraCashNeeded, constraints: [] });
+  });
+  it('expires the replacement quote at its own validUntil, with a plain next step', async () => {
+    const { repo } = await setup(); const s = unwrap(await repo.snapshot());
+    expect(Date.parse(T.replacementQuoteValidUntil)).toBeGreaterThan(Date.parse(T.hotelDeadline));
+    const [cont] = unwrap(computeComparison(s, I.trip, T.replacementQuoteValidUntil)).options;
+    expect(cont!.extraCashNeeded).toHaveProperty('unknown', true);
+    expect(cont!.constraints[0]).toBe('The replacement price has expired; get a fresh quote before keeping the trip.');
   });
   it('does not give traveler cancellation the provider entitlement', async () => {
     const { repo } = await setup(); const s = unwrap(await repo.snapshot()); const b = s.bookings[0]!;

@@ -102,7 +102,8 @@ export function computeComparison(s: WorkspaceSnapshot, tripId: string, now: Ins
   const root = bookings.find(b => b.id === disruption.bookingId)!;
   const quote = s.quotes.filter(q => q.tripId === tripId && q.forBookingId === root.id && q.kind === root.kind).sort((a, b) => b.createdAt.localeCompare(a.createdAt) || b.id.localeCompare(a.id))[0];
   const quoteProblem = !quote ? 'Replacement quote is missing.'
-    : !quote.validUntil || !isBefore(now, quote.validUntil) ? 'Replacement quote is expired or has unknown validity.'
+    : !quote.validUntil ? 'The replacement price has no stated expiry; get a fresh quote before keeping the trip.'
+    : !isBefore(now, quote.validUntil) ? 'The replacement price has expired; get a fresh quote before keeping the trip.'
     : !quote.startsAt || !quote.endsAt || !isBefore(now, quote.startsAt) || !isBefore(quote.startsAt, quote.endsAt) ? 'Replacement travel times need review.'
     : quote.price.currency !== currency ? 'Replacement quote currency does not match the trip.'
     : impacts.some(i => i.affected && i.booking.id !== root.id && isBefore(i.booking.kind === 'hotel' ? i.booking.endsAt ?? i.booking.startsAt : i.booking.startsAt, quote.endsAt!))

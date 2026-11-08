@@ -19,6 +19,7 @@
 .wf-rr-opt[aria-checked='true'] .wf-rr-rad { border: 7px solid var(--wf-color-text); }
 .wf-rr-opt h3 { margin: 0; padding-right: 30px; font-size: 1.1rem; }
 .wf-rr-opt .wf-big { font-size: 2.4rem; }
+.wf-rr-opt .wf-rr-pending { color: var(--wf-color-text-muted); font-weight: 600; }
 .wf-rr-opt ul { display: flex; flex-direction: column; gap: 6px; margin: 0; padding: 0; list-style: none; color: var(--wf-color-text-muted); font-size: 0.93rem; }
 .wf-rr-opt li { display: flex; gap: 8px; align-items: flex-start; }
 .wf-rr-opt li .wf-icon { width: 18px; height: 18px; margin-top: 2px; }
