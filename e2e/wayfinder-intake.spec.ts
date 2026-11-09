@@ -96,16 +96,24 @@ test.describe('Wayfinder and intake states (Agent 2, #4)', () => {
     await expect(save).toBeEnabled();
 
     // Non-USD currency is rejected for this USD trip.
-    const currency = review.getByLabel('Currency (USD trip)');
+    const currency = review.getByLabel('Currency');
     await currency.fill('EUR');
     await expect(currency).toHaveAttribute('aria-invalid', 'true');
     await expect(save).toBeDisabled();
     await currency.fill('USD');
 
-    // An impossible calendar date is rejected.
-    const start = review.getByLabel('Start (UTC ISO instant)');
+    const start = review.getByLabel('Starts');
     const validStart = await start.inputValue();
-    await start.fill('2026-02-30T20:00:00Z');
+    // Times are reviewed as local wall time in the booking's zone (check-in 3:00 PM New York).
+    expect(validStart).toBe('2026-11-20T15:00');
+    // An end before the start is rejected.
+    const end = review.getByLabel('Ends');
+    const validEnd = await end.inputValue();
+    await end.fill('2026-11-19T10:00');
+    await expect(end).toHaveAttribute('aria-invalid', 'true');
+    await end.fill(validEnd);
+    // A blank start is rejected.
+    await start.fill('');
     await expect(start).toHaveAttribute('aria-invalid', 'true');
     await expect(save).toBeDisabled();
     await start.fill(validStart);
@@ -129,7 +137,7 @@ test.describe('Wayfinder and intake states (Agent 2, #4)', () => {
     await button(page, 'Use sample document').click();
     await button(page, 'Extract booking').click();
     const review = card(page, 'Review before saving');
-    await review.getByLabel('Paid amount (blank means unknown)').fill('');
+    await review.getByLabel('Amount paid').fill('');
     await review.getByLabel(/Policy terms are uncertain/).check();
     await review.getByLabel(/I reviewed the facts and confirm/).check();
     await button(page, 'Save reviewed booking').click();

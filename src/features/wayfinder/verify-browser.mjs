@@ -237,20 +237,29 @@ try {
   await expect(button(page, 'Save reviewed booking')).toBeDisabled();
   await review.getByLabel(/I reviewed the facts and confirm/).check();
   await expect(button(page, 'Save reviewed booking')).toBeEnabled();
-  await review.getByLabel('Currency (USD trip)').fill('EUR');
-  await expect(review.getByLabel('Currency (USD trip)')).toHaveAttribute('aria-invalid', 'true');
+  await review.getByLabel('Currency').fill('EUR');
+  await expect(review.getByLabel('Currency')).toHaveAttribute('aria-invalid', 'true');
   await expect(button(page, 'Save reviewed booking')).toBeDisabled();
-  await review.getByLabel('Currency (USD trip)').fill('USD');
-  const start = review.getByLabel('Start (UTC ISO instant)');
+  await review.getByLabel('Currency').fill('USD');
+  const start = review.getByLabel('Starts');
   const validStart = await start.inputValue();
-  await start.fill('2026-02-30T20:00:00Z');
+  // Times are reviewed as local wall time in the booking's zone (check-in 3:00 PM New York).
+  expect(validStart).toBe('2026-11-20T15:00');
+  // An end before the start is rejected.
+  const end = review.getByLabel('Ends');
+  const validEnd = await end.inputValue();
+  await end.fill('2026-11-19T10:00');
+  await expect(end).toHaveAttribute('aria-invalid', 'true');
+  await end.fill(validEnd);
+  // A blank start is rejected.
+  await start.fill('');
   await expect(start).toHaveAttribute('aria-invalid', 'true');
   await expect(button(page, 'Save reviewed booking')).toBeDisabled();
   await start.fill(validStart);
   await review.getByLabel('Provider', { exact: true }).fill('');
   await expect(button(page, 'Save reviewed booking')).toBeDisabled();
   await review.getByLabel('Provider', { exact: true }).fill('Harbor Line Hotel Midtown');
-  await review.getByLabel('Booking title', { exact: true }).fill('Reviewed hotel stay');
+  await review.getByLabel('Booking title').fill('Reviewed hotel stay');
   await expect(button(page, 'Save reviewed booking')).toBeEnabled();
   expect(await columns(page, '.wf-intake-layout')).toBe(2);
   expect(await columns(page, '.wf-intake-review-fields')).toBe(2);
@@ -273,7 +282,7 @@ try {
     expect(await overflow(page), `review overflow at ${width}`).toBeLessThanOrEqual(0);
     expect(await columns(page, '.wf-intake-review-fields')).toBe(1);
     expect(await columns(page, '.wf-intake-layout')).toBe(1);
-    const modeNotice = page.locator('.wf-alert').filter({ has: page.getByText('Sample mode: extraction is simulated', { exact: true }) });
+    const modeNotice = page.locator('.wf-intake-mode').filter({ hasText: 'Sample mode' });
     const noticeBox = await modeNotice.boundingBox();
     const reviewBox = await review.boundingBox();
     const originalBox = await card(page, 'Original document').boundingBox();
@@ -329,7 +338,7 @@ try {
   await button(other, 'Use sample document').click();
   await button(other, 'Extract booking').click();
   const otherReview = card(other, 'Review before saving');
-  await otherReview.getByLabel('Paid amount (blank means unknown)').fill('');
+  await otherReview.getByLabel('Amount paid').fill('');
   await otherReview.getByLabel(/Policy terms are uncertain/).check();
   await otherReview.getByLabel(/I reviewed the facts and confirm/).check();
   await button(other, 'Save reviewed booking').click();

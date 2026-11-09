@@ -1,36 +1,74 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Link } from 'react-router';
 import {
-  BOOKING_KINDS, DEMO_DOCUMENT_SOURCES, DEMO_IDS, MAX_EXTRACTION_INPUT_CHARS, appError,
-  type AppError, type Booking, type BookingExtraction, type ExtractedField, type FeatureModule, type FeaturePageProps,
+  BOOKING_KINDS, DEMO_DOCUMENT_SOURCES, DEMO_IDS, MAX_EXTRACTION_INPUT_CHARS, appError, formatInstant, isUnknown, isValidTimeZone,
+  type AppError, type Booking, type BookingExtraction, type BookingKind, type ExtractedField, type FeatureModule, type FeaturePageProps,
+  type RecoveryMethod,
 } from '../../core/index.ts';
-import { Button, CapabilityLabel, Card, EmptyState, ErrorState, InstantText, KeyValue, LoadingState, MoneyText, Notice, StatusBadge } from '../../ui/index.tsx';
-import { createIntakeExtractor, reviewDraft, saveReviewedIntake, validateReview, type ReviewDraft } from './review.ts';
+import { Button, CapabilityLabel, Card, EmptyState, ErrorState, LoadingState, MoneyText, Notice } from '../../ui/index.tsx';
+import { Icon, type IconName } from '../../ui/icons.tsx';
+import { createIntakeExtractor, instantToLocalInput, localInputToInstant, reviewDraft, saveReviewedIntake, validateReview, type ReviewDraft } from './review.ts';
 import './intake.css';
 
 const SAMPLE_IDS = [DEMO_IDS.documents.flightConfirmation, DEMO_IDS.documents.hotelConfirmation,
   DEMO_IDS.documents.activityConfirmation, DEMO_IDS.documents.transferConfirmation,
   DEMO_IDS.documents.unknownPolicy, DEMO_IDS.documents.lateDeadlineHotel, DEMO_IDS.documents.malformed];
 
-function Evidence({ field }: { field: ExtractedField<unknown> }) {
-  return field.status === 'found' ? <div className="wf-stack wf-intake-evidence">
-    <div className="wf-row"><span className="wf-muted">{field.confidence.charAt(0).toUpperCase() + field.confidence.slice(1)} confidence</span>
-      {field.confidence !== 'high' && <StatusBadge tone="warning">Check this</StatusBadge>}</div>
-    <blockquote><span className="wf-muted">Source excerpt</span><br /><q>{field.excerpt}</q></blockquote>
-  </div> : <p className="wf-muted">Not found in the document. {field.reason}</p>;
+const KIND_LABEL: Record<BookingKind, string> = { flight: 'Flight', hotel: 'Stay', activity: 'Activity', transfer: 'Ride', other: 'Other' };
+const KIND_ICON: Record<BookingKind, IconName> = { flight: 'plane', hotel: 'bed', activity: 'ticket', transfer: 'car', other: 'doc' };
+const REFUNDABILITY: Record<string, [string, 'ok' | 'warn' | 'bad' | 'mute']> = {
+  refundable: ['Refundable', 'ok'], partially_refundable: ['Partly refundable', 'warn'], non_refundable: ['Non-refundable', 'bad'], unknown: ['Terms unknown', 'mute'],
+};
+const METHOD: Record<RecoveryMethod, string> = {
+  original_payment: 'to your original payment', travel_credit: 'as travel credit', voucher: 'as a voucher', points: 'as points', none: 'no refund', unknown: 'refund method not stated',
+};
+type ExtractedTier = BookingExtraction['policy']['refundTiers'][number];
+const CONDITION: Record<ExtractedTier['condition'], string | null> = { any: null, traveler_cancels: 'if you cancel', provider_cancels: 'if the provider cancels' };
+/** Common zones first; the extracted zone is added when it isn't listed. */
+const ZONES = ['America/Los_Angeles', 'America/Denver', 'America/Chicago', 'America/New_York', 'America/Anchorage', 'Pacific/Honolulu',
+  'Europe/London', 'Europe/Paris', 'Asia/Tokyo', 'Australia/Sydney', 'UTC'];
+function zoneLabel(tz: string) {
+  if (tz === 'UTC') return 'UTC';
+  let generic = '';
+  try { generic = new Intl.DateTimeFormat('en-US', { timeZone: tz, timeZoneName: 'longGeneric' }).formatToParts(new Date()).find((p) => p.type === 'timeZoneName')?.value ?? ''; } catch { /* unknown zone */ }
+  const city = tz.split('/').pop()!.replace(/_/g, ' ');
+  return generic ? `${city} · ${generic}` : city;
 }
 
-function ReviewField({ name, label, issue, field, children }: {
-  name: string; label: string; issue?: string; field?: ExtractedField<unknown>; children: ReactNode;
+function Tag({ tone, icon, children }: { tone: 'ok' | 'warn' | 'bad' | 'mute' | 'info'; icon: IconName; children: ReactNode }) {
+  return <span className="wf-tag" data-tone={tone}><Icon name={icon} />{children}</span>;
+}
+
+/** What the document said for one field: confidence in words, then the source excerpt. */
+function Evidence({ field }: { field: ExtractedField<unknown> }) {
+  if (field.status !== 'found') return <p className="wf-intake-src wf-intake-src-missing">Not found in the document. {field.reason}</p>;
+  const high = field.confidence === 'high';
+  return <div className="wf-intake-src">
+    <span className="wf-intake-conf" data-tone={high ? 'ok' : 'warn'}><Icon name={high ? 'check' : 'alert'} />{field.confidence.charAt(0).toUpperCase() + field.confidence.slice(1)} confidence</span>
+    {!high && <span className="wf-intake-check">Check this</span>}
+    <q>{field.excerpt}</q>
+  </div>;
+}
+
+function ReviewField({ name, label, hint, issue, field, wide, children }: {
+  name: string; label: string; hint?: string; issue?: string; field?: ExtractedField<unknown>; wide?: boolean; children: ReactNode;
 }) {
-  return <div className="wf-stack wf-intake-field"><label className="wf-stack" htmlFor={`wf-review-${name}`}>{label}</label>
-    {children}{issue && <span id={`wf-review-${name}-error`} className="wf-intake-field-error">{issue}</span>}
+  return <div className={`wf-intake-field${wide ? ' wf-intake-field-wide' : ''}`}>
+    <label htmlFor={`wf-review-${name}`}>{label}{hint && <span className="wf-intake-hint"> · {hint}</span>}</label>
+    {children}
+    {issue && <span id={`wf-review-${name}-error`} className="wf-intake-field-error"><Icon name="alert" />{issue}</span>}
     {field && <div id={`wf-review-${name}-evidence`}><Evidence field={field} /></div>}
   </div>;
 }
 
-const factLabels = { provider: 'Provider', reference: 'Booking reference', title: 'Booking title',
-  startsAt: 'Start (UTC ISO instant)', endsAt: 'End (UTC ISO instant, optional)', localTimezone: 'Display timezone (IANA)' };
+function windowText(tier: ExtractedTier, tz: string) {
+  const at = (i: string) => formatInstant(i, tz).replace(/, \d{4},/, ',');
+  const { startsAtOrAfter: from, endsBefore: until } = tier.window;
+  if (from && until) return `From ${at(from)} until ${at(until)}`;
+  if (until) return `Before ${at(until)}`;
+  if (from) return `From ${at(from)}`;
+  return 'Any time';
+}
 
 export function IntakePage({ tripId, ctx }: FeaturePageProps) {
   const [text, setText] = useState('');
@@ -98,88 +136,180 @@ export function IntakePage({ tripId, ctx }: FeaturePageProps) {
     const descriptions = [fieldIssue(key) && `wf-review-${key}-error`, evidence && `wf-review-${key}-evidence`].filter(Boolean).join(' ');
     return { id: `wf-review-${key}`, 'aria-invalid': !!fieldIssue(key), 'aria-describedby': descriptions || undefined };
   }
+  // Times are stored as UTC instants but reviewed as local wall times in the booking's time zone.
+  const zone = draft && isValidTimeZone(draft.localTimezone) ? draft.localTimezone : 'UTC';
+  function editTime(key: 'startsAt' | 'endsAt', wall: string) { edit(key, localInputToInstant(wall, zone)); }
+  function editZone(next: string) {
+    setDraft((d) => {
+      if (!d) return d;
+      const to = isValidTimeZone(next) ? next : 'UTC';
+      // Keep the wall times the confirmation states; only the zone they're in changes.
+      const move = (i: string) => (i ? localInputToInstant(instantToLocalInput(i, zone), to) || i : i);
+      return { ...d, localTimezone: next, startsAt: move(d.startsAt), endsAt: move(d.endsAt) };
+    });
+    setError(null); setMessage('');
+  }
+
   const pasteError = !extraction && error && ['not_configured', 'validation_failed', 'provider_error', 'timeout', 'rate_limited'].includes(error.code);
-  const confirmationInput = <Card title="Confirmation text"><form className="wf-stack" onSubmit={(e) => { e.preventDefault(); void extract(); }}>
-      <fieldset disabled={saving} className="wf-stack"><legend>Pasted text or an explicitly selected sample</legend>
-        <label className="wf-stack">Sample document<select className="wf-input" value={sample} onChange={(e) => setSample(e.target.value)}>
-          {SAMPLE_IDS.map((id) => <option key={id} value={id}>{DEMO_DOCUMENT_SOURCES[id]!.title}</option>)}
-        </select></label>
-        <div><Button onClick={() => changeText(DEMO_DOCUMENT_SOURCES[sample]!.text)}>Use sample document</Button></div>
-        <label className="wf-stack" htmlFor="wf-intake-text">Paste booking confirmation</label>
-        <textarea id="wf-intake-text" className="wf-input wf-mono" rows={12} maxLength={MAX_EXTRACTION_INPUT_CHARS} value={text} aria-invalid={!!pasteError} aria-describedby="wf-intake-text-help" onChange={(e) => changeText(e.target.value)} />
-        <p id="wf-intake-text-help" className="wf-muted">{text.length}/{MAX_EXTRACTION_INPUT_CHARS} characters. In sample mode only the listed documents can be extracted; other text requires configured server AI.</p>
-        <div><Button type="submit" variant="primary" aria-busy={loading} disabled={loading || text.trim().length < 20}>{loading ? 'Extracting booking…' : 'Extract booking'}</Button></div>
-      </fieldset>
-    </form></Card>;
+  const confirmationInput = <form className={`wf-intake-compose${extraction ? ' wf-intake-compose-compact' : ''}`} aria-label="Booking confirmation" onSubmit={(e) => { e.preventDefault(); void extract(); }}>
+    <fieldset disabled={saving}>
+      <legend className="wf-visually-hidden">Paste a confirmation or use a sample</legend>
+      <div className="wf-intake-compose-head">
+        <span className="wf-intake-compose-title"><Icon name="doc" />Booking confirmation</span>
+        <span className="wf-intake-count wf-num">{text.length.toLocaleString('en-US')} / {MAX_EXTRACTION_INPUT_CHARS.toLocaleString('en-US')}</span>
+      </div>
+      <label className="wf-visually-hidden" htmlFor="wf-intake-text">Paste booking confirmation</label>
+      <textarea id="wf-intake-text" rows={extraction ? 4 : 9} maxLength={MAX_EXTRACTION_INPUT_CHARS} value={text} aria-invalid={!!pasteError} aria-describedby="wf-intake-text-help"
+        placeholder="Paste a confirmation email or receipt here. WayFare reads the provider, dates, price and refund rules." onChange={(e) => changeText(e.target.value)} />
+      <div className="wf-intake-compose-bar">
+        <label className="wf-chipb wf-intake-sample"><span className="wf-visually-hidden">Sample document</span><Icon name="clip" />
+          <select value={sample} onChange={(e) => setSample(e.target.value)}>
+            {SAMPLE_IDS.map((id) => <option key={id} value={id}>{DEMO_DOCUMENT_SOURCES[id]!.title}</option>)}
+          </select>
+        </label>
+        <Button variant="secondary" onClick={() => changeText(DEMO_DOCUMENT_SOURCES[sample]!.text)}>Use sample document</Button>
+        <span className="wf-intake-bar-gap" />
+        <Button type="submit" variant="primary" aria-busy={loading} disabled={loading || text.trim().length < 20}>{loading ? 'Reading booking…' : 'Extract booking'}</Button>
+      </div>
+    </fieldset>
+    <p id="wf-intake-text-help" className="wf-intake-help">{ctx.extraction.capability === 'live'
+      ? 'Nothing is saved until you review it. Instructions inside pasted text are ignored.'
+      : 'In this demo only the sample confirmations can be read; other text needs live AI on the server. Nothing is saved until you review it.'}</p>
+  </form>;
+
+  const policy = extraction?.policy;
+  const [refundLabel, refundTone] = REFUNDABILITY[draft?.policyUncertain ? 'unknown' : policy?.refundability ?? 'unknown'] ?? REFUNDABILITY.unknown!;
+  const saveHelp = validation?.ok ? 'Ready to save.' : draft?.confirmed ? 'Fix the highlighted details to save.' : 'Check the details, then confirm above to save.';
+
   return <div className="wf-stack-lg wf-intake">
-    <header className="wf-page-header"><h1>Import bookings</h1>
-      <p>Paste a confirmation, inspect its facts and evidence, then explicitly save it to this trip. A selected plan is not a confirmation.</p>
+    <header className="wf-page-header wf-intake-header">
+      <Link className="wf-intake-back" to={`/trips/${tripId}/plan`}><Icon name="arrow" className="wf-icon wf-intake-back-icon" />Plan</Link>
+      <h1>Import bookings</h1>
+      <p>Add a booking you made somewhere else. WayFare reads the confirmation, you check every detail, and nothing is saved until you confirm.</p>
     </header>
     {extraction && confirmationInput}
     <div className="wf-intake-layout">
-    <div className="wf-intake-capability">
-      <Notice tone={ctx.extraction.capability === 'unavailable' ? 'warning' : ctx.extraction.capability === 'live' ? 'info' : 'simulated'}>
-        <strong>{ctx.extraction.capability === 'unavailable' ? 'Extraction unavailable' : ctx.extraction.capability === 'live' ? 'Booking extraction' : 'Sample mode: extraction is simulated'}</strong>
-        <p>{ctx.extraction.description}</p>
-        {ctx.extraction.capability !== 'unavailable' && <CapabilityLabel status={ctx.extraction.capability}>extraction service</CapabilityLabel>}
-        <p>Nothing is saved until you review it. Instructions inside pasted documents are ignored.</p>
-      </Notice>
-    </div>
-    <div className="wf-stack-lg wf-intake-main">
-    {!extraction && confirmationInput}
-    {loading && <LoadingState label="Extracting booking facts; nothing has been saved…" />}
-    {error && <ErrorState error={error} onRetry={() => retry.current()} />}
-    {message && <div role="status"><Notice tone={replayed ? 'info' : 'success'}>{message}</Notice></div>}
-    {extraction && draft && <Card title="Review before saving" actions={<CapabilityLabel status={extraction.capability}>this extraction</CapabilityLabel>}>
-      <p className="wf-mono">Request {extraction.requestId}{extraction.model && ` · ${extraction.model}`}</p>
-      {extraction.warnings.map((warning) => <Notice key={warning} tone="warning">{warning}</Notice>)}
-      <form className="wf-stack" noValidate onSubmit={(e) => { e.preventDefault(); if (validation?.ok) void save(); }}>
-        <fieldset disabled={saving} className="wf-stack"><legend>Booking facts · editable</legend>
-          <div className="wf-intake-review-fields">
-            <ReviewField name="kind" label="Booking type" issue={fieldIssue('kind')} field={extraction.booking.kind}>
-              <select {...fieldProps('kind')} className="wf-input" value={draft.kind} onChange={(e) => edit('kind', e.target.value as ReviewDraft['kind'])}><option value="">Unknown · choose a type</option>{BOOKING_KINDS.map((k) => <option key={k}>{k}</option>)}</select>
-            </ReviewField>
-            {(['provider', 'reference', 'title', 'startsAt', 'endsAt', 'localTimezone'] as const).map((key) => <ReviewField name={key} label={factLabels[key]} key={key} issue={fieldIssue(key)} field={extraction.booking[key]}>
-              <input {...fieldProps(key)} className="wf-input" value={draft[key]} onChange={(e) => edit(key, e.target.value)} />
-            </ReviewField>)}
-            <ReviewField name="amount" label="Paid amount (blank means unknown)" issue={fieldIssue('amount')} field={extraction.booking.paid}>
-              <input {...fieldProps('amount')} className="wf-input" inputMode="decimal" value={draft.amount} onChange={(e) => edit('amount', e.target.value)} />
-            </ReviewField>
-            <ReviewField name="currency" label="Currency (USD trip)" issue={fieldIssue('currency')}>
-              <input {...fieldProps('currency', false)} className="wf-input" value={draft.currency} onChange={(e) => edit('currency', e.target.value)} />
-            </ReviewField>
+      <div className="wf-intake-capability">
+        <div className="wf-intake-mode" data-capability={ctx.extraction.capability}>
+          <Icon name={ctx.extraction.capability === 'unavailable' ? 'alert' : 'spark'} />
+          <div>
+            <strong>{ctx.extraction.capability === 'unavailable' ? 'Reading is unavailable' : ctx.extraction.capability === 'live' ? 'Read by WayFare AI' : 'Sample mode'}</strong>
+            <p>{ctx.extraction.description.replace(/^Sample mode:\s*/i, '').replace(/^./, (c) => c.toUpperCase())}</p>
+            {ctx.extraction.capability !== 'unavailable' && <CapabilityLabel status={ctx.extraction.capability}>extraction service</CapabilityLabel>}
           </div>
-          <p className="wf-muted">Source excerpts show the original extraction. Edited values are your corrections; the original document is retained.</p>
-          <section className="wf-card wf-stack wf-intake-policy" aria-label="Policy evidence"><h3>Policy facts and source evidence</h3>
-            <p>Refundability: {draft.policyUncertain ? 'unknown · reviewer disputed extraction' : extraction.policy.refundability}. These are policy terms, not an expected refund or received money.</p>
-            {extraction.policy.refundTiers.map((tier, i) => <div className="wf-stack" key={i}>
-              <KeyValue label={tier.label} value={<MoneyText value={tier.refund} />} />
-              <p className="wf-muted">Method: {tier.method} · condition: {tier.condition}</p>
-              <p>Window: {tier.window.startsAtOrAfter ?? 'no stated start'} (inclusive) to {tier.window.endsBefore ?? 'no stated end'} (exclusive).</p><blockquote><span className="wf-muted">Source excerpt</span><br /><q>{tier.excerpt}</q></blockquote></div>)}
-            {extraction.policy.deadlines.map((deadline, i) => <div key={i}><strong>{deadline.label}</strong><p><InstantText value={deadline.at} timeZone={deadline.displayTimezone} /> · {deadline.displayTimezone}</p><blockquote>{deadline.excerpt}</blockquote></div>)}
-            {extraction.policy.unknownFields.map((field, i) => <Notice tone="warning" key={i}>{field.field}: {field.reason}</Notice>)}
-            {!extraction.policy.refundTiers.length && <Notice tone="warning">No usable refund rules were extracted. Missing terms do not mean a full refund or a nonrefundable booking.</Notice>}
-            <label className="wf-intake-checkbox"><input type="checkbox" checked={draft.policyUncertain} onChange={(e) => edit('policyUncertain', e.target.checked)} /> <span>Policy terms are uncertain or incorrect · save them as unknown and preserve the source for review</span></label>
-          </section>
-          {validation && !validation.ok && validation.error.issues?.some((entry) => entry.path !== 'confirmed') && <Notice tone="warning">Some booking facts need correction. Enter the required facts and resolve the highlighted fields before saving. Unknown prices and policy terms stay unknown.</Notice>}
-          <label className="wf-intake-checkbox"><input type="checkbox" checked={draft.confirmed} onChange={(e) => edit('confirmed', e.target.checked)} /> <span>I reviewed the facts and confirm this document records a confirmed booking (sample documents remain simulated).</span></label>
-          <p className="wf-muted" id="wf-review-save-help">{validation?.ok ? 'Ready to save your reviewed facts.' : draft.confirmed ? 'Resolve the highlighted fields before saving.' : 'Review the facts and check the confirmation above to enable saving.'}</p>
-          <div className="wf-row wf-intake-actions"><Button type="submit" variant="primary" aria-describedby="wf-review-save-help" aria-busy={saving} disabled={saving || !validation?.ok}>{saving ? 'Saving reviewed booking…' : 'Save reviewed booking'}</Button>
-            <Button variant="ghost" onClick={() => changeText(text)}>Start over</Button></div>
-        </fieldset>
-      </form>
-    </Card>}
-    </div><aside className="wf-stack-lg wf-intake-context" aria-label="Import context">
-    {extraction && <Card title="Original document" actions={<StatusBadge>Kept verbatim</StatusBadge>}><pre className="wf-mono">{text}</pre></Card>}
-    <Card title="Saved bookings in this trip">
-      {!loaded && <LoadingState label="Loading saved bookings…" />}
-      {loaded && !bookings.length && <EmptyState title="No confirmed bookings have been imported." />}
-      {bookings.map((booking) => <div key={booking.id}><KeyValue label={<strong>{booking.provider} · {booking.reference}</strong>} value={<MoneyText value={booking.paid} />} />
-        <p><StatusBadge>{booking.state}</StatusBadge> {booking.provenance.source}</p>
-      </div>)}
-      <Link to={`/trips/${tripId}`}>Return to trip dashboard</Link>
-    </Card>
-    </aside></div>
+        </div>
+      </div>
+      <div className="wf-stack-lg wf-intake-main">
+        {!extraction && confirmationInput}
+        {loading && <LoadingState label="Reading the confirmation. Nothing has been saved." />}
+        {error && <ErrorState error={error} onRetry={() => retry.current()} />}
+        {message && <div role="status"><Notice tone={replayed ? 'info' : 'success'}>{message}</Notice></div>}
+        {extraction && draft && <Card title="Review before saving" actions={<CapabilityLabel status={extraction.capability}>this extraction</CapabilityLabel>}>
+          <p className="wf-intake-lead">Here’s what WayFare found. Fix anything that’s wrong; the original document stays attached.</p>
+          <p className="wf-intake-req">Request {extraction.requestId}{extraction.model && ` · ${extraction.model}`}</p>
+          {extraction.warnings.map((warning) => <Notice key={warning} tone="warning">{warning}</Notice>)}
+          <form className="wf-stack" noValidate onSubmit={(e) => { e.preventDefault(); if (validation?.ok) void save(); }}>
+            <fieldset disabled={saving} className="wf-stack-lg">
+              <legend className="wf-visually-hidden">Booking details you can edit</legend>
+              <div className="wf-intake-review-fields">
+                <ReviewField name="kind" label="Booking type" issue={fieldIssue('kind')} field={extraction.booking.kind}>
+                  <select {...fieldProps('kind')} className="wf-input" value={draft.kind} onChange={(e) => edit('kind', e.target.value as ReviewDraft['kind'])}>
+                    <option value="">Choose a type</option>{BOOKING_KINDS.map((k) => <option key={k} value={k}>{KIND_LABEL[k]}</option>)}
+                  </select>
+                </ReviewField>
+                <ReviewField name="provider" label="Provider" issue={fieldIssue('provider')} field={extraction.booking.provider}>
+                  <input {...fieldProps('provider')} className="wf-input" value={draft.provider} onChange={(e) => edit('provider', e.target.value)} />
+                </ReviewField>
+                <ReviewField name="reference" label="Booking reference" issue={fieldIssue('reference')} field={extraction.booking.reference}>
+                  <input {...fieldProps('reference')} className="wf-input" value={draft.reference} onChange={(e) => edit('reference', e.target.value)} />
+                </ReviewField>
+                <ReviewField name="title" label="Booking title" hint="optional" issue={fieldIssue('title')} field={extraction.booking.title}>
+                  <input {...fieldProps('title')} className="wf-input" value={draft.title} onChange={(e) => edit('title', e.target.value)} />
+                </ReviewField>
+                <ReviewField name="startsAt" label="Starts" hint="local time" issue={fieldIssue('startsAt')} field={extraction.booking.startsAt}>
+                  <input {...fieldProps('startsAt')} type="datetime-local" className="wf-input" value={instantToLocalInput(draft.startsAt, zone)} onChange={(e) => editTime('startsAt', e.target.value)} />
+                </ReviewField>
+                <ReviewField name="endsAt" label="Ends" hint="local time, optional" issue={fieldIssue('endsAt')} field={extraction.booking.endsAt}>
+                  <input {...fieldProps('endsAt')} type="datetime-local" className="wf-input" value={instantToLocalInput(draft.endsAt, zone)} onChange={(e) => editTime('endsAt', e.target.value)} />
+                </ReviewField>
+                <ReviewField name="localTimezone" label="Time zone" issue={fieldIssue('localTimezone')} field={extraction.booking.localTimezone}>
+                  <select {...fieldProps('localTimezone')} className="wf-input" value={draft.localTimezone} onChange={(e) => editZone(e.target.value)}>
+                    <option value="">Choose a time zone</option>
+                    {[...new Set([...(draft.localTimezone && isValidTimeZone(draft.localTimezone) ? [draft.localTimezone] : []), ...ZONES])].map((tz) => <option key={tz} value={tz}>{zoneLabel(tz)}</option>)}
+                  </select>
+                </ReviewField>
+                <ReviewField name="amount" label="Amount paid" hint="leave blank if unknown" issue={fieldIssue('amount')} field={extraction.booking.paid}>
+                  <div className="wf-intake-money"><span aria-hidden="true">$</span>
+                    <input {...fieldProps('amount')} className="wf-input wf-num" inputMode="decimal" placeholder="Unknown" value={draft.amount} onChange={(e) => edit('amount', e.target.value)} />
+                  </div>
+                </ReviewField>
+                <ReviewField name="currency" label="Currency" hint="this trip uses USD" issue={fieldIssue('currency')}>
+                  <input {...fieldProps('currency', false)} className="wf-input" value={draft.currency} onChange={(e) => edit('currency', e.target.value.toUpperCase())} />
+                </ReviewField>
+              </div>
+
+              <section className="wf-intake-policy" aria-label="Refund policy">
+                <div className="wf-intake-policy-head">
+                  <h3>Refund policy</h3>
+                  <Tag tone={refundTone} icon={refundTone === 'ok' ? 'check' : refundTone === 'mute' ? 'minus' : 'alert'}>{refundLabel}</Tag>
+                </div>
+                <p className="wf-intake-muted">These are the provider’s terms, not money you’ve been paid.</p>
+                {policy && !draft.policyUncertain && <>
+                  {policy.refundTiers.length > 0 && <ul className="wf-intake-tiers">
+                    {policy.refundTiers.map((tier, i) => <li key={i}>
+                      <div className="wf-intake-tier-main">
+                        <span className="wf-intake-tier-title">{tier.label}</span>
+                        <span className="wf-intake-muted">{[windowText(tier, zone), CONDITION[tier.condition], isUnknown(tier.refund) || tier.refund.amountMinor ? METHOD[tier.method] : null].filter(Boolean).join(' · ')}</span>
+                        <q className="wf-intake-quote">{tier.excerpt}</q>
+                      </div>
+                      <span className={`wf-intake-tier-amt wf-num${!isUnknown(tier.refund) && tier.refund.amountMinor > 0 ? ' wf-gain' : ''}`}>{!isUnknown(tier.refund) && tier.refund.amountMinor > 0 && '+'}<MoneyText value={tier.refund} /></span>
+                    </li>)}
+                  </ul>}
+                  {policy.deadlines.map((deadline, i) => <div className="wf-intake-deadline" key={i}>
+                    <Icon name="clock" />
+                    <div><strong>{deadline.label}</strong>
+                      <span>{formatInstant(deadline.at, deadline.displayTimezone)}</span>
+                      <q className="wf-intake-quote">{deadline.excerpt}</q>
+                    </div>
+                  </div>)}
+                  {policy.unknownFields.map((field, i) => <Notice tone="warning" key={i}>{field.reason}</Notice>)}
+                  {!policy.refundTiers.length && <Notice tone="warning">No usable refund rules were extracted. Missing terms do not mean a full refund or a nonrefundable booking.</Notice>}
+                </>}
+                {draft.policyUncertain && <p className="wf-intake-muted">The terms will be saved as unknown and the original document kept for review.</p>}
+                <label className="wf-intake-checkbox"><input type="checkbox" checked={draft.policyUncertain} onChange={(e) => edit('policyUncertain', e.target.checked)} />
+                  <span>Policy terms are uncertain or incorrect · save them as unknown and keep the source for review</span></label>
+              </section>
+
+              {validation && !validation.ok && validation.error.issues?.some((entry) => entry.path !== 'confirmed') && <Notice tone="warning">Some details need fixing before you can save. Unknown prices and policy terms stay unknown.</Notice>}
+              <div className="wf-intake-confirm">
+                <label className="wf-intake-checkbox"><input type="checkbox" checked={draft.confirmed} onChange={(e) => edit('confirmed', e.target.checked)} />
+                  <span>I reviewed the facts and confirm this document records a confirmed booking{extraction.capability !== 'live' ? ' (sample documents stay simulated)' : ''}.</span></label>
+                <div className="wf-row wf-intake-actions">
+                  <Button type="submit" variant="primary" aria-describedby="wf-review-save-help" aria-busy={saving} disabled={saving || !validation?.ok}>{saving ? 'Saving…' : 'Save reviewed booking'}</Button>
+                  <Button variant="ghost" onClick={() => changeText(text)}>Start over</Button>
+                  <span className="wf-intake-muted" id="wf-review-save-help">{saveHelp}</span>
+                </div>
+              </div>
+            </fieldset>
+          </form>
+        </Card>}
+      </div>
+      <aside className="wf-stack-lg wf-intake-context" aria-label="Import context">
+        {extraction && <Card title="Original document" actions={<span className="wf-label-mono">Kept as sent</span>}><pre className="wf-intake-doc">{text}</pre></Card>}
+        <Card title="Saved bookings in this trip">
+          {!loaded && <LoadingState label="Loading saved bookings…" />}
+          {loaded && !bookings.length && <EmptyState title="No confirmed bookings have been imported." />}
+          {bookings.length > 0 && <ul className="wf-intake-saved">
+            {bookings.map((booking) => <li key={booking.id}>
+              <span className="wf-intake-saved-ico" data-kind={booking.kind}><Icon name={KIND_ICON[booking.kind]} /></span>
+              <span className="wf-intake-saved-main"><strong>{booking.provider}</strong><span className="wf-intake-muted">{KIND_LABEL[booking.kind]} · {booking.reference}{booking.state !== 'confirmed' ? ` · ${booking.state.charAt(0).toUpperCase() + booking.state.slice(1)}` : ''}</span></span>
+              <span className="wf-num wf-intake-saved-amt"><MoneyText value={booking.paid} /></span>
+            </li>)}
+          </ul>}
+          <Link className="wf-intake-link" to={`/trips/${tripId}`}>Back to trip overview<Icon name="arrow" /></Link>
+        </Card>
+      </aside>
+    </div>
   </div>;
 }
 

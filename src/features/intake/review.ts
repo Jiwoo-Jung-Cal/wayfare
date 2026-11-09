@@ -1,6 +1,6 @@
 import {
   BookingExtractionSchema, BookingSchema, ExtractBookingRequestSchema, PolicyEvidenceSchema,
-  appError, err, fromZodError, isUnknown, isValidTimeZone, minorDigits, normalizeDocumentText, ok, parseMajorUnits, reviewedBookingInput, sha256Hex, unknownValue,
+  appError, err, fromZodError, isUnknown, isValidTimeZone, minorDigits, normalizeDocumentText, ok, parseMajorUnits, reviewedBookingInput, sha256Hex, unknownValue, zonedWallTimeToInstant,
   type BookingExtraction, type BookingKind, type BookingReviewEdits, type ExtractionService,
   type ExtractedField, type FeatureContext, type Money, type Result, type SaveReviewedBookingResult,
 } from '../../core/index.ts';
@@ -61,6 +61,19 @@ export function createIntakeExtractor(service: ExtractionService) {
   };
 }
 
+/** UTC instant -> the "YYYY-MM-DDTHH:mm" wall time a datetime-local input shows in `timeZone`. */
+export function instantToLocalInput(instant: string, timeZone: string): string {
+  if (!validInstant(instant) || !isValidTimeZone(timeZone)) return '';
+  const parts = Object.fromEntries(new Intl.DateTimeFormat('en-US', { timeZone, hourCycle: 'h23', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })
+    .formatToParts(new Date(instant)).map((p) => [p.type, p.value]));
+  return `${parts.year}-${parts.month}-${parts.day}T${parts.hour}:${parts.minute}`;
+}
+
+/** A datetime-local wall time in `timeZone` -> UTC instant; '' when blank or unparseable. */
+export function localInputToInstant(wall: string, timeZone: string): string {
+  return wall ? zonedWallTimeToInstant(wall, timeZone) ?? '' : '';
+}
+
 function validInstant(s: string) {
   if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?Z$/.test(s)) return false;
   const d = new Date(s);
@@ -70,17 +83,17 @@ function validInstant(s: string) {
 export function validateReview(d: ReviewDraft): Result<BookingReviewEdits> {
   const issues: { path: string; message: string }[] = [];
   for (const key of ['kind', 'provider', 'reference', 'localTimezone'] as const) {
-    if (!d[key].trim()) issues.push({ path: key, message: 'Enter this required booking fact' });
+    if (!d[key].trim()) issues.push({ path: key, message: 'Required. Enter it to save.' });
   }
-  if (!validInstant(d.startsAt)) issues.push({ path: 'startsAt', message: 'Enter a valid UTC instant, e.g. 2026-11-20T20:00:00Z' });
-  if (d.endsAt && (!validInstant(d.endsAt) || Date.parse(d.endsAt) <= Date.parse(d.startsAt))) issues.push({ path: 'endsAt', message: 'End must be a valid UTC instant after the start' });
-  if (d.localTimezone && !isValidTimeZone(d.localTimezone)) issues.push({ path: 'localTimezone', message: 'Enter an IANA timezone, e.g. America/New_York' });
-  if (!d.confirmed) issues.push({ path: 'confirmed', message: 'Confirm that the document records a confirmed booking before saving' });
+  if (!validInstant(d.startsAt)) issues.push({ path: 'startsAt', message: 'Enter the start date and time.' });
+  if (d.endsAt && (!validInstant(d.endsAt) || Date.parse(d.endsAt) <= Date.parse(d.startsAt))) issues.push({ path: 'endsAt', message: 'The end must be after the start.' });
+  if (d.localTimezone && !isValidTimeZone(d.localTimezone)) issues.push({ path: 'localTimezone', message: 'Choose a time zone.' });
+  if (!d.confirmed) issues.push({ path: 'confirmed', message: 'Confirm the booking details before saving.' });
   let paid: BookingReviewEdits['paid'] = unknownValue('Paid amount not supplied or confirmed by the reviewer');
-  if (d.currency && d.currency !== 'USD') issues.push({ path: 'currency', message: 'This trip supports USD only; no currency conversion is available' });
+  if (d.currency && d.currency !== 'USD') issues.push({ path: 'currency', message: 'This trip uses US dollars (USD). Currency conversion isn’t available.' });
   if (d.amount.trim()) {
     const amount = /^\d+(?:\.\d{1,2})?$/.test(d.amount.trim()) ? parseMajorUnits(d.amount.trim(), 'USD') : null;
-    if (!amount || d.currency !== 'USD') issues.push({ path: 'paid', message: 'Enter a nonnegative USD amount with at most two decimal places, or leave the amount blank for unknown' });
+    if (!amount || d.currency !== 'USD') issues.push({ path: 'paid', message: 'Enter an amount like 450.00, or leave it blank if you don’t know it.' });
     else paid = amount;
   }
   if (issues.length) return err('validation_failed', 'Check the booking facts listed below', { issues });

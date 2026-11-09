@@ -83,7 +83,7 @@ test('demo video script: every scene runs with the outputs the script lists', as
   await sample.selectOption({ label: 'Gotham Rooftop Dinners GRD-1180' });
   await btn(p, 'Use sample document').click();
   await btn(p, 'Extract booking').click();
-  await expect(review).toContainText('Refundability: unknown.');
+  await expect(review).toContainText('Terms unknown');
   await expect(review).toContainText('Missing terms do not mean a full refund or a nonrefundable booking.');
   await btn(p, 'Start over').click();
   await sample.selectOption({ label: 'Harbor Line Hotel HLH-48213 confirmation' });
