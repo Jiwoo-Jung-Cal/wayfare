@@ -192,7 +192,7 @@ test.describe('demo journey: Wayfinder and intake (Agent 2, #4)', () => {
     await expect(review.getByLabel(/^Booking reference/)).toHaveValue('HLH-48213');
     await expect(review).toContainText('Total charged: $450.00 USD');
     await expect(review).toContainText('Hotel $400 refund deadline');
-    await expect(review).toContainText('2026-11-19T23:00:00Z (exclusive)');
+    await expect(review).toContainText('Before Nov 19, 6:00 PM EST');
 
     await review.getByLabel(/I reviewed the facts and confirm/).check();
     await control(page, 'Save reviewed booking').click();
@@ -211,7 +211,7 @@ test.describe('demo journey: Wayfinder and intake (Agent 2, #4)', () => {
     await control(page, 'Use sample document').click();
     await control(page, 'Extract booking').click();
     await expect(page.getByText('No usable refund rules were extracted.')).toBeVisible();
-    await expect(page.getByText(/Refundability: unknown/)).toBeVisible();
+    await expect(page.getByText('Terms unknown')).toBeVisible();
 
     // Malformed document and unrecognized text are explicit errors; input is preserved.
     await sampleSelect(page).selectOption({ label: 'Malformed document' });

@@ -17,9 +17,13 @@ test('two validation issues on the same path render without a duplicate-key warn
   expect(consoleErrors.filter((e) => /same key/i.test(e))).toEqual([]);
 });
 
-test('the intake evidence textarea uses IBM Plex Mono', async ({ page }) => {
+test('the kept original document uses IBM Plex Mono; the paste box matches the composer', async ({ page }) => {
   await page.goto(`${TRIP}/import`);
-  const family = await page.getByLabel('Paste booking confirmation').evaluate((el) => getComputedStyle(el).fontFamily);
+  const paste = await page.getByLabel('Paste booking confirmation').evaluate((el) => getComputedStyle(el).fontFamily);
+  expect(paste).toMatch(/^"?Figtree"?/);
+  await page.getByRole('button', { name: 'Use sample document', exact: true }).click();
+  await page.getByRole('button', { name: 'Extract booking', exact: true }).click();
+  const family = await page.locator('.wf-intake-doc').evaluate((el) => getComputedStyle(el).fontFamily);
   expect(family).toMatch(/^"?IBM Plex Mono"?/);
   // Ordinary inputs keep the sans family.
   await page.goto(`${TRIP}/wallet`);

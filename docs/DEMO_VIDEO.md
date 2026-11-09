@@ -57,7 +57,7 @@ Open **Import** (the paperclip in Plan, or `#/trips/trip-demo-nyc/import`).
 
 | Do | You should see |
 | --- | --- |
-| Sample document **Gotham Rooftop Dinners GRD-1180**, then **Use sample document**, then **Extract booking** | Review before saving, with each fact next to its source excerpt (Prepaid: $95.00 USD, Reservation: GRD-1180). "**Refundability: unknown.** … Missing terms do not mean a full refund or a nonrefundable booking." |
+| Sample document **Gotham Rooftop Dinners GRD-1180**, then **Use sample document**, then **Extract booking** | Review before saving, with each fact next to its source excerpt (Prepaid: $95.00 USD, Reservation: GRD-1180). Refund policy tagged "**Terms unknown**" … "Missing terms do not mean a full refund or a nonrefundable booking." |
 | **Start over** | The form clears. Don't save this one: its unknown refund terms would make the ReRoute chart unknown. |
 | Sample **Harbor Line Hotel HLH-48213 confirmation**, then **Use sample document**, **Extract booking**, tick **I reviewed the facts and confirm…**, **Save reviewed booking** | "**Already imported**: Harbor Line Hotel Midtown HLH-48213. No duplicate was created; existing reviewed facts were kept." |
 | Paste `Acme Air confirmation ZZ9, paid $10.00 USD on December 1.` into "Paste booking confirmation", then **Extract booking** | "Live AI extraction is not configured. Sample mode only recognizes the WayFare sample documents." It never invents a result. |

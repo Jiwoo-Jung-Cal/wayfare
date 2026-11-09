@@ -4,7 +4,7 @@ import {
   createSampleExtractionService, err, isUnknown, memoryStorage, money, normalizeDocumentText, ok, sampleDocuments, sumMaybe, unwrap, usd,
   type BookingExtraction, type MaybeMoney, type Result,
 } from '../../core/index.ts';
-import { createIntakeExtractor, reviewDraft, saveReviewedIntake, validateReview } from './review.ts';
+import { createIntakeExtractor, instantToLocalInput, localInputToInstant, reviewDraft, saveReviewedIntake, validateReview } from './review.ts';
 
 const service = createSampleExtractionService(() => DEMO_TIMES.clockStart);
 const clock = createClock({ mode: 'sample', current: DEMO_TIMES.clockStart });
@@ -15,6 +15,21 @@ async function setup(text = sampleDocuments.HOTEL_CONFIRMATION) {
   const x = await extraction(text);
   return { storage, repo, x, input: { extraction: x, sourceText: text, draft: { ...reviewDraft(x), confirmed: true }, tripId: DEMO_TRIP_ID } };
 }
+
+describe('local-time review inputs', () => {
+  it('shows UTC instants as wall time in the booking zone and converts edits back exactly', () => {
+    expect(instantToLocalInput('2026-11-20T20:00:00Z', 'America/New_York')).toBe('2026-11-20T15:00');
+    expect(localInputToInstant('2026-11-20T15:00', 'America/New_York')).toBe('2026-11-20T20:00:00Z');
+    expect(instantToLocalInput('2026-11-20T15:00:00Z', 'America/Los_Angeles')).toBe('2026-11-20T07:00');
+    expect(instantToLocalInput('2026-11-20T20:00:00Z', 'UTC')).toBe('2026-11-20T20:00');
+  });
+  it('treats blank, invalid instants and unknown zones as empty rather than guessing', () => {
+    expect(localInputToInstant('', 'America/New_York')).toBe('');
+    expect(instantToLocalInput('', 'America/New_York')).toBe('');
+    expect(instantToLocalInput('2026-11-20T20:00:00Z', 'Not/AZone')).toBe('');
+    expect(localInputToInstant('2026-11-20T15:00', 'Not/AZone')).toBe('');
+  });
+});
 
 describe('reviewed booking intake', () => {
   it.each([

@@ -12,7 +12,7 @@ export function ClaimSyncNotice({ tripId }: { tripId: Id }) {
   switch (claimSync.status) {
     case 'syncing':
       return (
-        <div role="status" aria-live="polite" className="wf-muted">
+        <div role="status" aria-live="polite" className="wf-visually-hidden">
           Syncing refund claims from recorded actions…
         </div>
       );
@@ -33,7 +33,8 @@ export function ClaimSyncNotice({ tripId }: { tripId: Id }) {
       return <Notice tone="warning">Claim sync is pending: the TripWallet module is not connected yet. Any recorded recovery actions are kept.</Notice>;
     case 'synced':
       return (
-        <div role="status" aria-live="polite" className="wf-muted">
+        // Routine success is announced to screen readers only; the page itself shows the claims.
+        <div role="status" aria-live="polite" className="wf-visually-hidden">
           Refund claims up to date ({claimSync.result.created} created, {claimSync.result.existing} already tracked).
         </div>
       );
