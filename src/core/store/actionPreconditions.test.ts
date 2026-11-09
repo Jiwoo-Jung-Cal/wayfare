@@ -166,7 +166,7 @@ describe('recordBookingAction preconditions (local, two tabs on one store)', () 
       policyId: DEMO_IDS.policies.flight, expectedPolicyRevision: 1, validBefore: null,
       replacementQuoteId: DEMO_IDS.quotes.replacementFlight, ...extra,
     });
-    // At the quote's validUntil (same instant as the hotel cutoff) the quote has expired.
+    // At the quote's validUntil (four hours after the hotel cutoff) the quote has expired.
     unwrap(await repo.setClock({ mode: 'sample', current: DEMO_TIMES.replacementQuoteValidUntil }));
     let before = unwrap(await repo.snapshot());
     expect(await record(repo, replace, pre())).toMatchObject({ ok: false, error: { code: 'conflict', message: 'Replacement quote expired; review again' } });

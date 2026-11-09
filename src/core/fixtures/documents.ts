@@ -61,7 +61,7 @@ export const REPLACEMENT_QUOTE = `${SAMPLE_BANNER}
 Bayline Air - Rebooking quote
 Flight BL 230, SFO to JFK, November 20, 2026, departs 9:15 AM PT, arrives 5:45 PM ET
 Price: $360.00 USD
-Quote valid until November 19, 2026 11:00 PM UTC`;
+Quote valid until November 20, 2026 3:00 AM UTC`;
 
 export const HOTEL_REFUND_CONFIRMATION = `${SAMPLE_BANNER}
 Harbor Line Hotel Midtown - Refund confirmation

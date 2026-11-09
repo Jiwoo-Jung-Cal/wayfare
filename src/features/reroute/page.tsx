@@ -85,7 +85,9 @@ export function MoneyChart({ data, now, tz }: { data: Comparison; now: Instant; 
     const points = [{ h: 0, v: at(0) }, ...marks.map((m) => ({ h: m.h, v: at(m.h) }))];
     return { marks, points };
   }, [data, now]);
-  const [hover, setHover] = useState<{ h: number; v: number | null } | null>(null);
+  // Keep only the pointer position; the value is read from the current series on every render,
+  // so a demo-clock or data change under a still pointer never leaves a stale amount.
+  const [hoverH, setHoverH] = useState<number | null>(null);
   const paid = minor(data.options.find((o) => o.kind === 'cancel_trip')?.cashPaidBeforeRefunds) ?? 0;
   const top = Math.max(paid, 1);
   const X = (h: number) => X0 + (h / H) * (X1 - X0);
@@ -96,6 +98,7 @@ export function MoneyChart({ data, now, tz }: { data: Comparison; now: Instant; 
   for (const p of pts.slice(1)) path += ` H${X(p.h).toFixed(1)} V${Y(p.v).toFixed(1)}`;
   path += ` H${X(H)}`;
   const valueAt = (h: number) => [...pts].reverse().find((p) => p.h <= h)!.v;
+  const hover = hoverH === null ? null : { h: hoverH, v: valueAt(hoverH) };
   const ticks = [0, Math.round(top / 3 / 10000) * 100, Math.round((2 * top) / 3 / 10000) * 100, top / 100];
   const cur = data.options.find(o => o.kind === 'cancel_trip')!.expectedCashRecovery;
   const currency = isUnknown(cur) ? 'USD' : cur.currency;
@@ -104,7 +107,7 @@ export function MoneyChart({ data, now, tz }: { data: Comparison; now: Instant; 
     const r = (e.currentTarget.ownerSVGElement as SVGSVGElement).getBoundingClientRect();
     const sx = ((e.clientX - r.left) / r.width) * 640;
     const h = Math.max(0, Math.min(H, ((sx - X0) / (X1 - X0)) * H));
-    setHover({ h, v: valueAt(h) });
+    setHoverH(h);
   };
   return (
     <div className="wf-rr-chart">
@@ -148,13 +151,13 @@ export function MoneyChart({ data, now, tz }: { data: Comparison; now: Instant; 
         {hover && (
           <g>
             <line x1={X(hover.h)} x2={X(hover.h)} y1={Y(top)} y2={Y1} className="wf-rr-cross" />
-            <circle cx={X(hover.h)} cy={Y(hover.v ?? 0)} r="5" className="wf-rr-dot" strokeWidth="2" />
+            <circle cx={X(hover.h)} cy={Y(hover.v)} r="5" className="wf-rr-dot" strokeWidth="2" />
           </g>
         )}
         <circle cx={X(0)} cy={Y(pts[0]!.v)} r="5" className="wf-rr-dot" strokeWidth="2" />
-        <rect x={X0} y={Y0} width={X1 - X0} height={Y1 - Y0} fill="transparent" onPointerMove={onMove} onPointerDown={onMove} onPointerLeave={() => setHover(null)} />
+        <rect x={X0} y={Y0} width={X1 - X0} height={Y1 - Y0} fill="transparent" onPointerMove={onMove} onPointerDown={onMove} onPointerLeave={() => setHoverH(null)} />
       </svg>
-      {hover && hover.v !== null && (
+      {hover && (
         <div className="wf-rr-tip" style={{
           left: `${(X(hover.h) / 640) * 100}%`, top: `${(Y(hover.v) / 250) * 100}%`,
           // Move the anchor through the tooltip as it moves through the chart.
@@ -293,12 +296,14 @@ export function ReRoutePage({ tripId, ctx }: FeaturePageProps) {
         <button type="button" role="radio" data-choice="continue" tabIndex={selected === 'continue' ? 0 : -1} className="wf-rr-opt" aria-checked={selected === 'continue'} disabled={done && selected !== 'continue'} onClick={() => !done && setChoice('continue')}>
           <span className="wf-rr-rad" aria-hidden="true" />
           <h3>Keep the trip</h3>
-          <div><span className="wf-big wf-num wf-loss">−{whole(keep.extraCashNeeded)}</span> <span className="wf-muted">for a new {root.kind === 'flight' ? 'flight' : 'booking'}</span></div>
+          {minor(keep.extraCashNeeded) === null
+            ? <div><span className="wf-big wf-rr-pending">Price needed</span> <span className="wf-muted">for a new {root.kind === 'flight' ? 'flight' : 'booking'}</span></div>
+            : <div><span className="wf-big wf-num wf-loss">−{whole(keep.extraCashNeeded)}</span> <span className="wf-muted">for a new {root.kind === 'flight' ? 'flight' : 'booking'}</span></div>}
           <ul>
             <li><Icon name="check" /><span>You still get <b className="wf-gain">+{whole(rootCash)}</b> back for the cancelled {root.kind === 'flight' ? 'flight' : 'booking'}</span></li>
             <li><Icon name="check" /><span>{replacement ? `${replacement.description.replace(/,.*$/, '')} instead (sample price). Hotel and plans stay.` : 'Replacement quote unavailable.'}</span></li>
           </ul>
-          {keep.constraints.length > 0 && <span className="wf-rr-warn">Review needed: {keep.constraints[0]}</span>}
+          {keep.constraints.length > 0 && <span className="wf-rr-warn">{keep.constraints[0]}</span>}
         </button>
       </div>
 
